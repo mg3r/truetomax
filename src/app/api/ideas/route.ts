@@ -1,0 +1,32 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { askJSON, buildContext } from "@/lib/ai";
+
+export const maxDuration = 60;
+
+type Idea = { title: string; body: string; first_step: string; money_path?: string };
+
+const PROMPTS = {
+  venture: `Surface 3 new, feasible ideas for how Max could earn sustainable income from what he already does and loves. Each must be something he could test within two weeks with what he has now (skills, kitchen, studio, decks, Charlottesville community, truetomax). Prefer ideas that combine his gifts (e.g. food + music + gathering) and that put him in front of paying people. Skip anything already in play or eliminated.
+Return [{"title": short name, "body": 2-3 sentences on what it is and why it fits him, "first_step": one concrete action he can do this week, "money_path": who pays, roughly how much, and how often}]`,
+  content: `Max's personal Instagram is truetomax (a personal account, no analytics access). His challenge is sharing his work and finding the people who connect with it. Suggest 3 specific posts or short series he could make from what he is actually doing this week (look at his rhythm, recent work and journal). Each should show his process or invite people in (to a dinner, a set, the studio) — not just a polished result.
+Return [{"title": the post/series idea, "body": what to capture and how to frame it, 2-3 sentences, "first_step": exactly what to film or photograph next time he's doing it, "money_path": how this could lead to a booking, sale or seat, or omit if it's purely audience-building}]`,
+};
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+
+  const { kind } = await req.json();
+  const k = kind === "content" ? "content" : "venture";
+  try {
+    const ideas = await askJSON<Idea[]>(PROMPTS[k], await buildContext(supabase), 1800);
+    await supabase.from("ideas").insert(
+      ideas.slice(0, 3).map((i) => ({ kind: k, title: i.title, body: i.body, first_step: i.first_step, money_path: i.money_path ?? null }))
+    );
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "The partner is unavailable." }, { status: 502 });
+  }
+}
