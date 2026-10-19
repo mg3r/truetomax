@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { addProjectTask, moveTask, deleteTask, type Lane } from "@/app/actions";
+import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
 import { Board, LANES, laneOf, type BoardTask } from "./Board";
 
 const VIEW_KEY = "ttm-project-view";
@@ -111,9 +111,15 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                               </svg>
                             )}
                           </button>
-                          <button onClick={() => setOpen(open === t.id ? null : t.id)} className={`min-w-0 flex-1 text-left ${done ? "text-muted line-through decoration-line" : ""}`}>
-                            {t.title}
-                          </button>
+                          <TitleInput
+                            task={t}
+                            done={done}
+                            onFocus={() => setOpen(t.id)}
+                            onRename={(title) => {
+                              setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, title } : x)));
+                              start(() => renameTask(t.id, title));
+                            }}
+                          />
                         </div>
                         {open === t.id && (
                           <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
@@ -144,5 +150,25 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
         </div>
       )}
     </div>
+  );
+}
+
+/** The task's text, editable in place. Focusing it also shows where it can move. */
+function TitleInput({ task, done, onFocus, onRename }: { task: BoardTask; done: boolean; onFocus: () => void; onRename: (title: string) => void }) {
+  const [value, setValue] = useState(task.title);
+  useEffect(() => setValue(task.title), [task.title]);
+  return (
+    <input
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onFocus={onFocus}
+      onBlur={() => {
+        if (!value.trim()) return setValue(task.title);
+        if (value !== task.title) onRename(value.trim());
+      }}
+      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+      aria-label="Task"
+      className={`min-w-0 flex-1 bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""}`}
+    />
   );
 }

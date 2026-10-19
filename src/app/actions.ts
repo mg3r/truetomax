@@ -539,3 +539,40 @@ export async function addProjectTask(projectId: string, title: string, lane: Lan
   if (data && lane === "done") after(() => remember(supabase, "task", data.id, `Did: ${title.trim()}`, now));
   refresh();
 }
+
+/* Projects, edited in place */
+export async function updateProject(id: string, fields: { title?: string; description?: string; vision_id?: string | null; status?: string }) {
+  const supabase = await db();
+  const row: Record<string, string | null> = { updated_at: new Date().toISOString() };
+  if (typeof fields.title === "string" && fields.title.trim()) row.title = fields.title.trim();
+  if (typeof fields.description === "string") row.description = fields.description;
+  if (fields.vision_id !== undefined) row.vision_id = fields.vision_id || null;
+  if (fields.status && ["active", "paused", "done", "eliminated"].includes(fields.status)) row.status = fields.status;
+  await supabase.from("projects").update(row).eq("id", id);
+  if (row.status && row.status !== "active") {
+    const { data: p } = await supabase.from("projects").select("title").eq("id", id).single();
+    if (p) after(() => remember(supabase, "project", id, `Project "${p.title}" ${row.status}`));
+  }
+  refresh();
+}
+
+export async function addGoal(projectId: string, title: string) {
+  if (!title.trim()) return;
+  const supabase = await db();
+  await supabase.from("goals").insert({ project_id: projectId, title: title.trim() });
+  refresh();
+}
+
+export async function renameGoal(id: string, title: string) {
+  if (!title.trim()) return;
+  const supabase = await db();
+  await supabase.from("goals").update({ title: title.trim() }).eq("id", id);
+  refresh();
+}
+
+export async function renameTask(id: string, title: string) {
+  if (!title.trim()) return;
+  const supabase = await db();
+  await supabase.from("tasks").update({ title: title.trim() }).eq("id", id);
+  refresh();
+}

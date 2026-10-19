@@ -1,22 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { Grow } from "./Grow";
 import { updateVision, createVision, deleteVision } from "@/app/actions";
 
 type Vision = { id: string; title: string; body: string };
-
-/** A textarea that grows with its text, so a vision reads like a page, not a form. */
-function Grow(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const fit = () => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  };
-  useEffect(fit, [props.value]);
-  return <textarea ref={ref} rows={1} {...props} onInput={fit} />;
-}
 
 function VisionSection({ v }: { v: Vision }) {
   const [title, setTitle] = useState(v.title);

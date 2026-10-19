@@ -16,7 +16,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Routine tab with times and days
 - [x] Visions: a plain list, each vision its own section, edited in place
 - [x] Projects: simple cards; inside, goals plus one place to add a task (Today / Up next / Later / Done), shown as a list or a board
-- [x] Goals are outcomes you tick off, with an optional typed number
+- [x] Goals are plain text with a checkbox; project name, description, goals and tasks all edit in place
 - [x] Partner chat, focus review, ideas (income and sharing), process of elimination
 - [x] Learning: moves, suggestion results, long-term memory, weekly learning pass, insights you confirm or reject, rhythm proposals
 - [x] PWA on Supabase + Vercel + Claude API; muted, minimal, organic theme
