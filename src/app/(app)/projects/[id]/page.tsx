@@ -16,7 +16,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { data: p } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   if (!p) notFound();
 
-  const [goals, open, done, visions] = await Promise.all([
+  const [goals, open, done] = await Promise.all([
     supabase.from("goals").select("id, title, status").eq("project_id", id).neq("status", "dropped").order("created_at"),
     supabase.from("tasks").select("id, title, status, day, source, reason").eq("project_id", id).eq("status", "todo").order("created_at"),
     supabase
@@ -27,7 +27,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       .gte("completed_at", addDays(day, -14))
       .order("completed_at", { ascending: false })
       .limit(20),
-    supabase.from("visions").select("id, title").eq("status", "active").order("created_at"),
   ]);
 
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
@@ -36,7 +35,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     <div className="space-y-12">
       <div>
         <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
-        <ProjectHeader p={p} visions={visions.data ?? []} />
+        <ProjectHeader p={p} />
       </div>
 
       <section aria-labelledby="goals">

@@ -5,14 +5,8 @@ import { updateProject, addGoal, renameGoal, setGoalStatus } from "@/app/actions
 import { Grow } from "./Grow";
 import { Select } from "./Select";
 
-/** Project name, description, vision and status, all edited where they sit. */
-export function ProjectHeader({
-  p,
-  visions,
-}: {
-  p: { id: string; title: string; description: string; vision_id: string | null; status: string };
-  visions: { id: string; title: string }[];
-}) {
+/** Project name, description and status, all edited where they sit. */
+export function ProjectHeader({ p }: { p: { id: string; title: string; description: string; status: string } }) {
   const [title, setTitle] = useState(p.title);
   const [description, setDescription] = useState(p.description ?? "");
   const [, start] = useTransition();
@@ -36,14 +30,6 @@ export function ProjectHeader({
         className="mt-2 w-full resize-none overflow-hidden bg-transparent text-muted placeholder:text-muted/70 focus:text-ink focus:outline-none"
       />
       <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <Select
-          name="vision_id"
-          label="Vision"
-          className="w-60 max-w-full"
-          defaultValue={p.vision_id ?? ""}
-          onChange={(v) => start(() => updateProject(p.id, { vision_id: v }))}
-          options={[{ value: "", label: "No vision" }, ...visions.map((v) => ({ value: v.id, label: `Serves ${v.title}` }))]}
-        />
         <Select
           name="status"
           label="Status"

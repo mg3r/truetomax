@@ -67,7 +67,10 @@ export default async function TodayPage() {
     ...(events ?? []).filter((e) => !e.allDay).map((e) => ({ key: `e-${e.id}`, at: hhmm(e.start!), event: e, task: null as Task | null })),
     ...list.filter((t) => t.at_time).map((t) => ({ key: t.id, at: t.at_time!.slice(0, 5), event: null, task: t })),
   ].sort((a, b) => a.at.localeCompare(b.at));
-  const untimed = list.filter((t) => !t.at_time);
+  const PART: Record<string, number> = { morning: 0, afternoon: 1, evening: 2 };
+  const untimed = list
+    .filter((t) => !t.at_time)
+    .sort((a, b) => Number(a.status === "done") - Number(b.status === "done") || (PART[a.part_of_day ?? ""] ?? 3) - (PART[b.part_of_day ?? ""] ?? 3));
 
   return (
     <div className="space-y-16">
@@ -117,7 +120,7 @@ export default async function TodayPage() {
             ) : (
               <p className="mt-2 text-muted">
                 Add your copy of The Creative Act and a page will open here each morning.{" "}
-                <Link href="/settings#book" className="text-ink underline decoration-line underline-offset-4">Add the book</Link>
+                <Link href="/context?tab=docs#book" className="text-ink underline decoration-line underline-offset-4">Add the book</Link>
               </p>
             )}
           </>
@@ -151,7 +154,7 @@ export default async function TodayPage() {
         )}
         {googleConfigured() && !google.data && (
           <p className="mt-3 text-sm text-muted">
-            <Link href="/settings#calendar" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
+            <Link href="/context?tab=settings" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
           </p>
         )}
         <AddTask projects={projects.data ?? []} day={day} />

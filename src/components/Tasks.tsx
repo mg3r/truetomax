@@ -12,6 +12,7 @@ export type Task = {
   reason: string | null;
   day: string | null;
   at_time?: string | null;
+  part_of_day?: string | null;
   project?: string | null;
 };
 
@@ -56,7 +57,7 @@ export function TaskRow({ task, today, showProject = true, aside, showTime = fal
       <div className="min-w-0 flex-1">
         <p className={done ? "text-muted line-through decoration-line" : ""}>{task.title}</p>
         <p className="text-xs text-muted">
-          {[showProject && task.project, task.source === "rhythm" && "weekly rhythm", carried && "carried over"].filter(Boolean).join(", ")}
+          {[!task.at_time && task.part_of_day, showProject && task.project, task.source === "rhythm" && "your schedule", carried && "carried over"].filter(Boolean).join(", ")}
         </p>
       </div>
       {aside && <div className="shrink-0 self-center">{aside}</div>}

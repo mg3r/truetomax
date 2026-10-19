@@ -6,7 +6,7 @@ import { exchangeCode } from "@/lib/google";
 export async function GET(request: Request) {
   const { origin, searchParams } = new URL(request.url);
   const back = (status: string) => {
-    const res = NextResponse.redirect(`${origin}/settings?google=${status}#calendar`);
+    const res = NextResponse.redirect(`${origin}/context?tab=settings&google=${status}`);
     res.cookies.delete("g_state");
     return res;
   };

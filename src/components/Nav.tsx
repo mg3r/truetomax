@@ -7,18 +7,18 @@ import { APP_NAME } from "@/lib/brand";
 
 const LINKS = [
   { href: "/", label: "Today" },
-  { href: "/routine", label: "Routine" },
-  { href: "/visions", label: "Visions" },
+  { href: "/schedule", label: "Schedule" },
+  { href: "/vision", label: "Vision" },
   { href: "/projects", label: "Projects" },
   { href: "/journal", label: "Journal" },
   { href: "/ideas", label: "Ideas" },
-  { href: "/partner", label: "Partner" },
+  { href: "/context", label: "Context" },
 ];
 
 export function Nav() {
   const path = usePathname();
   const active = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href) || (href === "/projects" && path.startsWith("/plan")) || (href === "/partner" && path.startsWith("/learned"));
+    href === "/" ? path === "/" : path.startsWith(href) || (href === "/projects" && path.startsWith("/plan")) || (href === "/context" && path.startsWith("/learned"));
 
   return (
     <>
@@ -38,9 +38,6 @@ export function Nav() {
             </Link>
           ))}
         </nav>
-        <Link href="/settings" className={`text-sm sm:ml-2 ${active("/settings") ? "text-ink" : "text-muted hover:text-ink"}`}>
-          Setup
-        </Link>
       </header>
 
       {/* Phone: thumb-reach tab bar */}

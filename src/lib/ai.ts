@@ -24,6 +24,7 @@ How you work with him:
 - Be concrete and small. A good suggested task can be done in one sitting and names exactly what "done" looks like.
 - Respect his weekly rhythm; suggest work that fits the day, not on top of it.
 - You evolve with him. What he has confirmed about himself, the results of past suggestions, and your current guidance policy override your general instincts. Do more of what he actually follows through on; resize or reframe what he keeps skipping instead of repeating it.
+- His Vision page is a living doc in his own words. Help him understand what he actually wants: when it's thin, vague or seems out of date, ask him about it. Never fill it in for him.
 - His most important number is moves: times per week he shares his work or asks someone to pay him. Protect at least one move in most days' plans.
 - On The Creative Act by Rick Rubin: you may draw on its themes (attention, source, the vessel, play, letting go of outcomes, finishing, sharing work) and on passages Max has saved. Never quote the book from memory or invent quotes; only use the exact text of passages he has saved.
 - Write in a warm, grounded, plain voice. No hype, no emojis, no therapy-speak.`;
@@ -88,8 +89,17 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     supabase.from("projects").select("title, status_note").eq("status", "eliminated").limit(20),
   ]);
   const elimIdeas = await supabase.from("ideas").select("title, status_note").eq("status", "eliminated").limit(20);
-  // Practices: the aligned actions that feed projects (absent until the 0004 setup runs).
-  const practices = await supabase.from("practices").select("name, description");
+  // His own docs (vision, routine, plans, coaching notes). Most recently updated first, capped so they don't crowd out the rest.
+  const docs = await supabase.from("context_docs").select("title, text, updated_at").order("updated_at", { ascending: false }).limit(12);
+  let docBudget = 14000;
+  const docText = (docs.error ? [] : docs.data ?? [])
+    .map((d: Row) => {
+      const take = Math.max(0, Math.min(4000, docBudget));
+      docBudget -= take;
+      return take ? `### ${d.title}\n${(d.text as string).slice(0, take)}${(d.text as string).length > take ? "\n[…]" : ""}` : "";
+    })
+    .filter(Boolean)
+    .join("\n\n");
 
   const projName = new Map((projects.data ?? []).map((p: Row) => [p.id as string, p.title as string]));
   const todayRhythm = (rhythm.data ?? []).filter((r: Row) => r.weekday === weekdayOf(day)).map((r: Row) => r.title);
@@ -98,10 +108,8 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `Today is ${WEEKDAYS[weekdayOf(day)]}, ${day}.`,
     `## Max in his own words\n${ctx.data?.about_me || "(not written yet)"}`,
     ctx.data?.summary ? `## What you have learned about Max so far\n${ctx.data.summary}` : "",
-    `## Visions\n${(visions.data ?? []).map((v: Row) => `- ${v.title} (${v.horizon}): ${line(v.body as string)}`).join("\n") || "(none yet)"}`,
-    !practices.error && practices.data?.length
-      ? `## Practices (aligned actions he returns to; they feed his projects)\n${practices.data.map((p: Row) => `- ${p.name}${p.description ? `: ${line(p.description as string)}` : ""}`).join("\n")}`
-      : "",
+    `## Vision (his running doc of what's alive for him)\n${(visions.data ?? []).map((v: Row) => `- ${v.title}: ${line(v.body as string)}`).join("\n") || "(none yet)"}`,
+    docText ? `## His own docs (written by him; use them for context, suggestions and questions)\n${docText}` : "",
     `## Projects\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,
     `## Weekly rhythm — today\n${todayRhythm.map((t) => `- ${t}`).join("\n") || "(nothing fixed today)"}`,

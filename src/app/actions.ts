@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { today, addDays } from "@/lib/dates";
 import { remember, forget, journalText } from "@/lib/memory";
+import { readGoogleDoc } from "@/lib/google";
 
 const str = (fd: FormData, k: string) => {
   const v = fd.get(k);
@@ -16,6 +17,7 @@ const num = (fd: FormData, k: string) => {
   return v === null || isNaN(Number(v)) ? null : Number(v);
 };
 const refresh = () => revalidatePath("/", "layout");
+const partOfDay = (v: string | null) => (v && ["morning", "afternoon", "evening"].includes(v) ? v : null);
 
 async function db() {
   const supabase = await createClient();
@@ -219,9 +221,8 @@ export async function addRhythm(fd: FormData) {
   if (!title || !weekdays.length) return;
   const supabase = await db();
   const at_time = str(fd, "at_time");
-  await supabase.from("rhythm").insert(
-    weekdays.map((weekday) => ({ title, weekday, at_time, practice_id: str(fd, "practice_id"), project_id: str(fd, "project_id"), sort: 100 }))
-  );
+  const part_of_day = partOfDay(str(fd, "part_of_day"));
+  await supabase.from("rhythm").insert(weekdays.map((weekday) => ({ title, weekday, at_time, part_of_day, sort: 100 })));
   refresh();
 }
 
@@ -230,7 +231,7 @@ export async function updateRhythm(fd: FormData) {
   const title = str(fd, "title");
   if (!id || !title) return;
   const supabase = await db();
-  await supabase.from("rhythm").update({ title, at_time: str(fd, "at_time"), practice_id: str(fd, "practice_id") }).eq("id", id);
+  await supabase.from("rhythm").update({ title, at_time: str(fd, "at_time"), part_of_day: partOfDay(str(fd, "part_of_day")) }).eq("id", id);
   refresh();
 }
 
@@ -437,8 +438,8 @@ export async function setProjectPractices(projectId: string, practiceIds: string
 }
 
 /**
- * Start the plan fresh: removes every project with its goals and tasks.
- * Keeps visions, practices, your routine, journal, moves and what the partner has learned.
+ * Start fresh: clears every vision and project, with their goals and tasks.
+ * Keeps your schedule, journal, docs, moves and everything the partner has learned.
  */
 export async function resetPlan(fd: FormData) {
   if (fd.get("confirm") !== "clear") return;
@@ -446,8 +447,10 @@ export async function resetPlan(fd: FormData) {
   await supabase.from("tasks").delete().not("project_id", "is", null);
   await supabase.from("tasks").delete().eq("status", "suggested");
   await supabase.from("projects").delete().not("id", "is", null);
+  await supabase.from("visions").delete().not("id", "is", null);
+  await supabase.from("memory").delete().in("source_type", ["vision", "project"]);
   refresh();
-  redirect("/projects");
+  redirect("/vision");
 }
 
 /** Bring routine changes into today without waiting for tomorrow. Only adds what isn't on today yet. */
@@ -456,7 +459,7 @@ export async function applyRoutineToday() {
   const day = today();
   const weekday = new Date(day + "T12:00:00Z").getUTCDay();
   const [{ data: rhythm }, { data: existing }] = await Promise.all([
-    supabase.from("rhythm").select("title, project_id, practice_id, at_time").eq("weekday", weekday).order("sort"),
+    supabase.from("rhythm").select("title, project_id, at_time, part_of_day").eq("weekday", weekday).order("sort"),
     supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm"),
   ]);
   const have = new Set((existing ?? []).map((t) => t.title));
@@ -465,21 +468,6 @@ export async function applyRoutineToday() {
   refresh();
 }
 
-/** Load Max's five visions. Updates any vision with the same name instead of duplicating it. */
-export async function loadMyVisions() {
-  const { MY_VISIONS } = await import("@/lib/visions");
-  const supabase = await db();
-  const { data: existing } = await supabase.from("visions").select("id, title");
-  for (const v of MY_VISIONS) {
-    const match = (existing ?? []).find((e) => e.title.trim().toLowerCase() === v.title.toLowerCase());
-    const row = { ...v, status: "active", updated_at: new Date().toISOString() };
-    const { data } = match
-      ? await supabase.from("visions").update(row).eq("id", match.id).select("id").single()
-      : await supabase.from("visions").insert(row).select("id").single();
-    if (data) after(() => remember(supabase, "vision", data.id, `Vision (${v.horizon}): ${v.title}. ${v.body}`));
-  }
-  refresh();
-}
 
 export async function setGoalCurrent(id: string, current: number) {
   if (!Number.isFinite(current) || current < 0) return;
@@ -503,14 +491,26 @@ export async function updateVision(id: string, fields: { title?: string; body?: 
     const { data: v } = await supabase.from("visions").select("title, body, horizon").eq("id", id).single();
     if (v) after(() => remember(supabase, "vision", id, `Vision (${v.horizon}): ${v.title}. ${v.body}`));
   }
-  revalidatePath("/visions");
+  revalidatePath("/vision");
 }
 
-export async function createVision(title: string) {
-  if (!title.trim()) return;
+export async function createVision(title: string): Promise<{ id: string } | null> {
   const supabase = await db();
-  await supabase.from("visions").insert({ title: title.trim(), body: "" });
-  refresh();
+  // New visions go to the top of the doc.
+  const { data: first } = await supabase.from("visions").select("sort").order("sort").limit(1).maybeSingle();
+  const { data } = await supabase
+    .from("visions")
+    .insert({ title: title.trim() || "Untitled vision", body: "", sort: (first?.sort ?? 0) - 1 })
+    .select("id")
+    .single();
+  revalidatePath("/vision");
+  return data;
+}
+
+export async function reorderVisions(ids: string[]) {
+  const supabase = await db();
+  await Promise.all(ids.map((id, i) => supabase.from("visions").update({ sort: i }).eq("id", id)));
+  revalidatePath("/vision");
 }
 
 export async function deleteVision(id: string) {
@@ -574,5 +574,56 @@ export async function renameTask(id: string, title: string) {
   if (!title.trim()) return;
   const supabase = await db();
   await supabase.from("tasks").update({ title: title.trim() }).eq("id", id);
+  refresh();
+}
+
+/* Context: your own docs, so the partner knows your life */
+export async function addContextDoc(title: string, text: string): Promise<{ error?: string }> {
+  const supabase = await db();
+  const clean = text.replace(/\u0000/g, "").trim();
+  if (!clean) return { error: "That file had no readable text." };
+  const { data, error } = await supabase
+    .from("context_docs")
+    .insert({ title: title.slice(0, 200) || "Untitled", text: clean.slice(0, 200_000), source: "upload" })
+    .select("id")
+    .single();
+  if (error) return { error: error.message.includes("context_docs") ? "Run the 0005 setup file in Supabase first." : error.message };
+  if (data) after(() => remember(supabase, "doc", data.id, `Doc "${title}": ${clean.slice(0, 5000)}`));
+  refresh();
+  return {};
+}
+
+export async function addGoogleDoc(link: string): Promise<{ error?: string }> {
+  const id = link.match(/\/document\/d\/([a-zA-Z0-9_-]+)/)?.[1] ?? (/^[a-zA-Z0-9_-]{20,}$/.test(link.trim()) ? link.trim() : null);
+  if (!id) return { error: "That doesn't look like a Google Docs link. Open the doc and copy the link from the address bar." };
+  const supabase = await db();
+  const doc = await readGoogleDoc(supabase, id);
+  if ("error" in doc) return { error: doc.error };
+  const { data, error } = await supabase
+    .from("context_docs")
+    .insert({ title: doc.title, text: doc.text.slice(0, 200_000), source: "gdoc", gdoc_id: id })
+    .select("id")
+    .single();
+  if (error) return { error: error.message.includes("context_docs") ? "Run the 0005 setup file in Supabase first." : error.message };
+  if (data) after(() => remember(supabase, "doc", data.id, `Doc "${doc.title}": ${doc.text.slice(0, 5000)}`));
+  refresh();
+  return {};
+}
+
+export async function refreshGoogleDoc(id: string) {
+  const supabase = await db();
+  const { data: row } = await supabase.from("context_docs").select("gdoc_id").eq("id", id).single();
+  if (!row?.gdoc_id) return;
+  const doc = await readGoogleDoc(supabase, row.gdoc_id);
+  if ("error" in doc) return;
+  await supabase.from("context_docs").update({ title: doc.title, text: doc.text.slice(0, 200_000), updated_at: new Date().toISOString() }).eq("id", id);
+  after(() => remember(supabase, "doc", id, `Doc "${doc.title}": ${doc.text.slice(0, 5000)}`));
+  refresh();
+}
+
+export async function deleteContextDoc(id: string) {
+  const supabase = await db();
+  await supabase.from("context_docs").delete().eq("id", id);
+  await forget(supabase, "doc", id);
   refresh();
 }

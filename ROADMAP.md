@@ -8,13 +8,14 @@ Keep it simple: as few buttons and features as possible. Everything serves the p
 ## Purpose
 An evolving guiding light: give each day direction, help execute visions, share gifts through aligned action, and find aligned work that makes money sustainably, with no return to a job. The core problems to solve are discipline, direction, and sharing work with the people who connect with it.
 
-**Structure:** visions → projects → tasks. Your routine holds the aligned actions you repeat (pottery, art, DJing, cooking, hosting). Keep it simple.
+**Structure:** Vision is a living doc in your own words. Projects hold goals and tasks. Schedule holds your weekly rhythm and calendar. Context holds your docs and the partner. Everything connects through the partner, not through links you maintain.
 
 ## Built
 - [x] Daily affirmation, a random page from your copy of *The Creative Act*, a question from that page (swappable), journal
 - [x] Today combines routine, Google Calendar events and project tasks
-- [x] Routine tab with times and days
-- [x] Visions: a plain list, each vision its own section, edited in place
+- [x] Schedule: weekly rhythm by morning / afternoon / evening (time optional), plus the week's calendar
+- [x] Vision: one running doc, new sections on top, drag to reorder, edit in place
+- [x] Context: partner chat, your docs (upload PDF/Word/text or link Google Docs), book, settings
 - [x] Projects: simple cards; inside, goals plus one place to add a task (Today / Up next / Later / Done), shown as a list or a board
 - [x] Goals are plain text with a checkbox; project name, description, goals and tasks all edit in place
 - [x] Partner chat, focus review, ideas (income and sharing), process of elimination
@@ -30,7 +31,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 ## v2 integrations
 5. **Instagram (truetomax):** professional account since Oct 19, 2026. Read posts, reach and engagement so the partner learns which posts land. Needs a Meta developer app (`instagram_business_basic`, `instagram_business_manage_insights`).
 6. **Stripe and bank:** read-only income from SourceDart and Intelligent Adjuster (Stripe restricted key; bank via an aggregator like Plaid). Income becomes a learned signal alongside moves.
-7. **Google Drive:** attach docs to projects and visions; the partner can read them.
+7. **Google Drive folders:** link a whole folder instead of single Google Docs.
 8. **Morning notification** with the day's affirmation.
 9. **Memory by meaning:** deploy the `embed` function (one command); search falls back to words until then.
 

@@ -44,11 +44,11 @@ export async function prepareDay(supabase: SupabaseClient, { force = false } = {
   // 1. Weekly rhythm becomes today's fixed tasks.
   const { count } = await supabase.from("tasks").select("id", { count: "exact", head: true }).eq("day", day).eq("source", "rhythm");
   if (!count) {
-    const full = await supabase.from("rhythm").select("title, project_id, practice_id, at_time").eq("weekday", weekdayOf(day)).order("sort");
+    const full = await supabase.from("rhythm").select("title, project_id, at_time, part_of_day").eq("weekday", weekdayOf(day)).order("sort");
     if (!full.error && full.data?.length) {
       await supabase.from("tasks").insert(full.data.map((r) => ({ ...r, day, source: "rhythm" })));
     } else if (full.error) {
-      // Before the 0004 setup runs, rhythm has no time or practice columns yet.
+      // Before the setup files run, rhythm may not have time or part-of-day columns yet.
       const { data: rhythm } = await supabase.from("rhythm").select("title, project_id").eq("weekday", weekdayOf(day)).order("sort");
       if (rhythm?.length) await supabase.from("tasks").insert(rhythm.map((r) => ({ title: r.title, project_id: r.project_id, day, source: "rhythm" })));
     }
