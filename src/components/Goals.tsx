@@ -1,53 +1,61 @@
 "use client";
 
-import { useTransition, useRef } from "react";
-import { bumpGoal, setGoalStatus, saveGoal } from "@/app/actions";
+import { useTransition, useRef, useState } from "react";
+import { setGoalStatus, saveGoal, setGoalCurrent } from "@/app/actions";
 
 export type Goal = { id: string; title: string; metric: string | null; target: number | null; current: number; status: string; due_date?: string | null };
 
-export function GoalBar({ goal, compact = false }: { goal: Goal; compact?: boolean }) {
+/** A goal is an outcome you tick off when it's true. A number shows only if you chose to track one. */
+export function GoalRow({ goal }: { goal: Goal }) {
   const [pending, start] = useTransition();
-  const target = goal.target ? Number(goal.target) : null;
-  const current = Number(goal.current);
-  const pct = target ? Math.min(100, (current / target) * 100) : 0;
+  const [current, setCurrent] = useState(String(Number(goal.current)));
   const achieved = goal.status === "achieved";
+  const target = goal.target == null ? null : Number(goal.target);
 
   return (
-    <div className={pending ? "opacity-50" : ""}>
-      <div className="flex items-baseline justify-between gap-3 text-sm">
-        <span className={achieved ? "text-muted line-through decoration-line" : ""}>{goal.title}</span>
-        {goal.metric && (
-          <span className="shrink-0 text-muted tabular-nums">
-            {current}{target != null ? ` / ${target}` : ""} {compact ? "" : goal.metric}
-          </span>
+    <li className={`group flex items-start gap-3 py-2.5 ${pending ? "opacity-50" : ""}`}>
+      <button
+        aria-label={achieved ? `Mark "${goal.title}" not achieved` : `Mark "${goal.title}" achieved`}
+        onClick={() => start(() => setGoalStatus(goal.id, achieved ? "active" : "achieved"))}
+        className={`ring-check mt-0.5 grid h-5 w-5 shrink-0 place-items-center border ${achieved ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
+      >
+        {achieved && (
+          <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M2 6.5 5 9l5-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className={achieved ? "text-muted line-through decoration-line" : ""}>{goal.title}</p>
+        {target != null && !achieved && (
+          <form
+            className="mt-1 flex items-center gap-1.5 text-sm text-muted"
+            onSubmit={(e) => {
+              e.preventDefault();
+              start(() => setGoalCurrent(goal.id, Number(current)));
+            }}
+          >
+            <input
+              type="number"
+              min={0}
+              step="any"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              onBlur={() => Number(current) !== Number(goal.current) && start(() => setGoalCurrent(goal.id, Number(current)))}
+              aria-label={`Progress on ${goal.title}`}
+              className="w-12 border-b border-line bg-transparent text-center text-ink tabular-nums focus:border-ink focus:outline-none"
+            />
+            <span>of {target}{goal.metric ? ` ${goal.metric}` : ""}</span>
+          </form>
         )}
       </div>
-      {target != null && (
-        <div className="mt-1.5 h-[2px] overflow-hidden bg-line" role="progressbar" aria-valuenow={current} aria-valuemin={0} aria-valuemax={target} aria-label={goal.title}>
-          <div className={`h-full rounded-full ${achieved ? "bg-muted" : "bg-ink"}`} style={{ width: `${pct}%` }} />
-        </div>
-      )}
-      {!compact && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {goal.metric && (
-            <>
-              <button className="btn-quiet" aria-label={`Decrease ${goal.title}`} onClick={() => start(() => bumpGoal(goal.id, -1))}>−1</button>
-              <button className="btn-quiet !border-ink !text-ink" aria-label={`Increase ${goal.title}`} onClick={() => start(() => bumpGoal(goal.id, 1))}>+1</button>
-            </>
-          )}
-          {goal.due_date && <span className="text-xs text-muted">by {goal.due_date}</span>}
-          <span className="flex-1" />
-          {goal.status === "active" ? (
-            <>
-              <button className="text-xs text-muted hover:text-ink" onClick={() => start(() => setGoalStatus(goal.id, "achieved"))}>Mark achieved</button>
-              <button className="text-xs text-muted hover:text-danger" onClick={() => start(() => setGoalStatus(goal.id, "dropped"))}>Drop</button>
-            </>
-          ) : (
-            <button className="text-xs text-muted hover:text-ink" onClick={() => start(() => setGoalStatus(goal.id, "active"))}>Reopen</button>
-          )}
-        </div>
-      )}
-    </div>
+      <button
+        onClick={() => start(() => setGoalStatus(goal.id, "dropped"))}
+        className="text-xs text-muted opacity-100 hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+      >
+        Remove
+      </button>
+    </li>
   );
 }
 
@@ -60,14 +68,20 @@ export function AddGoal({ projectId }: { projectId: string }) {
         await saveGoal(fd);
         ref.current?.reset();
       }}
-      className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"
+      className="mt-2 space-y-2"
     >
       <input type="hidden" name="project_id" value={projectId} />
-      <input name="title" required placeholder="New goal" aria-label="Goal" className="field col-span-2" />
-      <input name="metric" placeholder="Measured in… (e.g. gigs)" aria-label="Metric" className="field col-span-2 sm:col-span-1" />
-      <input name="target" type="number" step="any" placeholder="Target" aria-label="Target" className="field" />
-      <input name="due_date" type="date" aria-label="Due date" className="field col-span-1 sm:col-span-2" />
-      <button className="btn col-span-2 justify-center sm:col-span-2">Add goal</button>
+      <div className="flex gap-2">
+        <input name="title" required placeholder='Add a goal, e.g. "First paid dinner hosted"' aria-label="Goal" className="field min-w-0 flex-1" />
+        <button className="btn">Add</button>
+      </div>
+      <details>
+        <summary className="cursor-pointer text-xs text-muted hover:text-ink">Track a number too (optional)</summary>
+        <div className="mt-2 flex gap-2">
+          <input name="target" type="number" step="any" min={0} placeholder="How many" aria-label="Target number" className="field w-28" />
+          <input name="metric" placeholder="of what (e.g. gigs)" aria-label="Unit" className="field min-w-0 flex-1" />
+        </div>
+      </details>
     </form>
   );
 }

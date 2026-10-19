@@ -3,6 +3,7 @@ import { today, weekdayOf, WEEKDAYS } from "@/lib/dates";
 import { addRhythm, updateRhythm, deleteRhythm, applyRoutineToday } from "@/app/actions";
 import { Select } from "@/components/Select";
 import { ActionButton, DeleteButton } from "@/components/DeleteButton";
+import { Practices } from "@/components/Practices";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,9 @@ export default async function RoutinePage() {
           );
         })}
       </section>
+      <div className="border-t border-line pt-10">
+        <Practices />
+      </div>
     </div>
   );
 }

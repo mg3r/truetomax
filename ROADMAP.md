@@ -11,7 +11,9 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Daily affirmation, a random page from your copy of *The Creative Act*, a question from that page (swappable), journal
 - [x] Today combines routine, Google Calendar events and project tasks
 - [x] Routine tab with times, days and practices
-- [x] Plan tab: practices → projects → visions; project board (Later / Up next / Today / Done)
+- [x] Visions tab (each vision and the projects serving it) and Projects tab (each project with its open tasks); project board (Later / Up next / Today / Done)
+- [x] Practices live on the Routine tab
+- [x] Goals are outcomes you tick off, with an optional typed number
 - [x] Partner chat, focus review, ideas (income and sharing), process of elimination
 - [x] Learning: moves, suggestion results, long-term memory, weekly learning pass, insights you confirm or reject, rhythm proposals
 - [x] PWA on Supabase + Vercel + Claude API; muted, minimal, organic theme
@@ -20,8 +22,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 ## Next, in priority order
 1. **Fill in the plan, step by step:** visions first, then projects, then the routine. Most important, because every suggestion the partner makes comes from this.
 2. **Partner suggests tasks for a vision or project:** a "Suggest next steps" button on each project and vision, which proposes 3–5 tasks to accept into a lane; it also runs when you create a project.
-3. **Simplify projects:** replace the +1/−1 goal counters. A goal becomes a plain outcome you tick off when it's true ("First paid dinner hosted"), with a number only if you choose to track one, typed directly.
-4. **Your setup steps:** clear the starter projects (Setup → Start your plan fresh), and the Google Cloud setup for Calendar.
+3. **Your setup steps:** clear the starter projects (Setup → Start your plan fresh), and the Google Cloud setup for Calendar.
 
 ## v2 integrations
 5. **Instagram (truetomax):** professional account since Oct 19, 2026. Read posts, reach and engagement so the partner learns which posts land. Needs a Meta developer app (`instagram_business_basic`, `instagram_business_manage_insights`).

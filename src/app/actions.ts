@@ -447,7 +447,7 @@ export async function resetPlan(fd: FormData) {
   await supabase.from("tasks").delete().eq("status", "suggested");
   await supabase.from("projects").delete().not("id", "is", null);
   refresh();
-  redirect("/plan");
+  redirect("/projects");
 }
 
 /** Bring routine changes into today without waiting for tomorrow. Only adds what isn't on today yet. */
@@ -478,5 +478,16 @@ export async function loadMyVisions() {
       : await supabase.from("visions").insert(row).select("id").single();
     if (data) after(() => remember(supabase, "vision", data.id, `Vision (${v.horizon}): ${v.title}. ${v.body}`));
   }
+  refresh();
+}
+
+export async function setGoalCurrent(id: string, current: number) {
+  if (!Number.isFinite(current) || current < 0) return;
+  const supabase = await db();
+  const { data } = await supabase.from("goals").select("target").eq("id", id).single();
+  await supabase
+    .from("goals")
+    .update({ current, status: data?.target != null && current >= Number(data.target) ? "achieved" : "active" })
+    .eq("id", id);
   refresh();
 }

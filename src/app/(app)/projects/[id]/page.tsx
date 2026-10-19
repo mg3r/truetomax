@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { today, addDays } from "@/lib/dates";
 import { saveProject, setProjectStatus } from "@/app/actions";
-import { GoalBar, AddGoal } from "@/components/Goals";
+import { GoalRow, AddGoal } from "@/components/Goals";
 import { Board, type BoardTask } from "@/components/Board";
 import { Select } from "@/components/Select";
 import { PracticePicker } from "@/components/PlanParts";
@@ -45,7 +45,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   return (
     <div className="space-y-12">
       <div>
-        <Link href="/plan" className="text-sm text-muted hover:text-ink">Plan</Link>
+        <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 className="font-serif text-3xl">{p.title}</h1>
           <span className="text-sm text-muted">
@@ -58,14 +58,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
       <section aria-labelledby="goals">
         <h2 id="goals" className="section-title">goals</h2>
-        <div className="mt-4 grid gap-6 sm:grid-cols-2">
-          {(goals.data ?? []).map((g) => <GoalBar key={g.id} goal={g} />)}
-        </div>
-        {!goals.data?.length && <p className="mt-2 text-muted">No goals yet. What would make this project a success in the next 90 days?</p>}
-        <details className="mt-4">
-          <summary className="cursor-pointer text-sm text-muted hover:text-ink">Add a goal</summary>
-          <AddGoal projectId={id} />
-        </details>
+        <p className="mt-1 text-sm text-muted">What&rsquo;s true when this project is working. Tick each one off when it happens.</p>
+        {(goals.data ?? []).length > 0 && (
+          <ul className="mt-2 divide-y divide-line">
+            {(goals.data ?? []).map((g) => <GoalRow key={g.id} goal={g} />)}
+          </ul>
+        )}
+        <AddGoal projectId={id} />
       </section>
 
       <section aria-labelledby="board">
