@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { saveAboutMe, addHighlight, deleteHighlight, resetPlan, signOut } from "@/app/actions";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -43,47 +42,42 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </form>
       </section>
 
-      <section aria-labelledby="learned">
-        <h2 id="learned" className="section-title">What your partner has learned</h2>
-        <p className="mt-1 text-sm text-muted">Patterns it has noticed, rhythm changes it suggests, and its weekly review.</p>
-        <Link href="/learned" className="btn-quiet mt-3">Open what it&rsquo;s learned</Link>
-      </section>
-
       <section aria-labelledby="book-h" id="book" className="scroll-mt-6">
         <h2 id="book-h" className="section-title">Your book</h2>
         <p className="mt-1 text-sm text-muted">
-          Add your PDF of The Creative Act. It&rsquo;s read on this device and only its text is stored, privately. Each morning Today opens to a page you haven&rsquo;t seen in a while, and the question and affirmation come from it.
+          Add your PDF of The Creative Act. It&rsquo;s read on this device and only its text is stored, privately. Each morning Today opens to a page you haven&rsquo;t seen in a while.
         </p>
         <BookUpload existing={book} />
-      </section>
 
-      <section aria-labelledby="passages-h" id="passages" className="scroll-mt-6">
-        <h2 id="passages-h" className="section-title">Passages</h2>
-        <p className="mt-1 text-sm text-muted">Lines you&rsquo;ve marked in your copy of The Creative Act, or any book. One shows up each morning and shapes the day&rsquo;s question.</p>
-        <form action={addHighlight} className="mt-3 space-y-2">
-          <textarea name="text" rows={3} required placeholder="The passage, exactly as written" aria-label="Passage" className="field" />
-          <div className="flex flex-wrap gap-2">
-            <input name="source" defaultValue="The Creative Act" aria-label="Book" className="field min-w-0 flex-1" />
-            <input name="location" placeholder="Chapter or page" aria-label="Chapter or page" className="field w-40" />
-            <button className="btn">Add passage</button>
-          </div>
-        </form>
-        <ul className="mt-5 space-y-4">
-          {(highlights.data ?? []).map((h) => (
-            <li key={h.id} className="border-t border-line pt-3">
-              <p className="font-serif italic">{h.text}</p>
-              <div className="mt-1 flex justify-between text-xs text-muted">
-                <span>{h.source}{h.location ? `, ${h.location}` : ""}</span>
-                <DeleteButton action={deleteHighlight.bind(null, h.id)} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <details id="passages" className="mt-6 scroll-mt-6">
+          <summary className="cursor-pointer text-sm text-muted hover:text-ink">
+            Saved passages{highlights.data?.length ? ` (${highlights.data.length})` : ""}
+          </summary>
+          <form action={addHighlight} className="mt-3 space-y-2">
+            <textarea name="text" rows={3} required placeholder="The passage, exactly as written" aria-label="Passage" className="field" />
+            <div className="flex flex-wrap gap-2">
+              <input name="source" defaultValue="The Creative Act" aria-label="Book" className="field min-w-0 flex-1" />
+              <input name="location" placeholder="Chapter or page" aria-label="Chapter or page" className="field w-40" />
+              <button className="btn">Add passage</button>
+            </div>
+          </form>
+          <ul className="mt-5 space-y-4">
+            {(highlights.data ?? []).map((h) => (
+              <li key={h.id} className="border-t border-line pt-3">
+                <p className="font-serif italic">{h.text}</p>
+                <div className="mt-1 flex justify-between text-xs text-muted">
+                  <span>{h.source}{h.location ? `, ${h.location}` : ""}</span>
+                  <DeleteButton action={deleteHighlight.bind(null, h.id)} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
       </section>
 
       <section aria-labelledby="calendar-h" id="calendar" className="scroll-mt-6">
         <h2 id="calendar-h" className="section-title">Google Calendar</h2>
-        <p className="mt-1 text-sm text-muted">Read-only. Today shows your events alongside your routine and tasks, and your partner plans around them.</p>
+        <p className="mt-1 text-sm text-muted">Read-only. Today shows your events alongside your routine and tasks.</p>
         {googleStatus && GOOGLE_STATUS[googleStatus] && <p role="status" className="mt-3 text-sm">{GOOGLE_STATUS[googleStatus]}</p>}
         {!googleConfigured() ? (
           <p className="mt-3 text-sm text-muted">Not set up yet: add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel.</p>
@@ -97,20 +91,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         )}
       </section>
 
-      <section aria-labelledby="reset-h">
-        <h2 id="reset-h" className="section-title">Start your plan fresh</h2>
-        <p className="mt-1 max-w-[60ch] text-sm text-muted">
-          Removes every project, with its goals and tasks, and today&rsquo;s partner suggestions. Keeps your visions, practices, routine, journal, moves and everything your partner has learned.
+      <form action={signOut}>
+        <button className="btn-quiet">Sign out</button>
+      </form>
+
+      <details className="border-t border-line pt-6">
+        <summary className="cursor-pointer text-sm text-muted hover:text-ink">Start your plan fresh</summary>
+        <p className="mt-2 max-w-[60ch] text-sm text-muted">
+          Removes every project, with its goals and tasks. Keeps your visions, routine, journal, moves and everything your partner has learned.
         </p>
         <form action={resetPlan} className="mt-3 flex flex-wrap items-center gap-2">
           <input name="confirm" required pattern="clear" placeholder='Type "clear" to confirm' aria-label='Type "clear" to confirm' className="field w-56" />
           <button className="btn-quiet hover:!border-danger hover:!text-danger">Remove all projects</button>
         </form>
-      </section>
-
-      <form action={signOut}>
-        <button className="btn-quiet">Sign out</button>
-      </form>
+      </details>
     </div>
   );
 }

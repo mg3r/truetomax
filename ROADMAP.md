@@ -5,14 +5,13 @@ The full list of requirements, so nothing gets lost between sessions.
 ## Purpose
 An evolving guiding light: give each day direction, help execute visions, share gifts through aligned action, and find aligned work that makes money sustainably, with no return to a job. The core problems to solve are discipline, direction, and sharing work with the people who connect with it.
 
-**Structure:** practices (aligned actions: pottery, art, DJing, cooking, hosting) feed projects (a cacao brand, a dinner-gathering concept), and projects serve visions.
+**Structure:** visions → projects → tasks. Your routine holds the aligned actions you repeat (pottery, art, DJing, cooking, hosting). Keep it simple.
 
 ## Built
 - [x] Daily affirmation, a random page from your copy of *The Creative Act*, a question from that page (swappable), journal
 - [x] Today combines routine, Google Calendar events and project tasks
-- [x] Routine tab with times, days and practices
+- [x] Routine tab with times and days
 - [x] Visions tab (each vision and the projects serving it) and Projects tab (each project with its open tasks); project board (Later / Up next / Today / Done)
-- [x] Practices live on the Routine tab
 - [x] Goals are outcomes you tick off, with an optional typed number
 - [x] Partner chat, focus review, ideas (income and sharing), process of elimination
 - [x] Learning: moves, suggestion results, long-term memory, weekly learning pass, insights you confirm or reject, rhythm proposals

@@ -6,11 +6,10 @@ import { saveProject, setProjectStatus } from "@/app/actions";
 import { GoalRow, AddGoal } from "@/components/Goals";
 import { Board, type BoardTask } from "@/components/Board";
 import { Select } from "@/components/Select";
-import { PracticePicker } from "@/components/PlanParts";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_LABEL: Record<string, string> = { active: "Active", paused: "Paused", done: "Finished", eliminated: "Eliminated" };
+const STATUS_LABEL: Record<string, string> = { paused: "Paused", done: "Finished", eliminated: "Eliminated" };
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,7 +19,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { data: p } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   if (!p) notFound();
 
-  const [goals, open, done, visions, practicesRes, links] = await Promise.all([
+  const [goals, open, done, visions] = await Promise.all([
     supabase.from("goals").select("*").eq("project_id", id).neq("status", "dropped").order("created_at"),
     supabase.from("tasks").select("id, title, status, day, source, reason").eq("project_id", id).eq("status", "todo").order("created_at"),
     supabase
@@ -32,12 +31,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       .order("completed_at", { ascending: false })
       .limit(20),
     supabase.from("visions").select("id, title").eq("status", "active"),
-    supabase.from("practices").select("id, name").order("sort").order("created_at"),
-    supabase.from("project_practices").select("practice_id").eq("project_id", id),
   ]);
-  const practices = practicesRes.error ? [] : practicesRes.data ?? [];
-  const linked = links.error ? [] : (links.data ?? []).map((l) => l.practice_id);
-  const practiceNames = practices.filter((pr) => linked.includes(pr.id)).map((pr) => pr.name);
 
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
   const vision = (visions.data ?? []).find((v) => v.id === p.vision_id);
@@ -46,19 +40,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     <div className="space-y-12">
       <div>
         <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="font-serif text-3xl">{p.title}</h1>
-          <span className="text-sm text-muted">
-            {[STATUS_LABEL[p.status], p.makes_money && "can make money", vision && `serves ${vision.title}`, practiceNames.length && `fed by ${practiceNames.join(", ")}`].filter(Boolean).join(", ")}
-          </span>
-        </div>
-        {p.status !== "active" && p.status_note && <p className="mt-2 text-sm text-muted">{p.status_note}</p>}
+        <h1 className="mt-1 font-serif text-3xl">{p.title}</h1>
+        <p className="mt-1 text-sm text-muted">
+          {[STATUS_LABEL[p.status], vision ? `Serves ${vision.title}` : "Not linked to a vision"].filter(Boolean).join(" · ")}
+        </p>
         {p.description && <p className="mt-3 max-w-[62ch] whitespace-pre-wrap text-muted">{p.description}</p>}
       </div>
 
       <section aria-labelledby="goals">
         <h2 id="goals" className="section-title">goals</h2>
-        <p className="mt-1 text-sm text-muted">What&rsquo;s true when this project is working. Tick each one off when it happens.</p>
         {(goals.data ?? []).length > 0 && (
           <ul className="mt-2 divide-y divide-line">
             {(goals.data ?? []).map((g) => <GoalRow key={g.id} goal={g} />)}
@@ -69,35 +59,17 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
       <section aria-labelledby="board">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="board" className="section-title">the work</h2>
-          <p className="text-xs text-muted">Drag cards between lanes, or tap one to move it.</p>
+          <h2 id="board" className="section-title">tasks</h2>
+          <p className="text-xs text-muted">Drag between lanes, or tap a task to move it.</p>
         </div>
         <div className="mt-4">
           <Board projectId={id} tasks={tasks} today={day} />
         </div>
       </section>
 
-      <section aria-labelledby="direction" className="pebble border border-line p-4 sm:p-5">
-        <h2 id="direction" className="section-title">keep, pause, or let go</h2>
-        <p className="mt-1 text-sm text-muted">Saying why helps your partner stop suggesting what you&rsquo;ve already ruled out.</p>
-        <form action={setProjectStatus} className="mt-3 space-y-3">
-          <input type="hidden" name="id" value={id} />
-          <input name="note" defaultValue={p.status_note ?? ""} placeholder="Why? (optional)" aria-label="Reason" className="field" />
-          <div className="flex flex-wrap gap-2">
-            {[
-              ["active", "Keep active"],
-              ["paused", "Pause"],
-              ["done", "Mark finished"],
-              ["eliminated", "Eliminate"],
-            ].map(([s, label]) => (
-              <button key={s} name="status" value={s} className={s === p.status ? "btn" : "btn-quiet"}>{label}</button>
-            ))}
-          </div>
-        </form>
-      </section>
-
       <details className="pebble-alt border border-line p-4">
         <summary className="cursor-pointer font-medium">Edit project</summary>
+
         <form action={saveProject} className="mt-4 space-y-4">
           <input type="hidden" name="id" value={id} />
           <input name="title" required defaultValue={p.title} aria-label="Name" className="field" />
@@ -106,15 +78,29 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <Select
               name="vision_id"
               label="Vision"
-              className="w-56"
+              className="w-64 max-w-full"
               defaultValue={p.vision_id ?? ""}
               options={[{ value: "", label: "No vision" }, ...(visions.data ?? []).map((v) => ({ value: v.id, label: v.title }))]}
             />
-            <input name="area" defaultValue={p.area} aria-label="Area" placeholder="Area" className="field w-36" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="makes_money" defaultChecked={p.makes_money} /> Can make money</label>
           </div>
-          <PracticePicker practices={practices} selected={linked} />
           <button className="btn">Save changes</button>
+        </form>
+
+        <form action={setProjectStatus} className="mt-8 space-y-3 border-t border-line pt-5">
+          <p className="text-sm text-muted">Pause, finish or let it go. Saying why helps your partner stop suggesting it.</p>
+          <input type="hidden" name="id" value={id} />
+          <input name="note" defaultValue={p.status_note ?? ""} placeholder="Why? (optional)" aria-label="Reason" className="field" />
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["active", "Active"],
+              ["paused", "Pause"],
+              ["done", "Finished"],
+              ["eliminated", "Eliminate"],
+            ].map(([s, label]) => (
+              <button key={s} name="status" value={s} className={s === p.status ? "btn" : "btn-quiet"}>{label}</button>
+            ))}
+          </div>
         </form>
       </details>
     </div>

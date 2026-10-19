@@ -1,16 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { today, weekdayOf, WEEKDAYS } from "@/lib/dates";
 import { addRhythm, updateRhythm, deleteRhythm, applyRoutineToday } from "@/app/actions";
-import { Select } from "@/components/Select";
 import { ActionButton, DeleteButton } from "@/components/DeleteButton";
-import { Practices } from "@/components/Practices";
 
 export const dynamic = "force-dynamic";
 
 // Monday-first, the way the week is lived.
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-type Item = { id: string; weekday: number; title: string; at_time: string | null; practice_id: string | null; sort: number };
+type Item = { id: string; weekday: number; title: string; at_time: string | null; sort: number };
 
 function clock(t: string | null) {
   if (!t) return null;
@@ -21,14 +19,8 @@ function clock(t: string | null) {
 export default async function RoutinePage() {
   const supabase = await createClient();
   const todayWd = weekdayOf(today());
-  const [rhythm, practicesRes] = await Promise.all([
-    supabase.from("rhythm").select("*").order("sort").order("created_at"),
-    supabase.from("practices").select("id, name").order("sort").order("created_at"),
-  ]);
-  const practices = practicesRes.error ? [] : practicesRes.data ?? [];
-  const practiceName = new Map(practices.map((p) => [p.id, p.name]));
+  const rhythm = await supabase.from("rhythm").select("*").order("sort").order("created_at");
   const items = (rhythm.data ?? []) as Item[];
-  const practiceOptions = [{ value: "", label: "No practice" }, ...practices.map((p) => ({ value: p.id, label: p.name }))];
   // Timed items in time order, untimed ones after.
   const ordered = (wd: number) =>
     items.filter((r) => r.weekday === wd).sort((a, b) => (a.at_time ?? "99").localeCompare(b.at_time ?? "99") || a.sort - b.sort);
@@ -51,7 +43,6 @@ export default async function RoutinePage() {
               <label htmlFor="at_time" className="block text-xs text-muted">Time (optional)</label>
               <input id="at_time" name="at_time" type="time" className="field w-32" />
             </div>
-            {practices.length > 0 && <Select name="practice_id" label="Practice" className="w-44" options={practiceOptions} />}
           </div>
           <fieldset>
             <legend className="text-xs text-muted">Days</legend>
@@ -94,13 +85,11 @@ export default async function RoutinePage() {
                         <summary className="flex cursor-pointer list-none items-baseline gap-3">
                           <span className="w-16 shrink-0 text-sm text-muted tabular-nums">{clock(r.at_time) ?? "anytime"}</span>
                           <span className="min-w-0 flex-1">{r.title}</span>
-                          {r.practice_id && practiceName.get(r.practice_id) && <span className="shrink-0 text-xs text-muted">{practiceName.get(r.practice_id)}</span>}
                         </summary>
                         <form action={updateRhythm} className="mt-3 flex flex-wrap items-end gap-3 sm:pl-[4.75rem]">
                           <input type="hidden" name="id" value={r.id} />
                           <input name="title" defaultValue={r.title} aria-label="Routine item" className="field min-w-[12rem] flex-1" />
                           <input name="at_time" type="time" defaultValue={r.at_time?.slice(0, 5) ?? ""} aria-label="Time" className="field w-32" />
-                          {practices.length > 0 && <Select name="practice_id" label="Practice" className="w-40" defaultValue={r.practice_id ?? ""} options={practiceOptions} />}
                           <button className="btn-quiet">Save</button>
                           <DeleteButton action={deleteRhythm.bind(null, r.id)} label="Remove" />
                         </form>
@@ -115,9 +104,6 @@ export default async function RoutinePage() {
           );
         })}
       </section>
-      <div className="border-t border-line pt-10">
-        <Practices />
-      </div>
     </div>
   );
 }
