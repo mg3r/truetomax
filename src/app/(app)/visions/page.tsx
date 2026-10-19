@@ -57,7 +57,7 @@ export default async function VisionsPage() {
         })}
       </section>
 
-      <details className="rounded-2xl border border-dashed border-line p-4" open={active.length === 0}>
+      <details className="pebble border border-dashed border-line p-4" open={active.length === 0}>
         <summary className="cursor-pointer font-semibold">Add a vision</summary>
         <VisionForm />
       </details>

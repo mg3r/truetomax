@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today, prettyDay, addDays, weekdayOf } from "@/lib/dates";
 import { MoveLogger } from "@/components/Moves";
-import { Star } from "@/components/Star";
+import { Mark } from "@/components/Mark";
 import { PrepareDay } from "@/components/PrepareDay";
 import { TaskRow, SuggestionRow, AddTask, type Task } from "@/components/Tasks";
 import { JournalForm } from "@/components/JournalForm";
@@ -52,19 +52,18 @@ export default async function TodayPage() {
   const doneCount = list.filter((t) => t.status === "done").length;
 
   return (
-    <div className="space-y-12">
-      {/* The affirmation is the one bright moment of the day. */}
-      <section aria-label="Affirmation" className="pt-6">
-        <p className="text-sm text-muted">{prettyDay(day)}</p>
-        <div className="mt-5 flex gap-4">
-          <Star size={26} className="dawn-rise mt-2 shrink-0 text-dawn" />
-          <h1 className="font-serif text-[2rem] leading-[1.15] tracking-[-0.015em] sm:text-[2.6rem]">{d.affirmation}</h1>
-        </div>
-        {d.focus && <p className="mt-5 max-w-[60ch] border-l-2 border-dawn pl-4 text-muted">{d.focus}</p>}
+    <div className="space-y-16">
+      {/* The morning's words, with one slow-moving form behind them. */}
+      <section aria-label="Affirmation" className="relative isolate pt-10 pb-4">
+        <div className="morning-form" aria-hidden="true" />
+        <Mark size={30} className="mark-draw text-ink" />
+        <p className="mt-6 text-sm text-muted">{prettyDay(day)}</p>
+        <h1 className="mt-2 max-w-[20ch] font-serif text-[2.15rem] leading-[1.12] font-normal tracking-[-0.02em] sm:text-[3rem]">{d.affirmation}</h1>
+        {d.focus && <p className="mt-6 max-w-[52ch] text-muted">{d.focus}</p>}
       </section>
 
       {learnedNotes.length > 0 && (
-        <Link href="/learned" className="block rounded-2xl border border-dawn/60 px-4 py-3 hover:bg-surface">
+        <Link href="/learned" className="block pebble border border-line px-4 py-3 hover:bg-surface">
           <span className="font-semibold">Your partner has {learnedNotes.join(", ")}.</span>{" "}
           <span className="text-muted">Check it&rsquo;s right so it keeps learning the right things.</span>
         </Link>
@@ -74,7 +73,7 @@ export default async function TodayPage() {
         <h2 id="passage" className="section-title">Today&rsquo;s passage</h2>
         {highlight.data ? (
           <figure className="mt-3">
-            <blockquote className="font-serif text-lg leading-relaxed italic">{highlight.data.text}</blockquote>
+            <blockquote className="max-w-[58ch] font-serif text-xl leading-relaxed italic">{highlight.data.text}</blockquote>
             <figcaption className="mt-2 text-sm text-muted">
               {highlight.data.source}
               {highlight.data.location ? `, ${highlight.data.location}` : ""}
@@ -103,8 +102,8 @@ export default async function TodayPage() {
         <AddTask projects={projects.data ?? []} day={day} />
 
         {suggestions.length > 0 && (
-          <div className="mt-8 rounded-2xl bg-surface p-4 sm:p-5">
-            <h3 className="font-serif text-lg">Your partner suggests</h3>
+          <div className="mt-8 pebble bg-surface p-4 sm:p-5">
+            <h3 className="section-title">your partner suggests</h3>
             <ul className="divide-y divide-line">
               {suggestions.map((t) => <SuggestionRow key={t.id} task={t} />)}
             </ul>
@@ -115,7 +114,7 @@ export default async function TodayPage() {
       <section aria-labelledby="moves">
         <h2 id="moves" className="section-title">Moves this week</h2>
         <p className="mt-1 text-sm text-muted">Every time you share your work or ask someone to pay you. This is the number that changes everything else.</p>
-        <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
+        <dl className="mt-5 grid grid-cols-4 gap-2">
           {[
             ["Shared", shares],
             ["Asked", asks],
@@ -124,7 +123,7 @@ export default async function TodayPage() {
           ].map(([label, value]) => (
             <div key={label as string} className="flex flex-col-reverse">
               <dt className="text-xs text-muted">{label}</dt>
-              <dd className={`font-serif text-3xl tabular-nums ${value === 0 ? "text-muted" : ""}`}>{value}</dd>
+              <dd className={`font-serif text-4xl font-light tabular-nums ${value === 0 ? "text-muted" : ""}`}>{value}</dd>
             </div>
           ))}
         </dl>

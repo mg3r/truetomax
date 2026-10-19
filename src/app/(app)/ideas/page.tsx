@@ -37,7 +37,7 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
 
       <section className="space-y-4">
         {live.map((i) => (
-          <article key={i.id} className="rounded-2xl bg-surface p-4 sm:p-5">
+          <article key={i.id} className="pebble bg-surface p-4 sm:p-5">
             <h2 className="font-semibold">{i.title}</h2>
             {i.body && <p className="mt-1 text-muted">{i.body}</p>}
             {i.money_path && <p className="mt-3 text-sm"><span className="font-semibold">Money path:</span> {i.money_path}</p>}
@@ -60,7 +60,7 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
         {!live.length && <p className="text-muted">No open ideas. Ask your partner for some, or add your own below.</p>}
       </section>
 
-      <details className="rounded-2xl border border-dashed border-line p-4">
+      <details className="pebble border border-dashed border-line p-4">
         <summary className="cursor-pointer font-semibold">Add your own idea</summary>
         <form action={addIdea} className="mt-4 space-y-3">
           <input type="hidden" name="kind" value={kind} />

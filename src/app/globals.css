@@ -1,43 +1,42 @@
 @import "tailwindcss";
 
+/*
+  truetomax — muted grays, black, white. Minimal, with organic edges:
+  a paper grain, pebble-shaped surfaces, a hand-drawn mark, and one slow-moving form on Today.
+*/
 :root {
-  --bg: #e8edf0;
-  --surface: #f6f8f9;
-  --ink: #1d2a36;
-  --muted: #5f6e7a;
-  --line: #cbd4da;
-  --celadon: #4f7f71;
-  --celadon-soft: #d6e5df;
-  --dawn: #c8902a;
-  --dawn-soft: #f3e3c2;
-  --danger: #a34a3c;
+  --bg: #ebebe8;
+  --surface: #f4f4f2;
+  --faint: #dcdcd8;
+  --ink: #1f1f1d;
+  --muted: #73736e;
+  --line: #d1d1cc;
+  --danger: #8f4f45;
+  --grain-opacity: 0.07;
+  --grain-blend: multiply;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #131b23;
-    --surface: #1b2530;
-    --ink: #e4eaee;
-    --muted: #93a1ac;
-    --line: #2b3743;
-    --celadon: #8db8aa;
-    --celadon-soft: #23362f;
-    --dawn: #e8b95a;
-    --dawn-soft: #3a2f1a;
-    --danger: #e08a7b;
+    --bg: #1b1b1a;
+    --surface: #232322;
+    --faint: #2b2b29;
+    --ink: #e9e9e5;
+    --muted: #96968f;
+    --line: #353532;
+    --danger: #cf958b;
+    --grain-opacity: 0.05;
+    --grain-blend: screen;
   }
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-faint: var(--faint);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --color-celadon: var(--celadon);
-  --color-celadon-soft: var(--celadon-soft);
-  --color-dawn: var(--dawn);
-  --color-dawn-soft: var(--dawn-soft);
   --color-danger: var(--danger);
   --font-serif: "Newsreader", Georgia, serif;
   --font-sans: "Hanken Grotesk", system-ui, sans-serif;
@@ -52,32 +51,82 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.55;
+  overflow-x: clip;
+}
+
+/* Paper grain over everything, like unglazed clay or rag paper. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--bg);
 }
 
 :focus-visible {
-  outline: 2px solid var(--celadon);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 1.5px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
-/* Form controls share one quiet style. */
+/* Pebble: no two corners the same, like something shaped by hand. */
+.pebble {
+  border-radius: 28px 18px 32px 20px / 22px 30px 18px 28px;
+}
+.pebble-alt {
+  border-radius: 20px 30px 22px 34px / 30px 20px 28px 18px;
+}
+
+/* Section titles: quiet, lowercase, out of the way of the content. */
+.section-title {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: lowercase;
+  letter-spacing: 0.01em;
+}
+
 .field {
   width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0.55rem 0.1rem;
   color: var(--ink);
+}
+.field:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+select.field {
+  padding-right: 1.2rem;
+}
+textarea.field {
+  border: 1px solid var(--line);
+  border-radius: 22px 14px 26px 16px / 16px 24px 14px 22px;
+  padding: 0.9rem 1rem;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  resize: vertical;
+}
+textarea.field:focus {
+  border-color: var(--ink);
 }
 .field::placeholder {
   color: var(--muted);
-}
-textarea.field {
-  font-family: var(--font-serif);
-  font-size: 1.075rem;
-  line-height: 1.65;
-  resize: vertical;
+  opacity: 0.8;
 }
 
 .btn {
@@ -85,51 +134,72 @@ textarea.field {
   align-items: center;
   gap: 0.4rem;
   border-radius: 999px;
-  padding: 0.5rem 1rem;
-  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  font-weight: 500;
   font-size: 0.95rem;
   background: var(--ink);
   color: var(--bg);
 }
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 .btn-quiet {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  padding: 0.35rem 0.8rem;
+  padding: 0.35rem 0.85rem;
   font-size: 0.9rem;
   color: var(--muted);
   border: 1px solid var(--line);
 }
 .btn-quiet:hover {
   color: var(--ink);
-  border-color: var(--muted);
+  border-color: var(--ink);
+}
+.btn-quiet[aria-pressed="true"] {
+  color: var(--bg);
+  background: var(--ink);
+  border-color: var(--ink);
 }
 
-.section-title {
-  font-family: var(--font-serif);
-  font-size: 1.35rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+/* Checkbox: a slightly lopsided ring. */
+.ring-check {
+  border-radius: 52% 48% 55% 45% / 48% 54% 46% 52%;
+}
+
+/* The one moving thing: a soft form behind the morning's words. */
+.morning-form {
+  position: absolute;
+  z-index: -1;
+  inset: -2.5rem -1.5rem auto auto;
+  width: min(78vw, 26rem);
+  aspect-ratio: 1;
+  background: var(--faint);
+  border-radius: 46% 54% 38% 62% / 52% 40% 60% 48%;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .dawn-rise {
-    animation: dawn-rise 1.4s ease-out both;
+  .morning-form {
+    animation: morph 22s ease-in-out infinite alternate;
   }
-  @keyframes dawn-rise {
-    from {
-      opacity: 0;
-      transform: translateY(6px) scale(0.92);
-      filter: blur(2px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-      filter: none;
-    }
+  @keyframes morph {
+    0% { border-radius: 46% 54% 38% 62% / 52% 40% 60% 48%; transform: rotate(0deg); }
+    50% { border-radius: 58% 42% 55% 45% / 41% 58% 42% 59%; transform: rotate(8deg) scale(1.03); }
+    100% { border-radius: 40% 60% 47% 53% / 60% 45% 55% 40%; transform: rotate(-6deg); }
+  }
+
+  .mark-draw {
+    animation: mark-in 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes mark-in {
+    from { opacity: 0; transform: rotate(-40deg) scale(0.86); filter: blur(3px); }
+  }
+
+  .breathe {
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    50% { opacity: 0.35; transform: scale(0.94); }
   }
 }

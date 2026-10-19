@@ -23,7 +23,7 @@ export function TaskRow({ task, today, showProject = true, aside }: { task: Task
       <button
         aria-label={done ? `Mark "${task.title}" not done` : `Mark "${task.title}" done`}
         onClick={() => start(() => setTaskStatus(task.id, done ? "todo" : "done"))}
-        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${done ? "border-celadon bg-celadon text-bg" : "border-muted hover:border-celadon"}`}
+        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center ring-check border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
       >
         {done && (
           <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
@@ -60,7 +60,7 @@ export function SuggestionRow({ task }: { task: Task }) {
       <p className="font-medium">{task.title}</p>
       {task.reason && <p className="mt-0.5 text-sm text-muted">{task.reason}</p>}
       <div className="mt-2 flex gap-2">
-        <button className="btn-quiet !border-celadon !text-celadon" onClick={() => start(() => setTaskStatus(task.id, "todo"))}>
+        <button className="btn-quiet !border-ink !text-ink" onClick={() => start(() => setTaskStatus(task.id, "todo"))}>
           Add to today
         </button>
         <button className="btn-quiet" onClick={() => start(() => setTaskStatus(task.id, "skipped"))}>

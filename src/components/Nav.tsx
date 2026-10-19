@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star } from "./Star";
+import { Mark } from "./Mark";
 import { APP_NAME } from "@/lib/brand";
 
 const LINKS = [
@@ -22,7 +22,7 @@ export function Nav() {
     <>
       <header className="mx-auto flex max-w-2xl items-center justify-between px-4 pt-5 pb-2 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-serif text-lg">
-          <Star size={18} className="text-dawn" />
+          <Mark size={18} className="text-ink" />
           {APP_NAME}
         </Link>
         <nav className="hidden gap-1 sm:flex" aria-label="Main">

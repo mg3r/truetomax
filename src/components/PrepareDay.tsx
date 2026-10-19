@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Star } from "./Star";
+import { Mark } from "./Mark";
 
 /** Shown the first time you open the app each day while the partner prepares it. */
 export function PrepareDay({ auto = true }: { auto?: boolean }) {
@@ -40,7 +40,7 @@ export function PrepareDay({ auto = true }: { auto?: boolean }) {
 
   return (
     <div className="flex min-h-[50dvh] flex-col items-center justify-center text-center">
-      <Star size={36} className={`text-dawn ${state === "working" ? "motion-safe:animate-pulse" : ""}`} />
+      <Mark size={40} className={`text-ink ${state === "working" ? "breathe" : ""}`} />
       <p className="mt-4 font-serif text-xl">{state === "error" ? "Today didn't come together." : "Preparing your day…"}</p>
       <p className="mt-1 max-w-xs text-sm text-muted">
         {state === "error" ? "Check your connection, then try again." : "Reading your visions, recent work and journal."}

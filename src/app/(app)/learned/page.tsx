@@ -43,7 +43,7 @@ export default async function LearnedPage() {
       </div>
 
       {latest && (
-        <section aria-labelledby="review" className="border-l-2 border-dawn pl-4 sm:pl-5">
+        <section aria-labelledby="review" className="border-l border-ink pl-4 sm:pl-5">
           <h2 id="review" className="section-title">Week of {shortDay(latest.week_of)}</h2>
           <div className="mt-3 max-w-[65ch] space-y-3 font-serif text-lg leading-relaxed">
             {latest.body.split(/\n{2,}/).map((para: string, i: number) => <p key={i} className="whitespace-pre-wrap">{para}</p>)}
@@ -62,14 +62,14 @@ export default async function LearnedPage() {
           <p className="mt-1 text-sm text-muted">Things it thinks it&rsquo;s learned. Confirmed ones steer every suggestion; rejected ones are never acted on.</p>
           <ul className="mt-4 space-y-4">
             {proposed.map((i) => (
-              <li key={i.id} className="rounded-2xl bg-surface p-4">
+              <li key={i.id} className="pebble bg-surface p-4">
                 <p className="font-semibold">{i.statement}</p>
                 {i.evidence && <p className="mt-1 text-sm text-muted">{i.evidence}</p>}
                 <p className="mt-1 text-xs text-muted">{Math.round(i.confidence * 100)}% sure</p>
                 <form action={setInsightStatus} className="mt-3 flex flex-wrap gap-2">
                   <input type="hidden" name="id" value={i.id} />
                   <input name="note" placeholder="Add a correction or nuance (optional)" aria-label="Your note" className="field min-w-0 flex-1 basis-full !py-1.5 text-sm sm:basis-auto" />
-                  <button name="status" value="confirmed" className="btn-quiet !border-celadon !text-celadon">That&rsquo;s true</button>
+                  <button name="status" value="confirmed" className="btn-quiet !border-ink !text-ink">That&rsquo;s true</button>
                   <button name="status" value="rejected" className="btn-quiet">Not true</button>
                 </form>
               </li>
@@ -83,7 +83,7 @@ export default async function LearnedPage() {
           <h2 id="rhythm-changes" className="section-title">Suggested rhythm changes</h2>
           <ul className="mt-4 space-y-3">
             {(proposals.data ?? []).map((p) => (
-              <li key={p.id} className="rounded-2xl border border-line p-4">
+              <li key={p.id} className="pebble border border-line p-4">
                 <p className="font-semibold">
                   {p.action === "add" && `Add "${p.title}" on ${WEEKDAYS[p.weekday]}`}
                   {p.action === "remove" && `Remove ${rhythmTitle.get(p.rhythm_id) ?? "a rhythm item"}`}
@@ -91,7 +91,7 @@ export default async function LearnedPage() {
                 </p>
                 <p className="mt-1 text-sm text-muted">{p.reason}</p>
                 <div className="mt-3 flex gap-2">
-                  <ActionButton action={answerRhythmProposal.bind(null, p.id, true)} className="btn-quiet !border-celadon !text-celadon">Make the change</ActionButton>
+                  <ActionButton action={answerRhythmProposal.bind(null, p.id, true)} className="btn-quiet !border-ink !text-ink">Make the change</ActionButton>
                   <ActionButton action={answerRhythmProposal.bind(null, p.id, false)}>Keep it as is</ActionButton>
                 </div>
               </li>
@@ -152,8 +152,8 @@ export default async function LearnedPage() {
             {Object.entries(stats.data.byCategory).map(([cat, t]) => (
               <li key={cat}>
                 <div className="flex justify-between text-sm"><span className="capitalize">{cat}</span><span className="text-muted">{t.done} of {t.offered} done</span></div>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line">
-                  <div className="h-full rounded-full bg-celadon" style={{ width: `${t.offered ? (t.done / t.offered) * 100 : 0}%` }} />
+                <div className="mt-1 h-[2px] overflow-hidden bg-line">
+                  <div className="h-full rounded-full bg-ink" style={{ width: `${t.offered ? (t.done / t.offered) * 100 : 0}%` }} />
                 </div>
               </li>
             ))}

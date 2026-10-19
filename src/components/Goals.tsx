@@ -15,7 +15,7 @@ export function GoalBar({ goal, compact = false }: { goal: Goal; compact?: boole
   return (
     <div className={pending ? "opacity-50" : ""}>
       <div className="flex items-baseline justify-between gap-3 text-sm">
-        <span className={achieved ? "text-celadon" : ""}>{goal.title}</span>
+        <span className={achieved ? "text-muted line-through decoration-line" : ""}>{goal.title}</span>
         {goal.metric && (
           <span className="shrink-0 text-muted tabular-nums">
             {current}{target != null ? ` / ${target}` : ""} {compact ? "" : goal.metric}
@@ -23,8 +23,8 @@ export function GoalBar({ goal, compact = false }: { goal: Goal; compact?: boole
         )}
       </div>
       {target != null && (
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={current} aria-valuemin={0} aria-valuemax={target} aria-label={goal.title}>
-          <div className={`h-full rounded-full ${achieved ? "bg-celadon" : "bg-dawn"}`} style={{ width: `${pct}%` }} />
+        <div className="mt-1.5 h-[2px] overflow-hidden bg-line" role="progressbar" aria-valuenow={current} aria-valuemin={0} aria-valuemax={target} aria-label={goal.title}>
+          <div className={`h-full rounded-full ${achieved ? "bg-muted" : "bg-ink"}`} style={{ width: `${pct}%` }} />
         </div>
       )}
       {!compact && (
@@ -32,7 +32,7 @@ export function GoalBar({ goal, compact = false }: { goal: Goal; compact?: boole
           {goal.metric && (
             <>
               <button className="btn-quiet" aria-label={`Decrease ${goal.title}`} onClick={() => start(() => bumpGoal(goal.id, -1))}>−1</button>
-              <button className="btn-quiet !border-celadon !text-celadon" aria-label={`Increase ${goal.title}`} onClick={() => start(() => bumpGoal(goal.id, 1))}>+1</button>
+              <button className="btn-quiet !border-ink !text-ink" aria-label={`Increase ${goal.title}`} onClick={() => start(() => bumpGoal(goal.id, 1))}>+1</button>
             </>
           )}
           {goal.due_date && <span className="text-xs text-muted">by {goal.due_date}</span>}

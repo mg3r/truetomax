@@ -81,7 +81,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         )}
       </section>
 
-      <section aria-labelledby="direction" className="rounded-2xl bg-surface p-4 sm:p-5">
+      <section aria-labelledby="direction" className="pebble bg-surface p-4 sm:p-5">
         <h2 id="direction" className="section-title">Keep, pause, or let go</h2>
         <p className="mt-1 text-sm text-muted">Saying why helps your partner stop suggesting what you&rsquo;ve already ruled out.</p>
         <form action={setProjectStatus} className="mt-3 space-y-3">
@@ -100,7 +100,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </form>
       </section>
 
-      <details className="rounded-2xl border border-line p-4">
+      <details className="pebble border border-line p-4">
         <summary className="cursor-pointer font-semibold">Edit project</summary>
         <form action={saveProject} className="mt-4 space-y-3">
           <input type="hidden" name="id" value={id} />

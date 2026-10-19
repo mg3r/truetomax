@@ -43,7 +43,7 @@ export default async function ProjectsPage() {
                 const pg = (goals.data ?? []).filter((g) => g.project_id === p.id);
                 return (
                   <li key={p.id}>
-                    <Link href={`/projects/${p.id}`} className={`block rounded-2xl p-4 transition-colors ${quiet ? "border border-line hover:bg-surface" : "bg-surface hover:ring-1 hover:ring-line"}`}>
+                    <Link href={`/projects/${p.id}`} className={`block pebble p-4 transition-colors ${quiet ? "border border-line hover:bg-surface" : "bg-surface hover:ring-1 hover:ring-line"}`}>
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className={`font-semibold ${quiet ? "text-muted" : ""}`}>{p.title}</h3>
                         <span className="shrink-0 text-xs text-muted">
@@ -69,7 +69,7 @@ export default async function ProjectsPage() {
         );
       })}
 
-      <details className="rounded-2xl border border-dashed border-line p-4">
+      <details className="pebble border border-dashed border-line p-4">
         <summary className="cursor-pointer font-semibold">Start a project</summary>
         <form action={saveProject} className="mt-4 space-y-3">
           <input name="title" required placeholder="Name" aria-label="Project name" className="field" />

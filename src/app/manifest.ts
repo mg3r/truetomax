@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Your daily guide: what to do today, why, and what's next.",
     start_url: "/",
     display: "standalone",
-    background_color: "#e8edf0",
-    theme_color: "#e8edf0",
+    background_color: "#ebebe8",
+    theme_color: "#ebebe8",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

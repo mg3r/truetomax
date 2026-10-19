@@ -70,8 +70,13 @@ npm run dev
 4. Log every move — every share, every ask — even small ones.
 5. On Sunday, run a **focus review** in Partner. After your first full week, check **Learned** and confirm or reject what it found.
 
-## v2 roadmap
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for every requirement and what comes next. In short:
+
+### v2
 - **Instagram (truetomax):** sign in with Instagram (professional account, no Facebook Page needed) to pull posts, reach and engagement so the partner can see what lands and plan from it. Needs a Meta developer app with the `instagram_business_basic` and `instagram_business_manage_insights` permissions.
 - **Google Calendar:** see today's events on Today, and schedule tasks into time blocks.
 - **Google Drive:** attach docs to projects and visions; let the partner read them.
+- **Stripe and bank:** track money coming in from SourceDart and Intelligent Adjuster, read-only.
 - Morning push notification with the day's affirmation.

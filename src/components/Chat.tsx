@@ -63,10 +63,10 @@ export function Chat({ initial }: { initial: Msg[] }) {
         {messages.map((m) =>
           m.role === "user" ? (
             <div key={m.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 whitespace-pre-wrap text-bg">{m.content}</p>
+              <p className="max-w-[85%] pebble rounded-br-md bg-ink px-4 py-2.5 whitespace-pre-wrap text-bg">{m.content}</p>
             </div>
           ) : (
-            <div key={m.id} className={`max-w-[65ch] font-serif text-[1.075rem] leading-relaxed ${m.kind === "focus_review" ? "border-l-2 border-dawn pl-4" : ""}`}>
+            <div key={m.id} className={`max-w-[65ch] font-serif text-[1.075rem] leading-relaxed ${m.kind === "focus_review" ? "border-l border-ink pl-4" : ""}`}>
               <Prose text={m.content} />
             </div>
           )
