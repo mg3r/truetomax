@@ -7,16 +7,17 @@ import { APP_NAME } from "@/lib/brand";
 
 const LINKS = [
   { href: "/", label: "Today" },
+  { href: "/routine", label: "Routine" },
+  { href: "/plan", label: "Plan" },
   { href: "/journal", label: "Journal" },
-  { href: "/projects", label: "Projects" },
-  { href: "/visions", label: "Visions" },
   { href: "/ideas", label: "Ideas" },
   { href: "/partner", label: "Partner" },
 ];
 
 export function Nav() {
   const path = usePathname();
-  const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const active = (href: string) =>
+    href === "/" ? path === "/" : path.startsWith(href) || (href === "/plan" && path.startsWith("/projects")) || (href === "/partner" && path.startsWith("/learned"));
 
   return (
     <>

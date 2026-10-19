@@ -153,11 +153,19 @@ export async function saveProject(fd: FormData) {
     updated_at: new Date().toISOString(),
   };
   const id = str(fd, "id");
+  const practiceIds = fd.getAll("practice_ids").filter((v): v is string => typeof v === "string" && !!v);
+  const linkPractices = async (projectId: string) => {
+    if (!fd.has("practices_present")) return; // form didn't include the practice picker
+    await supabase.from("project_practices").delete().eq("project_id", projectId);
+    if (practiceIds.length) await supabase.from("project_practices").insert(practiceIds.map((practice_id) => ({ project_id: projectId, practice_id })));
+  };
   if (id) {
     await supabase.from("projects").update(row).eq("id", id);
+    await linkPractices(id);
     refresh();
   } else {
     const { data } = await supabase.from("projects").insert(row).select("id").single();
+    if (data) await linkPractices(data.id);
     refresh();
     if (data) redirect(`/projects/${data.id}`);
   }
@@ -207,10 +215,22 @@ export async function setGoalStatus(id: string, status: "active" | "achieved" | 
 /* Weekly rhythm */
 export async function addRhythm(fd: FormData) {
   const title = str(fd, "title");
-  const weekday = num(fd, "weekday");
-  if (!title || weekday === null) return;
+  const weekdays = fd.getAll("weekday").map((w) => Number(w)).filter((w) => Number.isInteger(w) && w >= 0 && w <= 6);
+  if (!title || !weekdays.length) return;
   const supabase = await db();
-  await supabase.from("rhythm").insert({ title, weekday, project_id: str(fd, "project_id"), sort: 100 });
+  const at_time = str(fd, "at_time");
+  await supabase.from("rhythm").insert(
+    weekdays.map((weekday) => ({ title, weekday, at_time, practice_id: str(fd, "practice_id"), project_id: str(fd, "project_id"), sort: 100 }))
+  );
+  refresh();
+}
+
+export async function updateRhythm(fd: FormData) {
+  const id = str(fd, "id");
+  const title = str(fd, "title");
+  if (!id || !title) return;
+  const supabase = await db();
+  await supabase.from("rhythm").update({ title, at_time: str(fd, "at_time"), practice_id: str(fd, "practice_id") }).eq("id", id);
   refresh();
 }
 
@@ -382,5 +402,65 @@ export async function addBoardTask(projectId: string, lane: Exclude<Lane, "done"
     project_id: projectId,
     day: lane === "later" ? null : lane === "today" ? now : addDays(now, 1),
   });
+  refresh();
+}
+
+/* Practices: the aligned actions that feed your projects */
+export async function addPractice(fd: FormData) {
+  const name = str(fd, "name");
+  if (!name) return;
+  const supabase = await db();
+  await supabase.from("practices").insert({ name, description: str(fd, "description") ?? "" });
+  refresh();
+}
+
+export async function renamePractice(fd: FormData) {
+  const id = str(fd, "id");
+  const name = str(fd, "name");
+  if (!id || !name) return;
+  const supabase = await db();
+  await supabase.from("practices").update({ name, description: str(fd, "description") ?? "" }).eq("id", id);
+  refresh();
+}
+
+export async function deletePractice(id: string) {
+  const supabase = await db();
+  await supabase.from("practices").delete().eq("id", id);
+  refresh();
+}
+
+export async function setProjectPractices(projectId: string, practiceIds: string[]) {
+  const supabase = await db();
+  await supabase.from("project_practices").delete().eq("project_id", projectId);
+  if (practiceIds.length) await supabase.from("project_practices").insert(practiceIds.map((practice_id) => ({ project_id: projectId, practice_id })));
+  refresh();
+}
+
+/**
+ * Start the plan fresh: removes every project with its goals and tasks.
+ * Keeps visions, practices, your routine, journal, moves and what the partner has learned.
+ */
+export async function resetPlan(fd: FormData) {
+  if (fd.get("confirm") !== "clear") return;
+  const supabase = await db();
+  await supabase.from("tasks").delete().not("project_id", "is", null);
+  await supabase.from("tasks").delete().eq("status", "suggested");
+  await supabase.from("projects").delete().not("id", "is", null);
+  refresh();
+  redirect("/plan");
+}
+
+/** Bring routine changes into today without waiting for tomorrow. Only adds what isn't on today yet. */
+export async function applyRoutineToday() {
+  const supabase = await db();
+  const day = today();
+  const weekday = new Date(day + "T12:00:00Z").getUTCDay();
+  const [{ data: rhythm }, { data: existing }] = await Promise.all([
+    supabase.from("rhythm").select("title, project_id, practice_id, at_time").eq("weekday", weekday).order("sort"),
+    supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm"),
+  ]);
+  const have = new Set((existing ?? []).map((t) => t.title));
+  const add = (rhythm ?? []).filter((r) => !have.has(r.title));
+  if (add.length) await supabase.from("tasks").insert(add.map((r) => ({ ...r, day, source: "rhythm" })));
   refresh();
 }

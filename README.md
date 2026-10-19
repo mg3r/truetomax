@@ -37,7 +37,7 @@ On first sign-in it seeds your weekly rhythm, four projects (pottery & art, DJin
 
 ### 1. Supabase
 1. Create a new project at [supabase.com](https://supabase.com).
-2. **SQL Editor** → paste `supabase/migrations/0001_init.sql` → Run. Then do the same with `0002_learning.sql`, then `0003_book.sql`.
+2. **SQL Editor** → paste `supabase/migrations/0001_init.sql` → Run. Then do the same with `0002_learning.sql`, then `0003_book.sql`, then `0004_practices_calendar.sql`.
 3. **Authentication → Sign In / Providers → Email**: turn **Confirm email** off, so creating your account doesn't depend on an email arriving. You sign in with email and password, typed inside the app, which keeps you signed in on the installed phone app.
 4. **Authentication → URL Configuration**: set Site URL to your Vercel URL, and add `https://YOUR-APP.vercel.app/auth/callback` to Redirect URLs.
 5. **Memory by meaning (recommended, free):** install the [Supabase CLI](https://supabase.com/docs/guides/cli), then from this folder run `supabase link` and `supabase functions deploy embed`. This uses Supabase's built-in embedding model, with no extra API key. Without it, memory search still works, by matching words instead of meaning.

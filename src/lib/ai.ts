@@ -88,6 +88,8 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     supabase.from("projects").select("title, status_note").eq("status", "eliminated").limit(20),
   ]);
   const elimIdeas = await supabase.from("ideas").select("title, status_note").eq("status", "eliminated").limit(20);
+  // Practices: the aligned actions that feed projects (absent until the 0004 setup runs).
+  const practices = await supabase.from("practices").select("name, description");
 
   const projName = new Map((projects.data ?? []).map((p: Row) => [p.id as string, p.title as string]));
   const todayRhythm = (rhythm.data ?? []).filter((r: Row) => r.weekday === weekdayOf(day)).map((r: Row) => r.title);
@@ -97,6 +99,9 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `## Max in his own words\n${ctx.data?.about_me || "(not written yet)"}`,
     ctx.data?.summary ? `## What you have learned about Max so far\n${ctx.data.summary}` : "",
     `## Visions\n${(visions.data ?? []).map((v: Row) => `- ${v.title} (${v.horizon}): ${line(v.body as string)}`).join("\n") || "(none yet)"}`,
+    !practices.error && practices.data?.length
+      ? `## Practices (aligned actions he returns to; they feed his projects)\n${practices.data.map((p: Row) => `- ${p.name}${p.description ? `: ${line(p.description as string)}` : ""}`).join("\n")}`
+      : "",
     `## Projects\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,
     `## Weekly rhythm — today\n${todayRhythm.map((t) => `- ${t}`).join("\n") || "(nothing fixed today)"}`,

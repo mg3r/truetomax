@@ -11,16 +11,37 @@ export type Task = {
   source: string;
   reason: string | null;
   day: string | null;
+  at_time?: string | null;
   project?: string | null;
 };
 
-export function TaskRow({ task, today, showProject = true, aside }: { task: Task; today?: string; showProject?: boolean; aside?: React.ReactNode }) {
+export function clock(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+}
+
+/** A calendar event in the day's list: same rhythm as a task row, but nothing to check off. */
+export function EventRow({ time, title, calendar, location }: { time: string; title: string; calendar: string; location?: string }) {
+  return (
+    <li className="flex items-start gap-3 py-2.5">
+      <span className="w-16 shrink-0 pt-0.5 text-sm text-muted tabular-nums">{time}</span>
+      <span aria-hidden="true" className="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-muted" />
+      <div className="min-w-0 flex-1">
+        <p>{title}</p>
+        <p className="text-xs text-muted">{[calendar, location].filter(Boolean).join(", ")}</p>
+      </div>
+    </li>
+  );
+}
+
+export function TaskRow({ task, today, showProject = true, aside, showTime = false }: { task: Task; today?: string; showProject?: boolean; aside?: React.ReactNode; showTime?: boolean }) {
   const [pending, start] = useTransition();
   const done = task.status === "done";
   const carried = today && task.day && task.day < today && !done;
 
   return (
     <li className={`group flex items-start gap-3 py-2.5 ${pending ? "opacity-50" : ""}`}>
+      {showTime && <span className="w-16 shrink-0 pt-0.5 text-sm text-muted tabular-nums">{task.at_time ? clock(task.at_time) : ""}</span>}
       <button
         aria-label={done ? `Mark "${task.title}" not done` : `Mark "${task.title}" done`}
         onClick={() => start(() => setTaskStatus(task.id, done ? "todo" : "done"))}

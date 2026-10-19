@@ -6,7 +6,8 @@ import { SaveLine } from "@/components/SaveLine";
 import { AskPartner } from "@/components/AskPartner";
 import { Mark } from "@/components/Mark";
 import { PrepareDay } from "@/components/PrepareDay";
-import { TaskRow, SuggestionRow, AddTask, type Task } from "@/components/Tasks";
+import { TaskRow, SuggestionRow, AddTask, EventRow, type Task } from "@/components/Tasks";
+import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export default async function TodayPage() {
     d.highlight_id ? supabase.from("highlights").select("text, source, location").eq("id", d.highlight_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase
       .from("tasks")
-      .select("id, title, status, source, reason, day, project_id, created_at")
+      .select("*")
       .or(`and(day.lte.${day},status.eq.todo),and(day.eq.${day},status.in.(done,suggested))`)
       .order("created_at"),
     supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
@@ -53,6 +54,20 @@ export default async function TodayPage() {
     .filter((t) => t.status !== "suggested")
     .sort((a, b) => Number(a.status === "done") - Number(b.status === "done") || Number(b.source === "rhythm") - Number(a.source === "rhythm"));
   const doneCount = list.filter((t) => t.status === "done").length;
+
+  // Calendar events and timed routine items form the day's schedule; everything else follows.
+  const [events, google] = await Promise.all([
+    eventsForDay(supabase, day),
+    googleConfigured() ? supabase.from("google_accounts").select("email").maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const hhmm = (iso: string) =>
+    new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: process.env.APP_TIMEZONE || "America/New_York" }).format(new Date(iso));
+  const allDay = (events ?? []).filter((e) => e.allDay);
+  const schedule = [
+    ...(events ?? []).filter((e) => !e.allDay).map((e) => ({ key: `e-${e.id}`, at: hhmm(e.start!), event: e, task: null as Task | null })),
+    ...list.filter((t) => t.at_time).map((t) => ({ key: t.id, at: t.at_time!.slice(0, 5), event: null, task: t })),
+  ].sort((a, b) => a.at.localeCompare(b.at));
+  const untimed = list.filter((t) => !t.at_time);
 
   return (
     <div className="space-y-16">
@@ -114,12 +129,30 @@ export default async function TodayPage() {
           <h2 id="tasks" className="section-title">What to do today</h2>
           {list.length > 0 && <span className="text-sm text-muted">{doneCount} of {list.length} done</span>}
         </div>
-        {list.length ? (
+        {(allDay.length > 0 || schedule.length > 0) && (
           <ul className="mt-2 divide-y divide-line">
-            {list.map((t) => <TaskRow key={t.id} task={t} today={day} />)}
+            {allDay.map((e) => <EventRow key={e.id} time="all day" title={e.title} calendar={e.calendar} location={e.location} />)}
+            {schedule.map((s) =>
+              s.event ? (
+                <EventRow key={s.key} time={timeLabel(s.event.start!)} title={s.event.title} calendar={s.event.calendar} location={s.event.location} />
+              ) : (
+                <TaskRow key={s.key} task={s.task!} today={day} showTime />
+              )
+            )}
           </ul>
-        ) : (
+        )}
+        {untimed.length > 0 && (
+          <ul className={`divide-y divide-line ${schedule.length || allDay.length ? "mt-4 border-t border-line" : "mt-2"}`}>
+            {untimed.map((t) => <TaskRow key={t.id} task={t} today={day} />)}
+          </ul>
+        )}
+        {!list.length && !events?.length && (
           <p className="mt-2 text-muted">Nothing set for today yet. Add the one thing that would make today count.</p>
+        )}
+        {googleConfigured() && !google.data && (
+          <p className="mt-3 text-sm text-muted">
+            <Link href="/settings#calendar" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
+          </p>
         )}
         <AddTask projects={projects.data ?? []} day={day} />
 

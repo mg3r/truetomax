@@ -1,24 +1,31 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { WEEKDAYS } from "@/lib/dates";
-import { saveAboutMe, addHighlight, deleteHighlight, addRhythm, deleteRhythm, signOut } from "@/app/actions";
+import { saveAboutMe, addHighlight, deleteHighlight, resetPlan, signOut } from "@/app/actions";
 import { DeleteButton } from "@/components/DeleteButton";
 import { BookUpload } from "@/components/BookUpload";
-import { Select } from "@/components/Select";
+import { googleConfigured } from "@/lib/google";
 
 export const dynamic = "force-dynamic";
 
-// Monday-first, the way the week is lived.
-const ORDER = [1, 2, 3, 4, 5, 6, 0];
+const GOOGLE_STATUS: Record<string, string> = {
+  connected: "Connected. Today will show your events from now on.",
+  disconnected: "Disconnected. truetomax no longer has access to your calendar.",
+  cancelled: "Google sign-in was cancelled. Nothing changed.",
+  expired: "That sign-in took too long. Try connecting again.",
+  "no-refresh": "Google didn't grant lasting access. Remove truetomax at myaccount.google.com/permissions, then connect again.",
+  "not-set-up": "Run the 0004 setup file in Supabase first, then connect again.",
+  "not-configured": "Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel first.",
+  failed: "Google sign-in didn't finish. Try again.",
+};
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ google?: string }> }) {
+  const { google: googleStatus } = await searchParams;
   const supabase = await createClient();
-  const [ctx, highlights, rhythm, projects, bookPages] = await Promise.all([
+  const [ctx, highlights, bookPages, googleAcct] = await Promise.all([
     supabase.from("profile_context").select("about_me, summary, summary_updated_at").maybeSingle(),
     supabase.from("highlights").select("id, text, source, location").order("created_at", { ascending: false }),
-    supabase.from("rhythm").select("id, weekday, title, project_id").order("sort").order("created_at"),
-    supabase.from("projects").select("id, title").eq("status", "active"),
     supabase.from("book_pages").select("book", { count: "exact" }).limit(1),
+    supabase.from("google_accounts").select("email").maybeSingle(),
   ]);
   // Null when no book has been added yet, or before the book table is set up.
   const book = !bookPages.error && bookPages.count ? { book: bookPages.data?.[0]?.book ?? "Your book", pages: bookPages.count } : null;
@@ -74,33 +81,30 @@ export default async function SettingsPage() {
         </ul>
       </section>
 
-      <section aria-labelledby="rhythm">
-        <h2 id="rhythm" className="section-title">Weekly rhythm</h2>
-        <p className="mt-1 text-sm text-muted">These become each day&rsquo;s fixed tasks. Changes apply from tomorrow.</p>
-        <div className="mt-4 space-y-5">
-          {ORDER.map((wd) => {
-            const items = (rhythm.data ?? []).filter((r) => r.weekday === wd);
-            return (
-              <div key={wd}>
-                <h3 className="text-sm font-semibold">{WEEKDAYS[wd]}</h3>
-                <ul className="mt-1">
-                  {items.map((r) => (
-                    <li key={r.id} className="flex items-center justify-between gap-3 py-1">
-                      <span>{r.title}</span>
-                      <DeleteButton action={deleteRhythm.bind(null, r.id)} label="Remove" />
-                    </li>
-                  ))}
-                  {!items.length && <li className="py-1 text-sm text-muted">Open day</li>}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-        <form action={addRhythm} className="mt-5 flex flex-wrap gap-2">
-          <Select name="weekday" label="Day" className="w-36" defaultValue="1" options={ORDER.map((wd) => ({ value: String(wd), label: WEEKDAYS[wd] }))} />
-          <input name="title" required placeholder="Recurring task" aria-label="Recurring task" className="field min-w-0 flex-1" />
-          <Select name="project_id" label="Project" className="w-44" options={[{ value: "", label: "No project" }, ...(projects.data ?? []).map((p) => ({ value: p.id, label: p.title }))]} />
-          <button className="btn">Add</button>
+      <section aria-labelledby="calendar-h" id="calendar" className="scroll-mt-6">
+        <h2 id="calendar-h" className="section-title">Google Calendar</h2>
+        <p className="mt-1 text-sm text-muted">Read-only. Today shows your events alongside your routine and tasks, and your partner plans around them.</p>
+        {googleStatus && GOOGLE_STATUS[googleStatus] && <p role="status" className="mt-3 text-sm">{GOOGLE_STATUS[googleStatus]}</p>}
+        {!googleConfigured() ? (
+          <p className="mt-3 text-sm text-muted">Not set up yet: add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel.</p>
+        ) : googleAcct.data ? (
+          <form action="/api/google/disconnect" method="post" className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="text-sm">Connected{googleAcct.data.email ? ` as ${googleAcct.data.email}` : ""}</span>
+            <button className="btn-quiet">Disconnect</button>
+          </form>
+        ) : (
+          <a href="/api/google/connect" className="btn mt-3">Connect Google Calendar</a>
+        )}
+      </section>
+
+      <section aria-labelledby="reset-h">
+        <h2 id="reset-h" className="section-title">Start your plan fresh</h2>
+        <p className="mt-1 max-w-[60ch] text-sm text-muted">
+          Removes every project, with its goals and tasks, and today&rsquo;s partner suggestions. Keeps your visions, practices, routine, journal, moves and everything your partner has learned.
+        </p>
+        <form action={resetPlan} className="mt-3 flex flex-wrap items-center gap-2">
+          <input name="confirm" required pattern="clear" placeholder='Type "clear" to confirm' aria-label='Type "clear" to confirm' className="field w-56" />
+          <button className="btn-quiet hover:!border-danger hover:!text-danger">Remove all projects</button>
         </form>
       </section>
 

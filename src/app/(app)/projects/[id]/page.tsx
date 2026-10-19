@@ -6,6 +6,7 @@ import { saveProject, setProjectStatus } from "@/app/actions";
 import { GoalBar, AddGoal } from "@/components/Goals";
 import { Board, type BoardTask } from "@/components/Board";
 import { Select } from "@/components/Select";
+import { PracticePicker } from "@/components/PlanParts";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { data: p } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   if (!p) notFound();
 
-  const [goals, open, done, visions] = await Promise.all([
+  const [goals, open, done, visions, practicesRes, links] = await Promise.all([
     supabase.from("goals").select("*").eq("project_id", id).neq("status", "dropped").order("created_at"),
     supabase.from("tasks").select("id, title, status, day, source, reason").eq("project_id", id).eq("status", "todo").order("created_at"),
     supabase
@@ -31,7 +32,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       .order("completed_at", { ascending: false })
       .limit(20),
     supabase.from("visions").select("id, title").eq("status", "active"),
+    supabase.from("practices").select("id, name").order("sort").order("created_at"),
+    supabase.from("project_practices").select("practice_id").eq("project_id", id),
   ]);
+  const practices = practicesRes.error ? [] : practicesRes.data ?? [];
+  const linked = links.error ? [] : (links.data ?? []).map((l) => l.practice_id);
+  const practiceNames = practices.filter((pr) => linked.includes(pr.id)).map((pr) => pr.name);
 
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
   const vision = (visions.data ?? []).find((v) => v.id === p.vision_id);
@@ -39,11 +45,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   return (
     <div className="space-y-12">
       <div>
-        <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
+        <Link href="/plan" className="text-sm text-muted hover:text-ink">Plan</Link>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 className="font-serif text-3xl">{p.title}</h1>
           <span className="text-sm text-muted">
-            {[STATUS_LABEL[p.status], p.makes_money && "can make money", vision && `serves ${vision.title}`].filter(Boolean).join(", ")}
+            {[STATUS_LABEL[p.status], p.makes_money && "can make money", vision && `serves ${vision.title}`, practiceNames.length && `fed by ${practiceNames.join(", ")}`].filter(Boolean).join(", ")}
           </span>
         </div>
         {p.status !== "active" && p.status_note && <p className="mt-2 text-sm text-muted">{p.status_note}</p>}
@@ -108,6 +114,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <input name="area" defaultValue={p.area} aria-label="Area" placeholder="Area" className="field w-36" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="makes_money" defaultChecked={p.makes_money} /> Can make money</label>
           </div>
+          <PracticePicker practices={practices} selected={linked} />
           <button className="btn">Save changes</button>
         </form>
       </details>

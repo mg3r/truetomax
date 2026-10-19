@@ -78,6 +78,8 @@ body::after {
   border-radius: 6px;
 }
 
+/* Component classes live in the components layer, so utility classes (w-24, !px-2, peer-checked:…) can override them. */
+@layer components {
 /* Pebble: no two corners the same, like something shaped by hand. */
 .pebble {
   border-radius: 28px 18px 32px 20px / 22px 30px 18px 28px;
@@ -166,6 +168,7 @@ textarea.field:focus {
 /* Checkbox: a slightly lopsided ring. */
 .ring-check {
   border-radius: 52% 48% 55% 45% / 48% 54% 46% 52%;
+}
 }
 
 /* The one moving thing: a soft form behind the morning's words. */

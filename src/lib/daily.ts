@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { askJSON, buildContext } from "./ai";
 import { today, weekdayOf } from "./dates";
 import { seedIfNeeded } from "./seed";
+import { eventsForDay, timeLabel } from "./google";
 
 const FALLBACK_AFFIRMATIONS = [
   "I finish what I start, and I let it be seen.",
@@ -43,9 +44,13 @@ export async function prepareDay(supabase: SupabaseClient, { force = false } = {
   // 1. Weekly rhythm becomes today's fixed tasks.
   const { count } = await supabase.from("tasks").select("id", { count: "exact", head: true }).eq("day", day).eq("source", "rhythm");
   if (!count) {
-    const { data: rhythm } = await supabase.from("rhythm").select("title, project_id").eq("weekday", weekdayOf(day)).order("sort");
-    if (rhythm?.length) {
-      await supabase.from("tasks").insert(rhythm.map((r) => ({ title: r.title, project_id: r.project_id, day, source: "rhythm" })));
+    const full = await supabase.from("rhythm").select("title, project_id, practice_id, at_time").eq("weekday", weekdayOf(day)).order("sort");
+    if (!full.error && full.data?.length) {
+      await supabase.from("tasks").insert(full.data.map((r) => ({ ...r, day, source: "rhythm" })));
+    } else if (full.error) {
+      // Before the 0004 setup runs, rhythm has no time or practice columns yet.
+      const { data: rhythm } = await supabase.from("rhythm").select("title, project_id").eq("weekday", weekdayOf(day)).order("sort");
+      if (rhythm?.length) await supabase.from("tasks").insert(rhythm.map((r) => ({ title: r.title, project_id: r.project_id, day, source: "rhythm" })));
     }
   }
 
@@ -75,7 +80,11 @@ export async function prepareDay(supabase: SupabaseClient, { force = false } = {
     maxSuggestions = Math.min(3, Math.max(1, Number((ctx?.policy as { max_suggestions?: number })?.max_suggestions) || 3));
     // Recall older memories related to today's work, passage and goals.
     const query = [page?.text.slice(0, 600) ?? hl?.text, ...(todaysRhythm ?? []).map((t) => t.title), ...(projects ?? []).map((p) => p.title)].filter(Boolean).join(". ");
-    const context = await buildContext(supabase, { query });
+    const events = await eventsForDay(supabase, day).catch(() => null);
+    const calendar = events?.length
+      ? `\n\n## Today's calendar\n${events.map((e) => `- ${e.allDay ? "all day" : `${timeLabel(e.start!)}–${e.end ? timeLabel(e.end) : ""}`}: ${e.title}`).join("\n")}\nPlan suggestions around these; don't stack work on top of them.`
+      : "";
+    const context = (await buildContext(supabase, { query })) + calendar;
     plan = await askJSON<DayPlan>(
       `Prepare Max's day.
 ${reading}
