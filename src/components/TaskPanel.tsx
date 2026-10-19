@@ -1,0 +1,148 @@
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import { addProjectTask, moveTask, deleteTask, type Lane } from "@/app/actions";
+import { Board, LANES, laneOf, type BoardTask } from "./Board";
+
+const VIEW_KEY = "ttm-project-view";
+
+/** A project's tasks: one place to add (choosing where it goes), shown as a list or a board. */
+export function TaskPanel({ projectId, tasks: initial, today }: { projectId: string; tasks: BoardTask[]; today: string }) {
+  const [tasks, setTasks] = useState(initial);
+  const [view, setView] = useState<"list" | "board">("list");
+  const [title, setTitle] = useState("");
+  const [lane, setLane] = useState<Lane>("today");
+  const [open, setOpen] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  useEffect(() => setTasks(initial), [initial]);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY);
+      if (v === "board" || v === "list") setView(v);
+    } catch {}
+  }, []);
+  function choose(v: "list" | "board") {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  }
+
+  function move(id: string, to: Lane) {
+    setOpen(null);
+    setTasks((ts) =>
+      ts.map((t) =>
+        t.id !== id ? t : to === "done" ? { ...t, status: "done" } : { ...t, status: "todo", day: to === "later" ? null : to === "today" ? today : "9999-12-31" }
+      )
+    );
+    start(() => moveTask(id, to));
+  }
+
+  return (
+    <div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const t = title.trim();
+          if (!t) return;
+          setTitle("");
+          start(() => addProjectTask(projectId, t, lane));
+        }}
+        className="space-y-3"
+      >
+        <div className="flex gap-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add a task"
+            aria-label="New task"
+            className="field min-w-0 flex-1"
+          />
+          <button className="btn" disabled={!title.trim()}>Add</button>
+        </div>
+        <fieldset className="flex flex-wrap gap-1.5">
+          <legend className="sr-only">When</legend>
+          {LANES.map((l) => (
+            <label key={l.id} className="cursor-pointer">
+              <input type="radio" name="lane" value={l.id} checked={lane === l.id} onChange={() => setLane(l.id)} className="peer sr-only" />
+              <span className="btn-quiet !px-3 !py-1 text-xs peer-checked:!border-ink peer-checked:!bg-ink peer-checked:!text-bg peer-focus-visible:outline peer-focus-visible:outline-1 peer-focus-visible:outline-offset-2">
+                {l.title}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      </form>
+
+      <div className="mt-8 flex items-baseline justify-end gap-3 text-sm" role="tablist" aria-label="View">
+        {(["list", "board"] as const).map((v) => (
+          <button key={v} role="tab" aria-selected={view === v} onClick={() => choose(v)} className={view === v ? "text-ink underline decoration-line underline-offset-4" : "text-muted hover:text-ink"}>
+            {v === "list" ? "List" : "Board"}
+          </button>
+        ))}
+      </div>
+
+      {view === "board" ? (
+        <div className="mt-3">
+          <Board tasks={tasks} today={today} />
+        </div>
+      ) : (
+        <div className={`mt-3 space-y-6 ${pending ? "opacity-80" : ""}`}>
+          {LANES.map((l) => {
+            const mine = tasks.filter((t) => laneOf(t, today) === l.id);
+            if (!mine.length) return null;
+            return (
+              <section key={l.id} aria-label={l.title}>
+                <h3 className="section-title">{l.title.toLowerCase()}</h3>
+                <ul className="mt-1 divide-y divide-line">
+                  {mine.map((t) => {
+                    const done = t.status === "done";
+                    return (
+                      <li key={t.id} className="py-2.5">
+                        <div className="flex items-start gap-3">
+                          <button
+                            aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
+                            onClick={() => move(t.id, done ? "today" : "done")}
+                            className={`ring-check mt-0.5 grid h-5 w-5 shrink-0 place-items-center border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
+                          >
+                            {done && (
+                              <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+                                <path d="M2 6.5 5 9l5-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </button>
+                          <button onClick={() => setOpen(open === t.id ? null : t.id)} className={`min-w-0 flex-1 text-left ${done ? "text-muted line-through decoration-line" : ""}`}>
+                            {t.title}
+                          </button>
+                        </div>
+                        {open === t.id && (
+                          <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
+                            {LANES.filter((x) => x.id !== l.id && x.id !== "done").map((x) => (
+                              <button key={x.id} className="btn-quiet !px-2.5 !py-1 text-xs" onClick={() => move(t.id, x.id)}>
+                                Move to {x.title}
+                              </button>
+                            ))}
+                            <button
+                              className="ml-auto text-xs text-muted hover:text-danger"
+                              onClick={() => {
+                                setTasks((ts) => ts.filter((x) => x.id !== t.id));
+                                start(() => deleteTask(t.id));
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })}
+          {!tasks.length && <p className="text-sm text-muted">No tasks yet. Add the next step above.</p>}
+        </div>
+      )}
+    </div>
+  );
+}

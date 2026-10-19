@@ -491,3 +491,51 @@ export async function setGoalCurrent(id: string, current: number) {
     .eq("id", id);
   refresh();
 }
+
+/* Visions, edited in place */
+export async function updateVision(id: string, fields: { title?: string; body?: string }) {
+  const supabase = await db();
+  const row: Record<string, string> = { updated_at: new Date().toISOString() };
+  if (typeof fields.title === "string" && fields.title.trim()) row.title = fields.title.trim();
+  if (typeof fields.body === "string") row.body = fields.body;
+  await supabase.from("visions").update(row).eq("id", id);
+  if (row.body !== undefined || row.title) {
+    const { data: v } = await supabase.from("visions").select("title, body, horizon").eq("id", id).single();
+    if (v) after(() => remember(supabase, "vision", id, `Vision (${v.horizon}): ${v.title}. ${v.body}`));
+  }
+  revalidatePath("/visions");
+}
+
+export async function createVision(title: string) {
+  if (!title.trim()) return;
+  const supabase = await db();
+  await supabase.from("visions").insert({ title: title.trim(), body: "" });
+  refresh();
+}
+
+export async function deleteVision(id: string) {
+  const supabase = await db();
+  await supabase.from("visions").delete().eq("id", id);
+  await forget(supabase, "vision", id);
+  refresh();
+}
+
+/** Add a task to a project and say where it goes: today, up next, later, or already done. */
+export async function addProjectTask(projectId: string, title: string, lane: Lane) {
+  if (!title.trim()) return;
+  const supabase = await db();
+  const now = today();
+  const { data } = await supabase
+    .from("tasks")
+    .insert({
+      title: title.trim(),
+      project_id: projectId,
+      day: lane === "later" ? null : lane === "next" ? addDays(now, 1) : now,
+      status: lane === "done" ? "done" : "todo",
+      completed_at: lane === "done" ? new Date().toISOString() : null,
+    })
+    .select("id")
+    .single();
+  if (data && lane === "done") after(() => remember(supabase, "task", data.id, `Did: ${title.trim()}`, now));
+  refresh();
+}

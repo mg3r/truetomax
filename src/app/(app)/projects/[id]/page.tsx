@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { today, addDays } from "@/lib/dates";
 import { saveProject, setProjectStatus } from "@/app/actions";
 import { GoalRow, AddGoal } from "@/components/Goals";
-import { Board, type BoardTask } from "@/components/Board";
+import { type BoardTask } from "@/components/Board";
+import { TaskPanel } from "@/components/TaskPanel";
 import { Select } from "@/components/Select";
 
 export const dynamic = "force-dynamic";
@@ -57,13 +58,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         <AddGoal projectId={id} />
       </section>
 
-      <section aria-labelledby="board">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 id="board" className="section-title">tasks</h2>
-          <p className="text-xs text-muted">Drag between lanes, or tap a task to move it.</p>
-        </div>
-        <div className="mt-4">
-          <Board projectId={id} tasks={tasks} today={day} />
+      <section aria-labelledby="tasks">
+        <h2 id="tasks" className="section-title">tasks</h2>
+        <div className="mt-3">
+          <TaskPanel projectId={id} tasks={tasks} today={day} />
         </div>
       </section>
 

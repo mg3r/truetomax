@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -12,18 +12,18 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { moveTask, addBoardTask, deleteTask, type Lane } from "@/app/actions";
+import { moveTask, deleteTask, type Lane } from "@/app/actions";
 
 export type BoardTask = { id: string; title: string; status: string; day: string | null; source: string; reason: string | null };
 
-const LANES: { id: Lane; title: string; hint: string; empty: string }[] = [
+export const LANES: { id: Lane; title: string; hint: string; empty: string }[] = [
   { id: "later", title: "Later", hint: "Not scheduled", empty: "Ideas and someday tasks wait here." },
   { id: "next", title: "Up next", hint: "The next few days", empty: "Drag something here to line it up." },
   { id: "today", title: "Today", hint: "Shows on Today", empty: "Nothing for this project today." },
   { id: "done", title: "Done", hint: "Last two weeks", empty: "Finished work lands here." },
 ];
 
-function laneOf(t: BoardTask, today: string): Lane {
+export function laneOf(t: BoardTask, today: string): Lane {
   if (t.status === "done") return "done";
   if (!t.day) return "later";
   return t.day <= today ? "today" : "next";
@@ -33,7 +33,7 @@ function shortDate(day: string) {
   return new Date(day + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-export function Board({ projectId, tasks: initial, today }: { projectId: string; tasks: BoardTask[]; today: string }) {
+export function Board({ tasks: initial, today }: { tasks: BoardTask[]; today: string }) {
   const [tasks, setTasks] = useState(initial);
   const [dragging, setDragging] = useState<BoardTask | null>(null);
   const [, start] = useTransition();
@@ -79,7 +79,6 @@ export function Board({ projectId, tasks: initial, today }: { projectId: string;
           <Column
             key={lane.id}
             lane={lane}
-            projectId={projectId}
             today={today}
             tasks={tasks.filter((t) => laneOf(t, today) === lane.id)}
             onMove={move}
@@ -99,14 +98,12 @@ export function Board({ projectId, tasks: initial, today }: { projectId: string;
 
 function Column({
   lane,
-  projectId,
   today,
   tasks,
   onMove,
   onDelete,
 }: {
   lane: (typeof LANES)[number];
-  projectId: string;
   today: string;
   tasks: BoardTask[];
   onMove: (id: string, lane: Lane) => void;
@@ -136,7 +133,6 @@ function Column({
         {!tasks.length && <li className="px-1 py-3 text-sm text-muted">{lane.empty}</li>}
       </ul>
 
-      {lane.id !== "done" && <QuickAdd projectId={projectId} lane={lane.id} />}
     </section>
   );
 }
@@ -178,33 +174,5 @@ function Card({ task, lane, today, onMove, onDelete }: { task: BoardTask; lane: 
         )}
       </div>
     </li>
-  );
-}
-
-function QuickAdd({ projectId, lane }: { projectId: string; lane: Exclude<Lane, "done"> }) {
-  const [title, setTitle] = useState("");
-  const [pending, start] = useTransition();
-  const input = useRef<HTMLInputElement>(null);
-  return (
-    <form
-      className="mt-3"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const t = title.trim();
-        if (!t) return;
-        setTitle("");
-        start(() => addBoardTask(projectId, lane, t));
-        input.current?.focus();
-      }}
-    >
-      <input
-        ref={input}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder={pending ? "Adding…" : "Add a task"}
-        aria-label={`Add a task to ${lane === "next" ? "Up next" : lane === "today" ? "Today" : "Later"}`}
-        className="w-full bg-transparent px-1 py-1.5 text-sm placeholder:text-muted focus:outline-none"
-      />
-    </form>
   );
 }

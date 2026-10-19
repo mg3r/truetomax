@@ -2,6 +2,9 @@
 
 The full list of requirements, so nothing gets lost between sessions.
 
+## Principle
+Keep it simple: as few buttons and features as possible. Everything serves the purpose below.
+
 ## Purpose
 An evolving guiding light: give each day direction, help execute visions, share gifts through aligned action, and find aligned work that makes money sustainably, with no return to a job. The core problems to solve are discipline, direction, and sharing work with the people who connect with it.
 
@@ -11,7 +14,8 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Daily affirmation, a random page from your copy of *The Creative Act*, a question from that page (swappable), journal
 - [x] Today combines routine, Google Calendar events and project tasks
 - [x] Routine tab with times and days
-- [x] Visions tab (each vision and the projects serving it) and Projects tab (each project with its open tasks); project board (Later / Up next / Today / Done)
+- [x] Visions: a plain list, each vision its own section, edited in place
+- [x] Projects: simple cards; inside, goals plus one place to add a task (Today / Up next / Later / Done), shown as a list or a board
 - [x] Goals are outcomes you tick off, with an optional typed number
 - [x] Partner chat, focus review, ideas (income and sharing), process of elimination
 - [x] Learning: moves, suggestion results, long-term memory, weekly learning pass, insights you confirm or reject, rhythm proposals
