@@ -53,6 +53,7 @@ export type CardData = {
   lastDone: string | null;
   next: string | null;
   practices: string[];
+  vision?: string | null;
   goals: { id: string; title: string; current: number; target: number | null }[];
   counts: { today: number; next: number; later: number };
   shape: "pebble" | "pebble-alt";
@@ -74,7 +75,9 @@ export function ProjectCard({ p }: { p: CardData }) {
         <h3 className="font-serif text-xl leading-tight">{p.title}</h3>
         {p.makesMoney && <span className="shrink-0 text-xs text-muted">income</span>}
       </div>
-      {p.practices.length > 0 && <p className="mt-1 text-xs text-muted">{p.practices.join(", ")}</p>}
+      {(p.vision || p.practices.length > 0) && (
+        <p className="mt-1 text-xs text-muted">{[p.vision && `Serves ${p.vision}`, p.practices.length && p.practices.join(", ")].filter(Boolean).join(" · ")}</p>
+      )}
       <p className={`mt-1 text-xs ${quiet && p.lastDone ? "text-ink" : "text-muted"}`}>
         {p.lastDone ? `Last worked on ${since(p.lastDone)}${quiet ? ", gone quiet" : ""}` : "Nothing finished yet"}
       </p>

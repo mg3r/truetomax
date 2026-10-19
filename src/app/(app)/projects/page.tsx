@@ -1,78 +1,76 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { today, shortDay } from "@/lib/dates";
+import { today } from "@/lib/dates";
 import { saveProject } from "@/app/actions";
-import { PracticePicker } from "@/components/PlanParts";
-import { TaskRow, AddTask, type Task } from "@/components/Tasks";
+import { PracticePicker, ProjectCard, type CardData } from "@/components/PlanParts";
 import { Select } from "@/components/Select";
 
 export const dynamic = "force-dynamic";
 
-const SHOWN = 6;
+type Task = { project_id: string; title: string; day: string | null; status: string; completed_at: string | null };
 
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ vision?: string }> }) {
   const { vision: visionParam } = await searchParams;
   const supabase = await createClient();
   const day = today();
 
-  const [projects, tasks, visions, practicesRes] = await Promise.all([
-    supabase.from("projects").select("id, title, status, status_note, vision_id").order("created_at"),
-    supabase.from("tasks").select("*").not("project_id", "is", null).eq("status", "todo").order("day", { ascending: true, nullsFirst: false }).order("created_at"),
+  const [projects, goals, tasks, visions, practicesRes, links] = await Promise.all([
+    supabase.from("projects").select("id, title, status, status_note, makes_money, vision_id").order("created_at"),
+    supabase.from("goals").select("id, project_id, title, target, current").eq("status", "active"),
+    supabase.from("tasks").select("project_id, title, day, status, completed_at").not("project_id", "is", null).in("status", ["todo", "done"]).order("day", { ascending: true, nullsFirst: false }),
     supabase.from("visions").select("id, title").eq("status", "active").order("created_at"),
     supabase.from("practices").select("id, name").order("sort").order("created_at"),
+    supabase.from("project_practices").select("project_id, practice_id"),
   ]);
 
+  const all = (tasks.data ?? []) as Task[];
+  const practices = practicesRes.error ? [] : practicesRes.data ?? [];
+  const pairs = links.error ? [] : links.data ?? [];
+  const practiceName = new Map(practices.map((p) => [p.id, p.name]));
+  const visionName = new Map((visions.data ?? []).map((v) => [v.id, v.title]));
   const active = (projects.data ?? []).filter((p) => p.status === "active");
   const resting = (projects.data ?? []).filter((p) => p.status !== "active");
-  const visionName = new Map((visions.data ?? []).map((v) => [v.id, v.title]));
-  const practices = practicesRes.error ? [] : practicesRes.data ?? [];
+
+  const card = (p: (typeof active)[number], i: number): CardData => {
+    const mine = all.filter((t) => t.project_id === p.id);
+    const todo = mine.filter((t) => t.status === "todo");
+    return {
+      id: p.id,
+      title: p.title,
+      makesMoney: p.makes_money,
+      vision: p.vision_id ? visionName.get(p.vision_id) ?? null : null,
+      lastDone: mine.filter((t) => t.completed_at).map((t) => t.completed_at!).sort().pop() ?? null,
+      next: (todo.find((t) => t.day && t.day <= day) ?? todo.find((t) => t.day) ?? todo[0])?.title ?? null,
+      practices: pairs.filter((l) => l.project_id === p.id).map((l) => practiceName.get(l.practice_id)).filter((n): n is string => !!n),
+      goals: (goals.data ?? [])
+        .filter((g) => g.project_id === p.id)
+        .slice(0, 2)
+        .map((g) => ({ id: g.id, title: g.title, current: Number(g.current), target: g.target == null ? null : Number(g.target) })),
+      counts: {
+        today: todo.filter((t) => t.day && t.day <= day).length,
+        next: todo.filter((t) => t.day && t.day > day).length,
+        later: todo.filter((t) => !t.day).length,
+      },
+      shape: i % 2 ? "pebble-alt" : "pebble",
+    };
+  };
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-12">
       <div>
         <h1 className="font-serif text-3xl">Projects</h1>
-        <p className="mt-1 max-w-[56ch] text-muted">What you&rsquo;re building, and the tasks that move each one forward.</p>
+        <p className="mt-1 max-w-[56ch] text-muted">What&rsquo;s moving, what&rsquo;s next, and what&rsquo;s gone quiet. Open a project to see its board.</p>
       </div>
 
-      {active.map((p) => {
-        const open = ((tasks.data ?? []) as (Task & { project_id: string })[]).filter((t) => t.project_id === p.id);
-        // Today first, then the next few days, then later.
-        const ordered = [
-          ...open.filter((t) => t.day && t.day <= day),
-          ...open.filter((t) => t.day && t.day > day),
-          ...open.filter((t) => !t.day),
-        ];
-        const label = (t: Task) => (!t.day ? "later" : t.day <= day ? "today" : shortDay(t.day));
-        return (
-          <section key={p.id} aria-labelledby={`p-${p.id}`} className="border-t border-line pt-6">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 id={`p-${p.id}`} className="font-serif text-2xl leading-tight">
-                <Link href={`/projects/${p.id}`} className="hover:underline hover:decoration-line hover:underline-offset-4">{p.title}</Link>
-              </h2>
-              <Link href={`/projects/${p.id}`} className="shrink-0 text-sm text-muted hover:text-ink">Open</Link>
-            </div>
-            <p className="mt-0.5 text-sm text-muted">{p.vision_id && visionName.get(p.vision_id) ? `Serves ${visionName.get(p.vision_id)}` : "Not linked to a vision yet"}</p>
-
-            {ordered.length > 0 ? (
-              <ul className="mt-3 divide-y divide-line">
-                {ordered.slice(0, SHOWN).map((t) => (
-                  <TaskRow key={t.id} task={t} today={day} showProject={false} aside={<span className="text-xs text-muted">{label(t)}</span>} />
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-muted">No open tasks. What&rsquo;s the next step?</p>
-            )}
-            {ordered.length > SHOWN && (
-              <Link href={`/projects/${p.id}`} className="mt-2 inline-block text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
-                {ordered.length - SHOWN} more
-              </Link>
-            )}
-            <AddTask projectId={p.id} placeholder="Add a task" allowBacklog />
-          </section>
-        );
-      })}
-
-      {!active.length && <p className="text-muted">No projects yet. Start one below, or from a vision.</p>}
+      {active.length > 0 ? (
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {active.map((p, i) => (
+            <li key={p.id}><ProjectCard p={card(p, i)} /></li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-muted">No projects yet. Start one below, or from a vision.</p>
+      )}
 
       <details id="new" className="pebble scroll-mt-6 border border-dashed border-line p-5" open={!!visionParam || !active.length}>
         <summary className="cursor-pointer font-medium">Start a project</summary>
@@ -91,10 +89,6 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           <button className="btn">Create project</button>
         </form>
       </details>
-
-      <p className="text-sm text-muted">
-        Looking for what to start? <Link href="/ideas" className="underline decoration-line underline-offset-4 hover:text-ink">See ideas</Link> your partner has surfaced.
-      </p>
 
       {resting.length > 0 && (
         <section aria-labelledby="resting">
