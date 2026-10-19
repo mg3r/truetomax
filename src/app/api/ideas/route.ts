@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const { kind } = await req.json();
   const k = kind === "content" ? "content" : "venture";
   try {
-    const ideas = await askJSON<Idea[]>(PROMPTS[k], await buildContext(supabase), 1800);
+    const ideas = await askJSON<Idea[]>(PROMPTS[k], await buildContext(supabase, { query: k === "content" ? "sharing posting instagram audience" : "income money paid offer clients" }), 1800);
     await supabase.from("ideas").insert(
       ideas.slice(0, 3).map((i) => ({ kind: k, title: i.title, body: i.body, first_step: i.first_step, money_path: i.money_path ?? null }))
     );

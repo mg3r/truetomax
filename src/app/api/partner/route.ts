@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { remember } from "@/lib/memory";
 import { createClient } from "@/lib/supabase/server";
 import { ask, buildContext, PARTNER } from "@/lib/ai";
 
@@ -12,10 +13,12 @@ export async function POST(req: Request) {
   const { message } = await req.json();
   if (!message?.trim()) return NextResponse.json({ error: "Write something first." }, { status: 400 });
 
-  await supabase.from("messages").insert({ role: "user", content: message.trim() });
+  const { data: saved } = await supabase.from("messages").insert({ role: "user", content: message.trim() }).select("id").single();
+  // What you tell your partner becomes long-term memory too.
+  if (saved && message.trim().length > 40) after(() => remember(supabase, "chat", saved.id, `Told the partner: ${message.trim()}`));
 
   const [context, history] = await Promise.all([
-    buildContext(supabase),
+    buildContext(supabase, { query: message }),
     supabase.from("messages").select("role, content").order("created_at", { ascending: false }).limit(20),
   ]);
   const turns: { role: "user" | "assistant"; content: string }[] = [];

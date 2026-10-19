@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, today, WEEKDAYS, weekdayOf } from "./dates";
+import { getStats } from "./learn";
+import { recall } from "./memory";
 import { APP_NAME } from "@/lib/brand";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
@@ -21,6 +23,8 @@ How you work with him:
 - Keep the money path visible. He makes about $3k/month and needs more. Favor actions that move a real person toward paying him (a booking, a sale, a seat at a dinner, a commission) over vanity metrics.
 - Be concrete and small. A good suggested task can be done in one sitting and names exactly what "done" looks like.
 - Respect his weekly rhythm; suggest work that fits the day, not on top of it.
+- You evolve with him. What he has confirmed about himself, the results of past suggestions, and your current guidance policy override your general instincts. Do more of what he actually follows through on; resize or reframe what he keeps skipping instead of repeating it.
+- His most important number is moves: times per week he shares his work or asks someone to pay him. Protect at least one move in most days' plans.
 - On The Creative Act by Rick Rubin: you may draw on its themes (attention, source, the vessel, play, letting go of outcomes, finishing, sharing work) and on passages Max has saved. Never quote the book from memory or invent quotes; only use the exact text of passages he has saved.
 - Write in a warm, grounded, plain voice. No hype, no emojis, no therapy-speak.`;
 
@@ -28,7 +32,46 @@ type Row = Record<string, unknown>;
 const line = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").trim();
 
 /** Everything the partner knows about Max right now, as compact text. */
-export async function buildContext(supabase: SupabaseClient, opts: { journalCount?: number } = {}) {
+export async function buildContext(
+  supabase: SupabaseClient,
+  opts: { journalCount?: number; query?: string; skipLearned?: boolean } = {}
+) {
+  const learned = opts.skipLearned ? "" : await learnedContext(supabase, opts.query);
+  return [await baseContext(supabase, opts), learned].filter(Boolean).join("\n\n");
+}
+
+/** What the partner has learned and the results that taught it — this is what makes it evolve. */
+async function learnedContext(supabase: SupabaseClient, query?: string) {
+  const day = today();
+  const weekStart = addDays(day, -((weekdayOf(day) + 6) % 7)); // Monday
+  const [insights, ctx, moves, stats, memories] = await Promise.all([
+    supabase.from("insights").select("statement, status, confidence, your_note, kind").in("status", ["confirmed", "proposed", "rejected"]).order("confidence", { ascending: false }),
+    supabase.from("profile_context").select("policy").maybeSingle(),
+    supabase.from("moves").select("kind, amount").gte("day", weekStart),
+    getStats(supabase, 28),
+    query ? recall(supabase, query, { count: 6, beforeDay: addDays(day, -14) }) : Promise.resolve([]),
+  ]);
+  const ins = insights.data ?? [];
+  const pick = (s: string) => ins.filter((i) => i.status === s);
+  const policy = (ctx.data?.policy ?? {}) as Record<string, unknown>;
+  const mv = moves.data ?? [];
+  const count = (k: string) => mv.filter((m) => m.kind === k).length;
+  const money = mv.reduce((s, m) => s + Number(m.amount ?? 0), 0);
+
+  return [
+    pick("confirmed").length ? `## What you've learned about Max (he confirmed these — act on them)\n${pick("confirmed").map((i) => `- ${i.statement}${i.your_note ? ` (his note: ${i.your_note})` : ""}`).join("\n")}` : "",
+    pick("proposed").length ? `## Working hypotheses (not yet confirmed — weigh by confidence)\n${pick("proposed").map((i) => `- ${i.statement} (confidence ${i.confidence})`).join("\n")}` : "",
+    pick("rejected").length ? `## Max said these are wrong — do not act on them\n${pick("rejected").map((i) => `- ${i.statement}${i.your_note ? ` (his correction: ${i.your_note})` : ""}`).join("\n")}` : "",
+    Object.keys(policy).length ? `## How to guide him right now (tuned from results)\n${JSON.stringify(policy)}` : "",
+    `## Results, last 4 weeks\n${stats.text}`,
+    `## Moves this week (sharing work or asking to be paid — the number that matters most)\nShared ${count("shared")}, asked ${count("asked")}, booked ${count("booked")}, sold ${count("sold")}, $${money} in.`,
+    memories.length ? `## Relevant memories from further back\n${memories.map((m) => `- ${m.day} [${m.source_type}] ${line(m.content).slice(0, 400)}`).join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+async function baseContext(supabase: SupabaseClient, opts: { journalCount?: number }) {
   const day = today();
   const since = addDays(day, -14);
   const [ctx, visions, projects, goals, rhythm, done, skipped, open, journal, ideas, released] = await Promise.all([

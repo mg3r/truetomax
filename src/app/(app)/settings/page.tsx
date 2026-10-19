@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { WEEKDAYS } from "@/lib/dates";
 import { saveAboutMe, addHighlight, deleteHighlight, addRhythm, deleteRhythm, signOut } from "@/app/actions";
 import { DeleteButton } from "@/components/DeleteButton";
-import { AskPartner } from "@/components/AskPartner";
 
 export const dynamic = "force-dynamic";
 
@@ -33,18 +33,8 @@ export default async function SettingsPage() {
 
       <section aria-labelledby="learned">
         <h2 id="learned" className="section-title">What your partner has learned</h2>
-        <p className="mt-1 text-sm text-muted">
-          Rewritten about once a week from your journal, finished work, skips and eliminations.
-          {ctx.data?.summary_updated_at && ` Last updated ${new Date(ctx.data.summary_updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.`}
-        </p>
-        {ctx.data?.summary ? (
-          <p className="mt-3 max-w-[65ch] font-serif text-lg leading-relaxed whitespace-pre-wrap">{ctx.data.summary}</p>
-        ) : (
-          <p className="mt-3 text-muted">Nothing yet. It starts once you&rsquo;ve written a few journal entries.</p>
-        )}
-        <div className="mt-3">
-          <AskPartner endpoint="/api/summary" label="Update it now" busyLabel="Reading everything…" className="btn-quiet" />
-        </div>
+        <p className="mt-1 text-sm text-muted">Patterns it has noticed, rhythm changes it suggests, and its weekly review.</p>
+        <Link href="/learned" className="btn-quiet mt-3">Open what it&rsquo;s learned</Link>
       </section>
 
       <section aria-labelledby="passages-h" id="passages" className="scroll-mt-6">

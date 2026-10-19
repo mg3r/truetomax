@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
+import { remember, forget, journalText } from "@/lib/memory";
 
 const str = (fd: FormData, k: string) => {
   const v = fd.get(k);
@@ -38,10 +40,35 @@ export async function addTask(fd: FormData) {
 
 export async function setTaskStatus(id: string, status: "todo" | "done" | "skipped" | "suggested") {
   const supabase = await db();
+  const { data: before } = await supabase.from("tasks").select("title, status, category, project_id, day, reason, source").eq("id", id).single();
+  if (!before) return;
+  const now = new Date().toISOString();
   await supabase
     .from("tasks")
-    .update({ status, completed_at: status === "done" ? new Date().toISOString() : null })
+    .update({
+      status,
+      completed_at: status === "done" ? now : null,
+      // Accepting a partner suggestion is a signal the partner learns from.
+      ...(before.status === "suggested" && status !== "skipped" ? { accepted_at: now } : {}),
+    })
     .eq("id", id);
+
+  // Finishing a share or ask task counts as a move.
+  if (before.category === "share" || before.category === "ask") {
+    if (status === "done") {
+      const { count } = await supabase.from("moves").select("id", { count: "exact", head: true }).eq("task_id", id);
+      if (!count) await supabase.from("moves").insert({ kind: before.category === "share" ? "shared" : "asked", note: before.title, project_id: before.project_id, task_id: id, day: today() });
+    } else {
+      await supabase.from("moves").delete().eq("task_id", id);
+    }
+  }
+
+  if (status === "done" || status === "skipped") {
+    const text = `${status === "done" ? "Did" : "Skipped"}${before.source === "partner" ? " (partner suggestion)" : ""}: ${before.title}${before.reason ? ` — suggested because: ${before.reason}` : ""}`;
+    after(() => remember(supabase, "task", id, text, before.day));
+  } else {
+    after(() => forget(supabase, "task", id));
+  }
   refresh();
 }
 
@@ -63,14 +90,17 @@ export async function saveJournal(fd: FormData) {
   if (!body) return;
   const supabase = await db();
   const id = str(fd, "id");
-  if (id) await supabase.from("journal_entries").update({ body, updated_at: new Date().toISOString() }).eq("id", id);
-  else await supabase.from("journal_entries").insert({ body, prompt: str(fd, "prompt"), day: str(fd, "day") ?? today() });
+  const { data: entry } = id
+    ? await supabase.from("journal_entries").update({ body, updated_at: new Date().toISOString() }).eq("id", id).select("id, day, prompt, body").single()
+    : await supabase.from("journal_entries").insert({ body, prompt: str(fd, "prompt"), day: str(fd, "day") ?? today() }).select("id, day, prompt, body").single();
+  if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
   refresh();
 }
 
 export async function deleteJournal(id: string) {
   const supabase = await db();
   await supabase.from("journal_entries").delete().eq("id", id);
+  await forget(supabase, "journal", id);
   refresh();
 }
 
@@ -96,8 +126,10 @@ export async function saveVision(fd: FormData) {
   const supabase = await db();
   const row = { title, body: str(fd, "body") ?? "", horizon: str(fd, "horizon") ?? "1 year", updated_at: new Date().toISOString() };
   const id = str(fd, "id");
-  if (id) await supabase.from("visions").update(row).eq("id", id);
-  else await supabase.from("visions").insert(row);
+  const { data: v } = id
+    ? await supabase.from("visions").update(row).eq("id", id).select("id").single()
+    : await supabase.from("visions").insert(row).select("id").single();
+  if (v) after(() => remember(supabase, "vision", v.id, `Vision (${row.horizon}): ${row.title}. ${row.body}`));
   refresh();
 }
 
@@ -136,7 +168,9 @@ export async function setProjectStatus(fd: FormData) {
   const status = str(fd, "status");
   if (!id || !status) return;
   const supabase = await db();
-  await supabase.from("projects").update({ status, status_note: str(fd, "note"), updated_at: new Date().toISOString() }).eq("id", id);
+  const note = str(fd, "note");
+  const { data: p } = await supabase.from("projects").update({ status, status_note: note, updated_at: new Date().toISOString() }).eq("id", id).select("title").single();
+  if (p && status !== "active") after(() => remember(supabase, "project", id, `Project "${p.title}" ${status}${note ? `: ${note}` : ""}`));
   refresh();
 }
 
@@ -200,7 +234,9 @@ export async function setIdeaStatus(fd: FormData) {
   const status = str(fd, "status");
   if (!id || !status) return;
   const supabase = await db();
-  await supabase.from("ideas").update({ status, status_note: str(fd, "note") }).eq("id", id);
+  const note = str(fd, "note");
+  const { data: idea } = await supabase.from("ideas").update({ status, status_note: note }).eq("id", id).select("title").single();
+  if (idea && status === "eliminated") after(() => remember(supabase, "idea", id, `Eliminated idea "${idea.title}"${note ? `: ${note}` : ""}`));
   refresh();
 }
 
@@ -241,4 +277,64 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+/* Moves: sharing your work or asking to be paid */
+export async function logMove(fd: FormData) {
+  const kind = str(fd, "kind");
+  if (!kind || !["shared", "asked", "booked", "sold"].includes(kind)) return;
+  const supabase = await db();
+  const note = str(fd, "note");
+  const amount = num(fd, "amount");
+  const { data: m } = await supabase.from("moves").insert({ kind, note, amount, project_id: str(fd, "project_id"), day: today() }).select("id").single();
+  if (m) after(() => remember(supabase, "move", m.id, `Move — ${kind}${note ? `: ${note}` : ""}${amount ? ` ($${amount})` : ""}`));
+  refresh();
+}
+
+export async function deleteMove(id: string) {
+  const supabase = await db();
+  await supabase.from("moves").delete().eq("id", id);
+  await forget(supabase, "move", id);
+  refresh();
+}
+
+/* What the partner has learned */
+export async function setInsightStatus(fd: FormData) {
+  const id = str(fd, "id");
+  const status = str(fd, "status");
+  if (!id || !status || !["confirmed", "rejected", "retired", "proposed"].includes(status)) return;
+  const supabase = await db();
+  await supabase
+    .from("insights")
+    .update({ status, your_note: str(fd, "note"), updated_at: new Date().toISOString(), ...(status === "confirmed" ? { confidence: 1 } : {}) })
+    .eq("id", id);
+  refresh();
+}
+
+export async function addInsight(fd: FormData) {
+  const statement = str(fd, "statement");
+  if (!statement) return;
+  const supabase = await db();
+  await supabase.from("insights").insert({ statement, status: "confirmed", confidence: 1, kind: "preference", evidence: "Max said so" });
+  refresh();
+}
+
+export async function answerRhythmProposal(id: string, accept: boolean) {
+  const supabase = await db();
+  const { data: p } = await supabase.from("rhythm_proposals").select("*").eq("id", id).eq("status", "proposed").single();
+  if (!p) return;
+  if (accept) {
+    if (p.action === "add") await supabase.from("rhythm").insert({ weekday: p.weekday, title: p.title, sort: 50 });
+    if (p.action === "remove" && p.rhythm_id) await supabase.from("rhythm").delete().eq("id", p.rhythm_id);
+    if (p.action === "move" && p.rhythm_id) await supabase.from("rhythm").update({ weekday: p.to_weekday }).eq("id", p.rhythm_id);
+  }
+  await supabase.from("rhythm_proposals").update({ status: accept ? "accepted" : "declined" }).eq("id", id);
+  after(() => remember(supabase, "rhythm", id, `${accept ? "Accepted" : "Declined"} rhythm change: ${p.reason}`));
+  refresh();
+}
+
+export async function markReviewSeen(id: string) {
+  const supabase = await db();
+  await supabase.from("reviews").update({ seen: true }).eq("id", id);
+  refresh();
 }

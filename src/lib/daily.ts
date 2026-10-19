@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { askJSON, buildContext, ask, PARTNER } from "./ai";
+import { askJSON, buildContext } from "./ai";
 import { today, weekdayOf } from "./dates";
 import { seedIfNeeded } from "./seed";
 
@@ -10,11 +10,13 @@ const FALLBACK_AFFIRMATIONS = [
   "The people who need what I make are looking for it.",
 ];
 
+const CATEGORIES = ["make", "practice", "share", "ask", "learn", "admin", "body", "rest"];
+
 type DayPlan = {
   affirmation: string;
   question: string;
   focus: string;
-  tasks: { title: string; project?: string; reason: string }[];
+  tasks: { title: string; project?: string; reason: string; category?: string; size?: string }[];
 };
 
 /** Prepare today once: weekly rhythm tasks, a saved passage, and the partner's affirmation, question and suggestions. */
@@ -59,10 +61,15 @@ export async function prepareDay(supabase: SupabaseClient, { force = false } = {
 
   // 3. The partner's read on today.
   let plan: DayPlan | null = null;
+  let maxSuggestions = 3;
   try {
-    await refreshSummaryIfStale(supabase);
-    const context = await buildContext(supabase);
     const { data: projects } = await supabase.from("projects").select("id, title").eq("status", "active");
+    const { data: todaysRhythm } = await supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm");
+    const { data: ctx } = await supabase.from("profile_context").select("policy").maybeSingle();
+    maxSuggestions = Math.min(3, Math.max(1, Number((ctx?.policy as { max_suggestions?: number })?.max_suggestions) || 3));
+    // Recall older memories related to today's work, passage and goals.
+    const query = [hl?.text, ...(todaysRhythm ?? []).map((t) => t.title), ...(projects ?? []).map((p) => p.title)].filter(Boolean).join(". ");
+    const context = await buildContext(supabase, { query });
     plan = await askJSON<DayPlan>(
       `Prepare Max's day.
 ${hl ? `Today's saved passage (from ${hl.source}, exact text he saved): "${hl.text}"` : "He hasn't saved any passages yet; draw the question from the themes of The Creative Act without quoting it."}
@@ -72,9 +79,9 @@ Return:
   "affirmation": one sentence in first person, specific to where he is right now, under 20 words,
   "question": one reflective journal question rooted in ${hl ? "the passage" : "a theme of The Creative Act"} and connected to what's actually happening in his life and work right now,
   "focus": one sentence naming the single thing that would make today count,
-  "tasks": up to 3 suggested tasks that fit today's rhythm and move a vision forward — favor finishing, sharing, and getting paid. Each: {"title": short imperative with a clear definition of done, "project": exact project title from this list or omit [${(projects ?? []).map((p) => p.title).join(", ")}], "reason": one sentence on why today}
+  "tasks": up to ${maxSuggestions} suggested tasks that fit today's rhythm and move a vision forward — favor finishing, sharing, and getting paid, and follow your current guidance policy. Each: {"title": short imperative with a clear definition of done, "project": exact project title from this list or omit [${(projects ?? []).map((p) => p.title).join(", ")}], "reason": one sentence on why today, grounded in what you've learned, "category": one of make/practice/share/ask/learn/admin/body/rest ("share" = putting his work in front of people, "ask" = asking someone to book, buy, or pay), "size": small (under 30 min) / medium (1–2 hours) / large}
 }
-Don't repeat anything already open or skipped recently.`,
+Don't repeat anything already open or skipped recently. If he has made no moves this week, at least one task should be a small share or ask.`,
       context
     );
   } catch (e) {
@@ -84,8 +91,10 @@ Don't repeat anything already open or skipped recently.`,
   const { data: projects } = await supabase.from("projects").select("id, title");
   if (plan?.tasks?.length) {
     await supabase.from("tasks").insert(
-      plan.tasks.slice(0, 3).map((t) => ({
+      plan.tasks.slice(0, maxSuggestions).map((t) => ({
         title: t.title,
+        category: CATEGORIES.includes(t.category ?? "") ? t.category : null,
+        size: ["small", "medium", "large"].includes(t.size ?? "") ? t.size : null,
         reason: t.reason,
         day,
         status: "suggested",
@@ -104,27 +113,4 @@ Don't repeat anything already open or skipped recently.`,
       focus: plan?.focus ?? null,
     })
     .eq("day", day);
-}
-
-/** The partner's evolving read of Max, rewritten from everything he's logged. Runs at most weekly. */
-export async function refreshSummaryIfStale(supabase: SupabaseClient, force = false) {
-  const { data: ctx } = await supabase.from("profile_context").select("summary_updated_at").maybeSingle();
-  const last = ctx?.summary_updated_at ? new Date(ctx.summary_updated_at).getTime() : 0;
-  if (!force && Date.now() - last < 6 * 86400_000) return;
-
-  const { count } = await supabase.from("journal_entries").select("id", { count: "exact", head: true });
-  if (!force && (count ?? 0) < 3) return;
-
-  const context = await buildContext(supabase, { journalCount: 30 });
-  const summary = await ask({
-    system: PARTNER,
-    maxTokens: 900,
-    messages: [
-      {
-        role: "user",
-        content: `${context}\n\n---\n\nRewrite "What you have learned about Max so far" in under 250 words. Cover: what genuinely energizes him (with evidence), what he avoids or keeps skipping, which paths look most viable for income, what he has eliminated and why, and the patterns you'd watch for next. Only state what the record supports. Plain prose, no headings.`,
-      },
-    ],
-  });
-  await supabase.from("profile_context").update({ summary, summary_updated_at: new Date().toISOString() }).not("user_id", "is", null);
 }

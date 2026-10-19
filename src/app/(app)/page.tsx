@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { today, prettyDay } from "@/lib/dates";
+import { today, prettyDay, addDays, weekdayOf } from "@/lib/dates";
+import { MoveLogger } from "@/components/Moves";
 import { Star } from "@/components/Star";
 import { PrepareDay } from "@/components/PrepareDay";
 import { TaskRow, SuggestionRow, AddTask, type Task } from "@/components/Tasks";
@@ -15,7 +16,8 @@ export default async function TodayPage() {
   const { data: d } = await supabase.from("days").select("*").eq("day", day).maybeSingle();
   if (!d?.affirmation) return <PrepareDay />;
 
-  const [highlight, tasks, projects, entry] = await Promise.all([
+  const weekStart = addDays(day, -((weekdayOf(day) + 6) % 7)); // Monday
+  const [highlight, tasks, projects, entry, moves, unseen, proposals, hunches] = await Promise.all([
     d.highlight_id ? supabase.from("highlights").select("text, source, location").eq("id", d.highlight_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase
       .from("tasks")
@@ -24,7 +26,21 @@ export default async function TodayPage() {
       .order("created_at"),
     supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
     supabase.from("journal_entries").select("id, body").eq("day", day).eq("prompt", d.question ?? "").maybeSingle(),
+    supabase.from("moves").select("kind, amount").gte("day", weekStart),
+    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("seen", false),
+    supabase.from("rhythm_proposals").select("id", { count: "exact", head: true }).eq("status", "proposed"),
+    supabase.from("insights").select("id", { count: "exact", head: true }).eq("status", "proposed"),
   ]);
+  const mv = moves.data ?? [];
+  const shares = mv.filter((m) => m.kind === "shared").length;
+  const asks = mv.filter((m) => m.kind === "asked").length;
+  const wins = mv.filter((m) => m.kind === "booked" || m.kind === "sold").length;
+  const earned = mv.reduce((sum, m) => sum + Number(m.amount ?? 0), 0);
+  const learnedNotes = [
+    unseen.count ? "a new weekly review" : null,
+    hunches.count ? `${hunches.count} thing${hunches.count === 1 ? "" : "s"} it thinks it's learned` : null,
+    proposals.count ? `${proposals.count} rhythm change${proposals.count === 1 ? "" : "s"}` : null,
+  ].filter(Boolean);
 
   const projName = new Map((projects.data ?? []).map((p) => [p.id, p.title]));
   const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null }));
@@ -46,6 +62,13 @@ export default async function TodayPage() {
         </div>
         {d.focus && <p className="mt-5 max-w-[60ch] border-l-2 border-dawn pl-4 text-muted">{d.focus}</p>}
       </section>
+
+      {learnedNotes.length > 0 && (
+        <Link href="/learned" className="block rounded-2xl border border-dawn/60 px-4 py-3 hover:bg-surface">
+          <span className="font-semibold">Your partner has {learnedNotes.join(", ")}.</span>{" "}
+          <span className="text-muted">Check it&rsquo;s right so it keeps learning the right things.</span>
+        </Link>
+      )}
 
       <section aria-labelledby="passage">
         <h2 id="passage" className="section-title">Today&rsquo;s passage</h2>
@@ -87,6 +110,25 @@ export default async function TodayPage() {
             </ul>
           </div>
         )}
+      </section>
+
+      <section aria-labelledby="moves">
+        <h2 id="moves" className="section-title">Moves this week</h2>
+        <p className="mt-1 text-sm text-muted">Every time you share your work or ask someone to pay you. This is the number that changes everything else.</p>
+        <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
+          {[
+            ["Shared", shares],
+            ["Asked", asks],
+            ["Booked or sold", wins],
+            ["Earned", `$${earned.toLocaleString()}`],
+          ].map(([label, value]) => (
+            <div key={label as string} className="flex flex-col-reverse">
+              <dt className="text-xs text-muted">{label}</dt>
+              <dd className={`font-serif text-3xl tabular-nums ${value === 0 ? "text-muted" : ""}`}>{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <MoveLogger />
       </section>
 
       <section aria-labelledby="question">
