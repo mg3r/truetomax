@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today, addDays, weekdayOf } from "@/lib/dates";
-import { addPractice, deletePractice, renamePractice, saveProject, setVisionStatus } from "@/app/actions";
+import { addPractice, deletePractice, renamePractice, saveProject, setVisionStatus, loadMyVisions } from "@/app/actions";
+import { MY_VISIONS } from "@/lib/visions";
 import { ProjectCard, PracticePicker, VisionForm, type CardData } from "@/components/PlanParts";
 import { ActionButton, DeleteButton } from "@/components/DeleteButton";
 
@@ -56,6 +57,7 @@ export default async function PlanPage() {
   const activeProjects = (projects.data ?? []).filter((p) => p.status === "active");
   const resting = (projects.data ?? []).filter((p) => p.status !== "active");
   const loose = activeProjects.filter((p) => !p.vision_id || !activeVisions.some((v) => v.id === p.vision_id));
+  const visionsToLoad = MY_VISIONS.filter((mv) => !activeVisions.some((v) => v.title.trim().toLowerCase() === mv.title.toLowerCase()));
   const missing = SUGGESTED_PRACTICES.filter((n) => !(practices ?? []).some((p) => p.name.toLowerCase() === n.toLowerCase()));
 
   const newProjectForm = (visionId?: string) => (
@@ -75,6 +77,18 @@ export default async function PlanPage() {
         <h1 className="font-serif text-3xl">Plan</h1>
         <p className="mt-1 max-w-[56ch] text-muted">Your practices feed your projects, and your projects serve your visions.</p>
       </div>
+
+      {visionsToLoad.length > 0 && (
+        <section aria-labelledby="load" className="pebble border border-ink p-5">
+          <h2 id="load" className="font-serif text-xl">Your visions are ready</h2>
+          <p className="mt-1 text-sm text-muted">
+            {MY_VISIONS.map((v) => v.title).join(", ")}. Written from your vision doc and journal. You can edit any of them after loading.
+          </p>
+          <div className="mt-4">
+            <ActionButton action={loadMyVisions} className="btn">Load my visions</ActionButton>
+          </div>
+        </section>
+      )}
 
       {/* Practices: the aligned actions you return to again and again */}
       <section aria-labelledby="practices">

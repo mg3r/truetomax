@@ -464,3 +464,19 @@ export async function applyRoutineToday() {
   if (add.length) await supabase.from("tasks").insert(add.map((r) => ({ ...r, day, source: "rhythm" })));
   refresh();
 }
+
+/** Load Max's five visions. Updates any vision with the same name instead of duplicating it. */
+export async function loadMyVisions() {
+  const { MY_VISIONS } = await import("@/lib/visions");
+  const supabase = await db();
+  const { data: existing } = await supabase.from("visions").select("id, title");
+  for (const v of MY_VISIONS) {
+    const match = (existing ?? []).find((e) => e.title.trim().toLowerCase() === v.title.toLowerCase());
+    const row = { ...v, status: "active", updated_at: new Date().toISOString() };
+    const { data } = match
+      ? await supabase.from("visions").update(row).eq("id", match.id).select("id").single()
+      : await supabase.from("visions").insert(row).select("id").single();
+    if (data) after(() => remember(supabase, "vision", data.id, `Vision (${v.horizon}): ${v.title}. ${v.body}`));
+  }
+  refresh();
+}
