@@ -75,9 +75,8 @@ export function VisionList({ visions }: { visions: Vision[] }) {
 
   return (
     <div className="space-y-10">
-      {visions.map((v) => <VisionSection key={v.id} v={v} />)}
       <form
-        className="border-t border-dashed border-line pt-7"
+        className="pebble border border-dashed border-line px-5 py-4"
         onSubmit={(e) => {
           e.preventDefault();
           const t = draft.trim();
@@ -91,9 +90,10 @@ export function VisionList({ visions }: { visions: Vision[] }) {
           onChange={(e) => setDraft(e.target.value)}
           placeholder={pending ? "Adding…" : "Add a vision"}
           aria-label="New vision name, then press Enter"
-          className="w-full bg-transparent font-serif text-[1.8rem] leading-tight placeholder:text-muted/70 focus:outline-none"
+          className="w-full bg-transparent font-serif text-xl leading-tight placeholder:text-muted focus:outline-none"
         />
       </form>
+      {visions.map((v) => <VisionSection key={v.id} v={v} />)}
     </div>
   );
 }

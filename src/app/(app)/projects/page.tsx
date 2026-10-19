@@ -48,16 +48,6 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
         <p className="mt-1 max-w-[56ch] text-muted">What you&rsquo;re building. Open one to see its tasks.</p>
       </div>
 
-      {active.length > 0 ? (
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {active.map((p, i) => (
-            <li key={p.id}><ProjectCard p={card(p, i)} /></li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-muted">No projects yet. Start one below, or from a vision.</p>
-      )}
-
       <details id="new" className="pebble scroll-mt-6 border border-dashed border-line p-5" open={!!visionParam || !active.length}>
         <summary className="cursor-pointer font-medium">Start a project</summary>
         <form action={saveProject} className="mt-4 space-y-4">
@@ -73,6 +63,17 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           <button className="btn">Create project</button>
         </form>
       </details>
+
+      {active.length > 0 ? (
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {active.map((p, i) => (
+            <li key={p.id}><ProjectCard p={card(p, i)} /></li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-muted">No projects yet. Start one below, or from a vision.</p>
+      )}
+
 
       {resting.length > 0 && (
         <section aria-labelledby="resting">
