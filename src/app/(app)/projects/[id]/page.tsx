@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { today, shortDay } from "@/lib/dates";
-import { saveProject, setProjectStatus, scheduleTask } from "@/app/actions";
+import { today, addDays } from "@/lib/dates";
+import { saveProject, setProjectStatus } from "@/app/actions";
 import { GoalBar, AddGoal } from "@/components/Goals";
-import { TaskRow, AddTask } from "@/components/Tasks";
-import { ActionButton } from "@/components/DeleteButton";
+import { Board, type BoardTask } from "@/components/Board";
+import { Select } from "@/components/Select";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_LABEL: Record<string, string> = { active: "Active", paused: "Paused", done: "Finished", eliminated: "Eliminated" };
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,72 +19,61 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { data: p } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   if (!p) notFound();
 
-  const [goals, tasks, visions] = await Promise.all([
+  const [goals, open, done, visions] = await Promise.all([
     supabase.from("goals").select("*").eq("project_id", id).neq("status", "dropped").order("created_at"),
-    supabase.from("tasks").select("id, title, status, source, reason, day").eq("project_id", id).in("status", ["todo", "done"]).order("day", { ascending: true, nullsFirst: false }).limit(80),
+    supabase.from("tasks").select("id, title, status, day, source, reason").eq("project_id", id).eq("status", "todo").order("created_at"),
+    supabase
+      .from("tasks")
+      .select("id, title, status, day, source, reason, completed_at")
+      .eq("project_id", id)
+      .eq("status", "done")
+      .gte("completed_at", addDays(day, -14))
+      .order("completed_at", { ascending: false })
+      .limit(20),
     supabase.from("visions").select("id, title").eq("status", "active"),
   ]);
 
-  const open = (tasks.data ?? []).filter((t) => t.status === "todo");
-  const scheduled = open.filter((t) => t.day);
-  const backlog = open.filter((t) => !t.day);
-  const done = (tasks.data ?? []).filter((t) => t.status === "done").slice(-10).reverse();
+  const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
+  const vision = (visions.data ?? []).find((v) => v.id === p.vision_id);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <div>
         <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
-        <h1 className="mt-1 font-serif text-3xl">{p.title}</h1>
-        {p.status !== "active" && (
-          <p className="mt-2 text-sm text-muted">
-            {p.status === "eliminated" ? "Eliminated" : p.status === "paused" ? "Paused" : "Finished"}
-            {p.status_note ? `: ${p.status_note}` : ""}
-          </p>
-        )}
-        {p.description && <p className="mt-3 max-w-[65ch] whitespace-pre-wrap text-muted">{p.description}</p>}
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 className="font-serif text-3xl">{p.title}</h1>
+          <span className="text-sm text-muted">
+            {[STATUS_LABEL[p.status], p.makes_money && "can make money", vision && `serves ${vision.title}`].filter(Boolean).join(", ")}
+          </span>
+        </div>
+        {p.status !== "active" && p.status_note && <p className="mt-2 text-sm text-muted">{p.status_note}</p>}
+        {p.description && <p className="mt-3 max-w-[62ch] whitespace-pre-wrap text-muted">{p.description}</p>}
       </div>
 
       <section aria-labelledby="goals">
-        <h2 id="goals" className="section-title">Goals</h2>
-        <div className="mt-3 space-y-5">
+        <h2 id="goals" className="section-title">goals</h2>
+        <div className="mt-4 grid gap-6 sm:grid-cols-2">
           {(goals.data ?? []).map((g) => <GoalBar key={g.id} goal={g} />)}
-          {!goals.data?.length && <p className="text-muted">No goals yet. What would make this project a success in the next 90 days?</p>}
         </div>
-        <AddGoal projectId={id} />
+        {!goals.data?.length && <p className="mt-2 text-muted">No goals yet. What would make this project a success in the next 90 days?</p>}
+        <details className="mt-4">
+          <summary className="cursor-pointer text-sm text-muted hover:text-ink">Add a goal</summary>
+          <AddGoal projectId={id} />
+        </details>
       </section>
 
-      <section aria-labelledby="work">
-        <h2 id="work" className="section-title">Work</h2>
-        {scheduled.length > 0 && (
-          <ul className="mt-2 divide-y divide-line">
-            {scheduled.map((t) => (
-              <TaskRow key={t.id} task={t} today={day} showProject={false} aside={<span className="text-xs text-muted">{t.day === day ? "Today" : shortDay(t.day!)}</span>} />
-            ))}
-          </ul>
-        )}
-        <AddTask projectId={id} placeholder="Add a task" allowBacklog />
-
-        {backlog.length > 0 && (
-          <>
-            <h3 className="mt-6 text-sm font-semibold text-muted">Later</h3>
-            <ul className="divide-y divide-line">
-              {backlog.map((t) => (
-                <TaskRow key={t.id} task={t} showProject={false} aside={<ActionButton action={scheduleTask.bind(null, t.id, day)}>Do today</ActionButton>} />
-              ))}
-            </ul>
-          </>
-        )}
-
-        {done.length > 0 && (
-          <>
-            <h3 className="mt-6 text-sm font-semibold text-muted">Recently done</h3>
-            <ul className="divide-y divide-line">{done.map((t) => <TaskRow key={t.id} task={t} showProject={false} />)}</ul>
-          </>
-        )}
+      <section aria-labelledby="board">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id="board" className="section-title">the work</h2>
+          <p className="text-xs text-muted">Drag cards between lanes, or tap one to move it.</p>
+        </div>
+        <div className="mt-4">
+          <Board projectId={id} tasks={tasks} today={day} />
+        </div>
       </section>
 
-      <section aria-labelledby="direction" className="pebble bg-surface p-4 sm:p-5">
-        <h2 id="direction" className="section-title">Keep, pause, or let go</h2>
+      <section aria-labelledby="direction" className="pebble border border-line p-4 sm:p-5">
+        <h2 id="direction" className="section-title">keep, pause, or let go</h2>
         <p className="mt-1 text-sm text-muted">Saying why helps your partner stop suggesting what you&rsquo;ve already ruled out.</p>
         <form action={setProjectStatus} className="mt-3 space-y-3">
           <input type="hidden" name="id" value={id} />
@@ -100,17 +91,20 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </form>
       </section>
 
-      <details className="pebble border border-line p-4">
-        <summary className="cursor-pointer font-semibold">Edit project</summary>
-        <form action={saveProject} className="mt-4 space-y-3">
+      <details className="pebble-alt border border-line p-4">
+        <summary className="cursor-pointer font-medium">Edit project</summary>
+        <form action={saveProject} className="mt-4 space-y-4">
           <input type="hidden" name="id" value={id} />
           <input name="title" required defaultValue={p.title} aria-label="Name" className="field" />
           <textarea name="description" rows={4} defaultValue={p.description} aria-label="Description" className="field" />
-          <div className="flex flex-wrap gap-3">
-            <select name="vision_id" defaultValue={p.vision_id ?? ""} aria-label="Vision" className="field w-auto">
-              <option value="">No vision</option>
-              {(visions.data ?? []).map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}
-            </select>
+          <div className="flex flex-wrap items-center gap-4">
+            <Select
+              name="vision_id"
+              label="Vision"
+              className="w-56"
+              defaultValue={p.vision_id ?? ""}
+              options={[{ value: "", label: "No vision" }, ...(visions.data ?? []).map((v) => ({ value: v.id, label: v.title }))]}
+            />
             <input name="area" defaultValue={p.area} aria-label="Area" placeholder="Area" className="field w-36" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="makes_money" defaultChecked={p.makes_money} /> Can make money</label>
           </div>

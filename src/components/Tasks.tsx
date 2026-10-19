@@ -2,6 +2,7 @@
 
 import { useTransition, useRef } from "react";
 import { setTaskStatus, deleteTask, addTask } from "@/app/actions";
+import { Select } from "./Select";
 
 export type Task = {
   id: string;
@@ -98,12 +99,7 @@ export function AddTask({
       {projectId && <input type="hidden" name="project_id" value={projectId} />}
       <input name="title" required placeholder={placeholder} aria-label={placeholder} className="field min-w-0 flex-1" />
       {projects && !projectId && (
-        <select name="project_id" aria-label="Project" className="field w-auto">
-          <option value="">No project</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.title}</option>
-          ))}
-        </select>
+        <Select name="project_id" label="Project" className="w-44" options={[{ value: "", label: "No project" }, ...projects.map((p) => ({ value: p.id, label: p.title }))]} />
       )}
       {allowBacklog && (
         <label className="flex items-center gap-1.5 text-sm text-muted">

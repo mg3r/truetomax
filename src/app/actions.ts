@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { today } from "@/lib/dates";
+import { today, addDays } from "@/lib/dates";
 import { remember, forget, journalText } from "@/lib/memory";
 
 const str = (fd: FormData, k: string) => {
@@ -336,5 +336,51 @@ export async function answerRhythmProposal(id: string, accept: boolean) {
 export async function markReviewSeen(id: string) {
   const supabase = await db();
   await supabase.from("reviews").update({ seen: true }).eq("id", id);
+  refresh();
+}
+
+/* Your book, page by page */
+export async function saveBookPages(book: string, pages: { page: number; text: string }[], replace: boolean): Promise<{ error?: string }> {
+  const supabase = await db();
+  // Errors are returned, not thrown: thrown messages are hidden from the browser in production.
+  if (replace) {
+    const { error } = await supabase.from("book_pages").delete().not("id", "is", null);
+    if (error) return { error: "The book table isn't set up yet. Run 0003_book.sql in the Supabase SQL editor, then try again." };
+  }
+  const rows = pages
+    .filter((p) => Number.isInteger(p.page) && typeof p.text === "string" && p.text.trim())
+    .map((p) => ({ book: book.slice(0, 200), page: p.page, text: p.text.slice(0, 20000) }));
+  if (!rows.length) return {};
+  const { error } = await supabase.from("book_pages").upsert(rows, { onConflict: "user_id,book,page" });
+  return error ? { error: error.message } : {};
+}
+
+/* Project board: move a task between Later, Up next, Today and Done */
+export type Lane = "later" | "next" | "today" | "done";
+
+export async function moveTask(id: string, lane: Lane) {
+  const supabase = await db();
+  const { data: t } = await supabase.from("tasks").select("status, day").eq("id", id).single();
+  if (!t) return;
+  if (lane === "done") {
+    if (t.status !== "done") await setTaskStatus(id, "done");
+    return;
+  }
+  if (t.status === "done") await setTaskStatus(id, "todo");
+  const now = today();
+  const day = lane === "later" ? null : lane === "today" ? now : t.day && t.day > now ? t.day : addDays(now, 1);
+  await supabase.from("tasks").update({ day, status: "todo" }).eq("id", id);
+  refresh();
+}
+
+export async function addBoardTask(projectId: string, lane: Exclude<Lane, "done">, title: string) {
+  if (!title.trim()) return;
+  const supabase = await db();
+  const now = today();
+  await supabase.from("tasks").insert({
+    title: title.trim(),
+    project_id: projectId,
+    day: lane === "later" ? null : lane === "today" ? now : addDays(now, 1),
+  });
   refresh();
 }

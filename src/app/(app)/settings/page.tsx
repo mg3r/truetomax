@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { WEEKDAYS } from "@/lib/dates";
 import { saveAboutMe, addHighlight, deleteHighlight, addRhythm, deleteRhythm, signOut } from "@/app/actions";
 import { DeleteButton } from "@/components/DeleteButton";
+import { BookUpload } from "@/components/BookUpload";
+import { Select } from "@/components/Select";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +13,15 @@ const ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const [ctx, highlights, rhythm, projects] = await Promise.all([
+  const [ctx, highlights, rhythm, projects, bookPages] = await Promise.all([
     supabase.from("profile_context").select("about_me, summary, summary_updated_at").maybeSingle(),
     supabase.from("highlights").select("id, text, source, location").order("created_at", { ascending: false }),
     supabase.from("rhythm").select("id, weekday, title, project_id").order("sort").order("created_at"),
     supabase.from("projects").select("id, title").eq("status", "active"),
+    supabase.from("book_pages").select("book", { count: "exact" }).limit(1),
   ]);
+  // Null when no book has been added yet, or before the book table is set up.
+  const book = !bookPages.error && bookPages.count ? { book: bookPages.data?.[0]?.book ?? "Your book", pages: bookPages.count } : null;
 
   return (
     <div className="space-y-14">
@@ -35,6 +40,14 @@ export default async function SettingsPage() {
         <h2 id="learned" className="section-title">What your partner has learned</h2>
         <p className="mt-1 text-sm text-muted">Patterns it has noticed, rhythm changes it suggests, and its weekly review.</p>
         <Link href="/learned" className="btn-quiet mt-3">Open what it&rsquo;s learned</Link>
+      </section>
+
+      <section aria-labelledby="book-h" id="book" className="scroll-mt-6">
+        <h2 id="book-h" className="section-title">Your book</h2>
+        <p className="mt-1 text-sm text-muted">
+          Add your PDF of The Creative Act. It&rsquo;s read on this device and only its text is stored, privately. Each morning Today opens to a page you haven&rsquo;t seen in a while, and the question and affirmation come from it.
+        </p>
+        <BookUpload existing={book} />
       </section>
 
       <section aria-labelledby="passages-h" id="passages" className="scroll-mt-6">
@@ -84,14 +97,9 @@ export default async function SettingsPage() {
           })}
         </div>
         <form action={addRhythm} className="mt-5 flex flex-wrap gap-2">
-          <select name="weekday" aria-label="Day" className="field w-auto">
-            {ORDER.map((wd) => <option key={wd} value={wd}>{WEEKDAYS[wd]}</option>)}
-          </select>
+          <Select name="weekday" label="Day" className="w-36" defaultValue="1" options={ORDER.map((wd) => ({ value: String(wd), label: WEEKDAYS[wd] }))} />
           <input name="title" required placeholder="Recurring task" aria-label="Recurring task" className="field min-w-0 flex-1" />
-          <select name="project_id" aria-label="Project" className="field w-auto">
-            <option value="">No project</option>
-            {(projects.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-          </select>
+          <Select name="project_id" label="Project" className="w-44" options={[{ value: "", label: "No project" }, ...(projects.data ?? []).map((p) => ({ value: p.id, label: p.title }))]} />
           <button className="btn">Add</button>
         </form>
       </section>

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today, prettyDay, addDays, weekdayOf } from "@/lib/dates";
 import { MoveLogger } from "@/components/Moves";
+import { SaveLine } from "@/components/SaveLine";
+import { AskPartner } from "@/components/AskPartner";
 import { Mark } from "@/components/Mark";
 import { PrepareDay } from "@/components/PrepareDay";
 import { TaskRow, SuggestionRow, AddTask, type Task } from "@/components/Tasks";
@@ -17,7 +19,8 @@ export default async function TodayPage() {
   if (!d?.affirmation) return <PrepareDay />;
 
   const weekStart = addDays(day, -((weekdayOf(day) + 6) % 7)); // Monday
-  const [highlight, tasks, projects, entry, moves, unseen, proposals, hunches] = await Promise.all([
+  const [page, highlight, tasks, projects, entry, moves, unseen, proposals, hunches] = await Promise.all([
+    d.page_id ? supabase.from("book_pages").select("page, book, text").eq("id", d.page_id).maybeSingle() : Promise.resolve({ data: null }),
     d.highlight_id ? supabase.from("highlights").select("text, source, location").eq("id", d.highlight_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase
       .from("tasks")
@@ -70,20 +73,39 @@ export default async function TodayPage() {
       )}
 
       <section aria-labelledby="passage">
-        <h2 id="passage" className="section-title">Today&rsquo;s passage</h2>
-        {highlight.data ? (
-          <figure className="mt-3">
-            <blockquote className="max-w-[58ch] font-serif text-xl leading-relaxed italic">{highlight.data.text}</blockquote>
-            <figcaption className="mt-2 text-sm text-muted">
-              {highlight.data.source}
-              {highlight.data.location ? `, ${highlight.data.location}` : ""}
-            </figcaption>
-          </figure>
+        {page.data ? (
+          <>
+            <h2 id="passage" className="section-title">today&rsquo;s page</h2>
+            <article className="mt-3 max-w-[62ch]">
+              <div className="space-y-4 font-serif text-[1.15rem] leading-[1.75]">
+                {page.data.text
+                  .split(/\n{2,}/)
+                  .map((para: string) => para.replace(/\s*\n\s*/g, " ").trim())
+                  .filter(Boolean)
+                  .map((para: string, i: number) => <p key={i}>{para}</p>)}
+              </div>
+              <p className="mt-3 text-sm text-muted">{page.data.book}, page {page.data.page}</p>
+            </article>
+            <SaveLine book={page.data.book} page={page.data.page} />
+          </>
         ) : (
-          <p className="mt-2 text-muted">
-            Add passages you&rsquo;ve marked in your copy of The Creative Act and one will meet you here each morning.{" "}
-            <Link href="/settings#passages" className="text-ink underline decoration-line underline-offset-4">Add passages</Link>
-          </p>
+          <>
+            <h2 id="passage" className="section-title">today&rsquo;s passage</h2>
+            {highlight.data ? (
+              <figure className="mt-3">
+                <blockquote className="max-w-[58ch] font-serif text-xl leading-relaxed italic">{highlight.data.text}</blockquote>
+                <figcaption className="mt-2 text-sm text-muted">
+                  {highlight.data.source}
+                  {highlight.data.location ? `, ${highlight.data.location}` : ""}
+                </figcaption>
+              </figure>
+            ) : (
+              <p className="mt-2 text-muted">
+                Add your copy of The Creative Act and a page will open here each morning.{" "}
+                <Link href="/settings#book" className="text-ink underline decoration-line underline-offset-4">Add the book</Link>
+              </p>
+            )}
+          </>
         )}
       </section>
 
@@ -132,7 +154,10 @@ export default async function TodayPage() {
 
       <section aria-labelledby="question">
         <h2 id="question" className="section-title">Today&rsquo;s question</h2>
-        <p className="mt-2 mb-4 max-w-[60ch] font-serif text-lg leading-relaxed">{d.question}</p>
+        <p className="mt-2 max-w-[60ch] font-serif text-xl leading-relaxed">{d.question}</p>
+        <div className="mt-3 mb-5">
+          <AskPartner endpoint="/api/question" label="Ask me something else" busyLabel="Finding another angle…" className="btn-quiet" />
+        </div>
         <JournalForm key={entry.data?.id ?? "new"} id={entry.data?.id} prompt={d.question} day={day} initial={entry.data?.body ?? ""} />
       </section>
 

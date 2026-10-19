@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { saveVision, setVisionStatus } from "@/app/actions";
 import { ActionButton } from "@/components/DeleteButton";
+import { Select } from "@/components/Select";
 
 export const dynamic = "force-dynamic";
 
@@ -86,9 +87,7 @@ function VisionForm({ v }: { v?: { id: string; title: string; body: string; hori
       <input name="title" required defaultValue={v?.title} placeholder="Name this vision" aria-label="Vision name" className="field" />
       <textarea name="body" rows={5} defaultValue={v?.body} placeholder="What does it look like when it's real? Who's there? What are you making? How does money come in?" aria-label="Vision description" className="field" />
       <div className="flex gap-3">
-        <select name="horizon" defaultValue={v?.horizon ?? "1 year"} aria-label="Horizon" className="field w-auto">
-          {HORIZONS.map((h) => <option key={h}>{h}</option>)}
-        </select>
+        <Select name="horizon" label="Horizon" className="w-36" defaultValue={v?.horizon ?? "1 year"} options={HORIZONS.map((h) => ({ value: h, label: h }))} />
         <button className="btn">{v ? "Save changes" : "Add vision"}</button>
       </div>
     </form>

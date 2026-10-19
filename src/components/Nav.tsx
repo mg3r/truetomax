@@ -20,7 +20,7 @@ export function Nav() {
 
   return (
     <>
-      <header className="mx-auto flex max-w-2xl items-center justify-between px-4 pt-5 pb-2 sm:px-6">
+      <header className="relative z-20 mx-auto flex max-w-2xl items-center justify-between px-4 pt-5 pb-2 sm:px-6">
         <Link href="/" className="flex items-center gap-2 font-serif text-lg">
           <Mark size={18} className="text-ink" />
           {APP_NAME}
