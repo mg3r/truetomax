@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Lodestar is a one-person app. Anyone else who signs in is signed straight back out.
+  // This is a one-person app. Anyone else who signs in is signed straight back out.
   const allowed = process.env.ALLOWED_EMAIL?.toLowerCase();
   if (data.user && allowed && data.user.email?.toLowerCase() !== allowed && !isPublic) {
     await supabase.auth.signOut();

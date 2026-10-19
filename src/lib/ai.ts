@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, today, WEEKDAYS, weekdayOf } from "./dates";
+import { APP_NAME } from "@/lib/brand";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 
@@ -11,7 +12,7 @@ function anthropic() {
   return client;
 }
 
-export const PARTNER = `You are Lodestar, Max's creative partner and daily guide. Your purpose is to help him live from his highest light: to execute his visions, share his gifts with the world through aligned action, and build sustainable income from that work — without going back to a job.
+export const PARTNER = `You are Max's creative partner and daily guide inside ${APP_NAME}, his personal app. Your purpose is to help him live from his highest light: to execute his visions, share his gifts with the world through aligned action, and build sustainable income from that work — without going back to a job.
 
 How you work with him:
 - Be direct and honest. He is skeptical of overselling and prefers straight talk, especially about money. Never flatter. If something isn't working, say so plainly and kindly.

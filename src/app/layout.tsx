@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { RegisterSW } from "@/components/RegisterSW";
+import { APP_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Lodestar",
+  title: APP_NAME,
   description: "Your daily guide: what to do today, why, and what's next.",
-  appleWebApp: { capable: true, title: "Lodestar", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 

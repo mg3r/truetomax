@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { APP_NAME } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Lodestar",
-    short_name: "Lodestar",
+    name: APP_NAME,
+    short_name: APP_NAME,
     description: "Your daily guide: what to do today, why, and what's next.",
     start_url: "/",
     display: "standalone",

@@ -1,4 +1,4 @@
-# Lodestar
+# truetomax
 
 A daily guide and creative partner. Each morning it hands you an affirmation, a passage you've saved from *The Creative Act*, a question to journal on, and what to do today — your weekly rhythm plus up to three suggestions from your partner. Underneath, it tracks visions, projects, goals and ideas, and learns from everything you write, finish, skip and eliminate.
 
@@ -25,7 +25,7 @@ On first sign-in it seeds your weekly rhythm, four projects (pottery & art, DJin
 ### 1. Supabase
 1. Create a new project at [supabase.com](https://supabase.com).
 2. **SQL Editor** → paste all of `supabase/migrations/0001_init.sql` → Run.
-3. **Authentication → Email Templates → Magic Link**: add `{{ .Token }}` to the body, for example `Your Lodestar code: {{ .Token }}`. Typing the code (instead of tapping the link) is what keeps you signed in inside the installed phone app.
+3. **Authentication → Email Templates → Magic Link**: add `{{ .Token }}` to the body, for example `Your truetomax code: {{ .Token }}`. Typing the code (instead of tapping the link) is what keeps you signed in inside the installed phone app.
 4. **Authentication → URL Configuration**: set Site URL to your Vercel URL, and add `https://YOUR-APP.vercel.app/auth/callback` to Redirect URLs.
 5. After you've signed in once, turn off **Allow new users to sign up** (Authentication → Sign In / Providers). `ALLOWED_EMAIL` also blocks anyone else.
 

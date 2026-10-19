@@ -1,4 +1,4 @@
-/** Eight-point lodestar. The one bright thing in the interface. */
+/** Eight-point guiding star. The one bright thing in the interface. */
 export function Star({ size = 20, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>

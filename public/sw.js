@@ -1,6 +1,6 @@
-// Lodestar service worker: makes the app installable and keeps the shell working on a bad connection.
+// truetomax service worker: makes the app installable and keeps the shell working on a bad connection.
 // Pages are network-first (your data is always fresh); static assets are cache-first.
-const CACHE = "lodestar-v1";
+const CACHE = "truetomax-v1";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/offline.html"])));

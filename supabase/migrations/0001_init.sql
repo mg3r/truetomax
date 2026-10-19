@@ -1,4 +1,4 @@
--- Lodestar schema. Single-user app; every row is scoped to the signed-in user by RLS.
+-- truetomax schema. Single-user app; every row is scoped to the signed-in user by RLS.
 
 create extension if not exists "pgcrypto";
 

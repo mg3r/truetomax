@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Star } from "./Star";
 
-/** Shown the first time you open Lodestar each day while the partner prepares it. */
+/** Shown the first time you open the app each day while the partner prepares it. */
 export function PrepareDay({ auto = true }: { auto?: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "working" | "error">(auto ? "working" : "idle");

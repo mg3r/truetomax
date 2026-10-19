@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Star } from "@/components/Star";
+import { APP_NAME } from "@/lib/brand";
 
 function LoginForm() {
   const router = useRouter();
@@ -41,7 +42,7 @@ function LoginForm() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
       <Star size={32} className="dawn-rise text-dawn" />
-      <h1 className="mt-4 font-serif text-3xl">Lodestar</h1>
+      <h1 className="mt-4 font-serif text-3xl">{APP_NAME}</h1>
       <p className="mt-1 text-muted">What to do today, and why.</p>
 
       {!sent ? (
