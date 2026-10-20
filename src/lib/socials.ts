@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type Post = {
+  seen?: string | null;
   media_id: string;
   caption: string | null;
   permalink: string | null;
@@ -41,7 +42,7 @@ export async function socialsContext(supabase: SupabaseClient) {
   if (!posts.length) return `## Instagram (@${acct.username}, ${acct.followers ?? "?"} followers)\nNo posts synced yet.`;
 
   const line = (m: Post) =>
-    `- ${m.posted_at?.slice(0, 10)} ${formatOf(m)}: "${(m.caption ?? "").replace(/\s+/g, " ").slice(0, 140)}" — ${m.views ?? "?"} views, ${m.reach ?? "?"} reach, ${m.likes ?? 0} likes, ${m.comments ?? 0} comments, ${m.saves ?? 0} saves, ${m.shares ?? 0} shares`;
+    `- ${m.posted_at?.slice(0, 10)} ${formatOf(m)}: "${(m.caption ?? "").replace(/\s+/g, " ").slice(0, 140)}"${m.seen ? ` [what's in it: ${m.seen.replace(/\s+/g, " ")}]` : ""} — ${m.views ?? "?"} views, ${m.reach ?? "?"} reach, ${m.likes ?? 0} likes, ${m.comments ?? 0} comments, ${m.saves ?? 0} saves, ${m.shares ?? 0} shares`;
   const byFormat = new Map<string, Post[]>();
   for (const p of posts) byFormat.set(formatOf(p), [...(byFormat.get(formatOf(p)) ?? []), p]);
   const avg = (ps: Post[]) => Math.round(ps.reduce((n, p) => n + (p.views ?? p.reach ?? 0), 0) / ps.length);

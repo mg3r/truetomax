@@ -171,3 +171,65 @@ export async function instagramContext(supabase: SupabaseClient) {
     `Latest:\n${list.slice(0, 5).map(fmt).join("\n")}`,
   ].join("\n");
 }
+
+/** Fetch an image and return it ready for the partner to look at (skips anything too big or not an image). */
+async function grab(url: string) {
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const type = (r.headers.get("content-type") ?? "image/jpeg").split(";")[0];
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > 4_500_000) return null;
+    return { mediaType: type, data: buf.toString("base64") };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Your partner looks at each post once: the photo, the first few photos of a carousel, or a reel's cover.
+ * It saves a short description of what's actually in it, so recommendations and post ideas draw on your content, not just captions.
+ */
+export async function lookAtPosts(supabase: SupabaseClient, limit = 8) {
+  if (!instagramConfigured()) return 0;
+  const { data: rows, error } = await supabase
+    .from("instagram_media")
+    .select("media_id, caption, media_type, product_type, thumb_url")
+    .is("seen", null)
+    .order("posted_at", { ascending: false })
+    .limit(limit);
+  if (error || !rows?.length) return 0;
+  const access = await token(supabase);
+  if (!access) return 0;
+  const { askAboutImages } = await import("./ai");
+
+  let done = 0;
+  for (const m of rows) {
+    try {
+      // Fresh links from Instagram: the photo, a carousel's first few, or a video's cover.
+      const info = await fetch(`${GRAPH}/${m.media_id}?fields=media_type,media_url,thumbnail_url,children{media_type,media_url,thumbnail_url}&access_token=${access}`, {
+        signal: AbortSignal.timeout(8000),
+      }).then((r) => r.json());
+      const pick = (x: { media_type?: string; media_url?: string; thumbnail_url?: string }) => (x.media_type === "VIDEO" ? x.thumbnail_url : x.media_url ?? x.thumbnail_url);
+      const urls: string[] = (info.children?.data?.length ? info.children.data.slice(0, 4).map(pick) : [pick(info)]).filter(Boolean);
+      const images = (await Promise.all(urls.map(grab))).filter(Boolean) as { mediaType: string; data: string }[];
+      if (!images.length) {
+        await supabase.from("instagram_media").update({ seen: "", seen_at: new Date().toISOString() }).eq("media_id", m.media_id);
+        continue;
+      }
+      const isVideo = info.media_type === "VIDEO" || m.product_type === "REELS";
+      const seen = await askAboutImages({
+        images,
+        prompt: `This is one of Max's Instagram posts${isVideo ? " (a reel: you're seeing its cover only)" : images.length > 1 ? ` (a carousel: first ${images.length} slides)` : ""}.
+Caption: "${(m.caption ?? "").slice(0, 600)}"
+In 2–3 plain sentences, describe what's actually in it: the subject (food, pottery, music, people, place), whether Max is in it, the setting and light, composition and style (close-up, process, finished piece, candid, polished), and any text on screen. No praise, no advice, just what's there.`,
+      });
+      await supabase.from("instagram_media").update({ seen: seen.slice(0, 800), seen_at: new Date().toISOString() }).eq("media_id", m.media_id);
+      done++;
+    } catch (e) {
+      console.error("lookAtPosts", e);
+    }
+  }
+  return done;
+}

@@ -49,9 +49,11 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 - [x] Projects: In review status for suggested ideas (Accept or delete); status dropdown; only In progress projects show their actions in Actions, Schedule, Today and suggestions — run `0020_in_review.sql`
 
+- [x] Partner looks at each Instagram post (photos, carousel slides, reel covers) and uses what's in it — run `0021_post_vision.sql`; next: frames from across a reel
+
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0020` in order if any haven't been run; check the 7am notification arrives.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0021` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.

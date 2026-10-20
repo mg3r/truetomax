@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { syncInstagram } from "@/lib/instagram";
+import { syncInstagram, lookAtPosts } from "@/lib/instagram";
 import { loadPosts, scoreOf, formatOf, type Post, type SocialRead } from "@/lib/socials";
 import { AskPartner } from "@/components/AskPartner";
 import { Thumb } from "@/components/Thumb";
@@ -18,7 +18,10 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
   const best = sort === "best";
   const supabase = await createClient();
   // Refresh from Instagram in the background (at most every few hours); this view shows what's saved.
-  after(() => syncInstagram(supabase).catch(() => {}));
+  after(async () => {
+    await syncInstagram(supabase).catch(() => {});
+    await lookAtPosts(supabase, 6).catch(() => 0);
+  });
 
   const { data: acct, error: acctErr } = await supabase.from("instagram_accounts").select("username, followers, synced_at").maybeSingle();
   if (acctErr || !acct)
@@ -165,6 +168,7 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
                       {top?.media_id === m.media_id && <span className="ml-2 text-ink">best so far</span>}
                     </p>
                     <p className="mt-0.5 line-clamp-2 group-hover:underline group-hover:decoration-line group-hover:underline-offset-4">{m.caption?.trim() || "(no caption)"}</p>
+                    {m.seen && <p className="mt-1 line-clamp-2 text-xs text-muted italic">{m.seen}</p>}
                     <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted tabular-nums">
                       {m.views != null && <span>{n(m.views)} views</span>}
                       <span>{n(m.reach)} reach</span>

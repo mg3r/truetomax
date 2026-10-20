@@ -78,7 +78,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
       "Your pages in one place. Instagram for now; more platforms will join it here.",
       "See your followers and the last 30 days at a glance (posts, views, reach, saves, shares), then every post with its numbers, sorted by Latest or Best. Tap a post to open it on Instagram.",
       "\u201cRead my posts\u201d has your partner go through them and say what's working, what isn't, and 3\u20135 specific things to try this week, each with the evidence behind it. Post ideas live here too: \u201cSuggest 3 posts\u201d builds them from what you're making this week and what's landing. Keep one (it goes to Up next in Actions) or let it go.",
-      "Posts refresh from Instagram every few hours. New posts count as a move (shared) on Today automatically.",
+      "Your partner also looks at each post once (the photo, a carousel's first few slides, or a reel's cover) and notes what's actually in it, shown in small italics under the caption. Its read and its post ideas draw on what your posts show, not just captions and numbers. (It can't watch a reel all the way through yet.) Posts refresh from Instagram every few hours. New posts count as a move (shared) on Today automatically.",
     ],
   },
   {

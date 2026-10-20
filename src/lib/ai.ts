@@ -175,6 +175,24 @@ export async function askAboutFile(opts: { prompt: string; mediaType: string; da
   return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
 }
 
+/** Look at a few images (JPEG/PNG/WebP, as base64) and answer about them. */
+export async function askAboutImages(opts: { prompt: string; images: { mediaType: string; data: string }[]; maxTokens?: number }) {
+  const res = await anthropic().messages.create({
+    model: MODEL,
+    max_tokens: opts.maxTokens ?? 400,
+    messages: [
+      {
+        role: "user",
+        content: [
+          ...opts.images.map((im) => ({ type: "image" as const, source: { type: "base64" as const, media_type: im.mediaType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: im.data } })),
+          { type: "text" as const, text: opts.prompt },
+        ],
+      },
+    ],
+  });
+  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+}
+
 export async function ask(opts: { system?: string; messages: { role: "user" | "assistant"; content: string }[]; maxTokens?: number }) {
   const res = await anthropic().messages.create({
     model: MODEL,
