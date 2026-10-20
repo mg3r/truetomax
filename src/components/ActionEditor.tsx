@@ -154,8 +154,8 @@ export function ActionEditor({
         label="Project"
         empty={
           <>
-            <span className="inline-block w-[4.5rem] pr-2 text-muted">Project</span>None in progress yet.{" "}
-            <Link href="/projects" className="underline decoration-line underline-offset-4 hover:text-ink">Drag one to In progress</Link> to add actions to it.
+            <span className="inline-block w-[4.5rem] pr-2 text-muted">Project</span>No projects yet.{" "}
+            <Link href="/projects" className="underline decoration-line underline-offset-4 hover:text-ink">Start one</Link>
           </>
         }
         options={projects.map((p) => ({ id: p.id, name: p.title }))}

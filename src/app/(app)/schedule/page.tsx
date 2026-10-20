@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { inActiveWork } from "@/lib/links";
 import { today, weekdayOf, WEEKDAYS, addDays } from "@/lib/dates";
 import { ScheduleAdd } from "@/components/ScheduleAdd";
 import { ScheduleItem } from "@/components/ScheduleItem";
@@ -87,7 +86,7 @@ export default async function SchedulePage() {
       .in("status", ["todo", "done"])
       .neq("source", "rhythm")
       .order("created_at"),
-    supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
+    supabase.from("projects").select("id, title").order("created_at"),
   ]);
   // Practices from your Rhythm: to schedule a session, and to show the days you practiced.
   const practices = await loadPractices(supabase);
@@ -95,9 +94,8 @@ export default async function SchedulePage() {
   const { data: checkRows } = await supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]).lte("day", week[6]);
   const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));
   const projects = projectRows.data ?? [];
-  // Only actions from projects you've accepted (In progress) appear on your Schedule.
-  const activeIds = new Set(projects.map((p) => p.id));
-  const tasks = (taskRows.data ?? []).filter((t) => inActiveWork(t, activeIds));
+  // Every action shows, whatever its project's status.
+  const tasks = taskRows.data ?? [];
   const routines = (routineRows.data ?? []) as Routine[];
   const dailyItems = routines.filter((r) => r.cadence === "daily");
   const nightlyItems = routines.filter((r) => r.cadence === "nightly");

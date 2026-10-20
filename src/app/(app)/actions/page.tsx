@@ -29,12 +29,14 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
   ]);
   const practices = await loadPractices(supabase);
   const ideaRows = await supabase.from("ideas").select("id, title, body, first_step, money_path").eq("kind", "action").in("status", ["new", "exploring"]).order("created_at", { ascending: false });
-  // Only projects you've accepted (In progress) show their actions here; the rest stay inside the project.
+  // Every action shows, whatever its project's status; any project can be picked for one.
   const allProjects = projectRows.data ?? [];
-  const projects = allProjects.filter((p) => p.status === "active");
-  const hidden = new Set(allProjects.filter((p) => p.status !== "active").map((p) => p.id));
-  const filter = projects.some((p) => p.id === project) ? project! : null;
-  const tasks = ([...(open.data ?? []), ...(done.data ?? [])] as ListTask[]).filter((t) => { const ps = projectsOf(t); return !ps.length || ps.some((p) => !hidden.has(p)); });
+  const projects = allProjects;
+  const tasks = [...(open.data ?? []), ...(done.data ?? [])] as ListTask[];
+  // The filter row lists only projects that have actions here, so it stays short.
+  const withActions = new Set(tasks.flatMap((t) => projectsOf(t)));
+  const filterable = projects.filter((p) => withActions.has(p.id));
+  const filter = filterable.some((p) => p.id === project) ? project! : null;
 
   return (
     <div className="space-y-8">
@@ -43,10 +45,10 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
         <ImportDialog kind="actions" projectId={filter} />
       </div>
 
-      {projects.length > 0 && (
+      {filterable.length > 0 && (
         <nav className="flex flex-wrap gap-1" aria-label="Filter by project">
           <Link href="/actions" className={`rounded-full px-3 py-1 text-sm ${!filter ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>All</Link>
-          {projects.map((p) => (
+          {filterable.map((p) => (
             <Link key={p.id} href={`/actions?project=${p.id}`} className={`rounded-full px-3 py-1 text-sm ${filter === p.id ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>
               {p.title}
             </Link>

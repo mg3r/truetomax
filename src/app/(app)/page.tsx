@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { inActiveWork, namesOf, projectsOf, practicesOf } from "@/lib/links";
+import { namesOf, projectsOf, practicesOf } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 import { today, prettyDay, addDays, weekdayOf } from "@/lib/dates";
 import { MovesLine, type Move } from "@/components/Moves";
@@ -34,7 +34,7 @@ export default async function TodayPage() {
       // Unfinished one-time tasks carry over; things that repeat come back on their own day instead.
       .or(`and(day.lt.${day},status.eq.todo,source.neq.rhythm),and(day.eq.${day},status.in.(todo,done,suggested))`)
       .order("created_at"),
-    supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
+    supabase.from("projects").select("id, title").order("created_at"),
     supabase.from("journal_entries").select("id, body").eq("day", day).eq("prompt", d.question ?? "").maybeSingle(),
     supabase.from("moves").select("*").gte("day", weekStart).order("created_at", { ascending: false }),
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("seen", false),
@@ -80,8 +80,8 @@ export default async function TodayPage() {
   const practiceList = await loadPractices(supabase);
   const practiceNames = new Map(practiceList.map((p) => [p.id, p.name]));
   // Actions from projects that aren't In progress (in review, backlog, done) stay inside their project.
-  const activeIds = new Set((projects.data ?? []).map((p) => p.id));
-  const all: Task[] = (tasks.data ?? []).filter((t) => inActiveWork(t, activeIds)).map((t) => ({ ...t, project: namesOf(projectsOf(t), projName), practice: namesOf(practicesOf(t), practiceNames) }));
+  // Every action shows on Today, whatever its project's status.
+  const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: namesOf(projectsOf(t), projName), practice: namesOf(practicesOf(t), practiceNames) }));
   const suggestions = all.filter((t) => t.status === "suggested");
   // Rhythm first, then everything else; finished tasks sink to the bottom.
   const list = all
