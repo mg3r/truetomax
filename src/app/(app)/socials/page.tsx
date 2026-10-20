@@ -2,12 +2,14 @@ import Link from "next/link";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { syncInstagram, lookAtPosts } from "@/lib/instagram";
-import { loadPosts, scoreOf, formatOf, type Post, type SocialRead } from "@/lib/socials";
+import { loadPosts, scoreOf, formatOf, rateOf, skipPct, type Post, type SocialRead } from "@/lib/socials";
 import { AskPartner } from "@/components/AskPartner";
-import { Thumb } from "@/components/Thumb";
+import { PostRow } from "@/components/PostRow";
+import type { AccountStats } from "@/lib/instagram";
 import { IdeaList } from "@/components/IdeaList";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 const n = (v: number | null | undefined) => (v == null ? "–" : v >= 10000 ? `${(v / 1000).toFixed(v >= 100000 ? 0 : 1)}k` : v.toLocaleString());
 const shortDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" }) : "");
@@ -22,7 +24,9 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
     await lookAtPosts(supabase, 6).catch(() => 0);
   });
 
-  const { data: acct, error: acctErr } = await supabase.from("instagram_accounts").select("username, followers, synced_at").maybeSingle();
+  const acctRes = await supabase.from("instagram_accounts").select("*").maybeSingle();
+  const acct = acctRes.data as { username: string; followers: number | null; synced_at: string | null; stats?: AccountStats | null } | null;
+  const acctErr = acctRes.error;
   if (acctErr || !acct)
     return (
       <div className="space-y-6">
@@ -46,6 +50,40 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
   const top = posts.length ? posts.reduce((a, b) => (scoreOf(b) > scoreOf(a) ? b : a)) : null;
   const list = best ? [...posts].sort((a, b) => scoreOf(b) - scoreOf(a)) : posts;
 
+  // Instagram's own account totals when it gives them; otherwise added up from your posts.
+  const st = acct.stats ?? null;
+  const pct = (v: number | null) => (v == null ? "–" : `${v < 10 ? v.toFixed(1) : Math.round(v)}%`);
+  const stats: [string, string | number][] = [
+    ["Followers", n(acct.followers)],
+    ["Posts", month.length],
+    ["Views", n(st?.views ?? sum(month, "views"))],
+    ["Reach", n(st?.reach ?? sum(month, "reach"))],
+    ...(st?.views_non_followers != null && st.views ? ([["From non-followers", pct((100 * st.views_non_followers) / st.views)]] as [string, string][]) : []),
+    ...(st?.engaged != null ? ([["Accounts engaged", n(st.engaged)]] as [string, string][]) : []),
+    ["Interactions", n(st?.interactions ?? sum(month, "likes") + sum(month, "comments") + sum(month, "saves") + sum(month, "shares"))],
+    ["Saves", n(st?.saves ?? sum(month, "saves"))],
+    ["Shares", n(st?.shares ?? sum(month, "shares"))],
+    ...(st?.follows != null ? ([["Follows", `+${n(st.follows)}${st.unfollows ? ` / −${n(st.unfollows)}` : ""}`]] as [string, string][]) : []),
+    ...(st?.link_taps != null ? ([["Link taps", n(st.link_taps)]] as [string, string][]) : []),
+  ];
+
+  // How each format does, side by side.
+  const avg = (vals: (number | null)[]) => {
+    const xs = vals.filter((v): v is number => v != null);
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  };
+  const byFormat = new Map<string, Post[]>();
+  for (const p of posts) byFormat.set(formatOf(p), [...(byFormat.get(formatOf(p)) ?? []), p]);
+  const formats = [...byFormat].map(([name, ps]) => ({
+    name,
+    count: ps.length,
+    views: Math.round(avg(ps.map((p) => p.views ?? p.reach)) ?? 0),
+    share: avg(ps.map((p) => rateOf(p.shares, p.reach))) != null ? pct(avg(ps.map((p) => rateOf(p.shares, p.reach)))) : null,
+    save: avg(ps.map((p) => rateOf(p.saves, p.reach))) != null ? pct(avg(ps.map((p) => rateOf(p.saves, p.reach)))) : null,
+    watch: avg(ps.map((p) => p.avg_watch_ms ?? null)) != null ? `${(avg(ps.map((p) => p.avg_watch_ms ?? null))! / 1000).toFixed(1)}s` : null,
+    skip: avg(ps.map((p) => skipPct(p.skip_rate))) != null ? pct(avg(ps.map((p) => skipPct(p.skip_rate)))) : null,
+  }));
+
   return (
     <div className="space-y-12">
       <div>
@@ -60,22 +98,47 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
           <h2 id="account" className="section-title">@{acct.username}</h2>
           {acct.synced_at && <span className="text-xs text-muted">updated {shortDate(acct.synced_at)}</span>}
         </div>
-        <dl className="mt-4 grid grid-cols-3 gap-y-5 sm:grid-cols-6">
-          {[
-            ["Followers", n(acct.followers)],
-            ["Posts, 30 days", month.length],
-            ["Views", n(sum(month, "views"))],
-            ["Reach", n(sum(month, "reach"))],
-            ["Saves", n(sum(month, "saves"))],
-            ["Shares", n(sum(month, "shares"))],
-          ].map(([label, value]) => (
-            <div key={label as string} className="flex flex-col-reverse">
+        <dl className="mt-4 grid grid-cols-3 gap-y-5 sm:grid-cols-5">
+          {stats.map(([label, value]) => (
+            <div key={label} className="flex flex-col-reverse">
               <dt className="text-xs text-muted">{label}</dt>
               <dd className="font-serif text-3xl font-light tabular-nums">{value}</dd>
             </div>
           ))}
         </dl>
-        <p className="mt-2 text-xs text-muted">Views, reach, saves and shares are for posts from the last 30 days.</p>
+        <p className="mt-2 text-xs text-muted">Everything here except followers is for the last 30 days.</p>
+
+        {formats.length > 0 && (
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[28rem] text-sm tabular-nums">
+              <thead>
+                <tr className="text-left text-xs text-muted">
+                  <th className="pb-1.5 font-normal">By format</th>
+                  <th className="pb-1.5 font-normal">Posts</th>
+                  <th className="pb-1.5 font-normal">Avg views</th>
+                  <th className="pb-1.5 font-normal">Share rate</th>
+                  <th className="pb-1.5 font-normal">Save rate</th>
+                  <th className="pb-1.5 font-normal">Avg watch</th>
+                  <th className="pb-1.5 font-normal">Skip rate</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {formats.map((f) => (
+                  <tr key={f.name}>
+                    <td className="py-1.5">{f.name}</td>
+                    <td>{f.count}</td>
+                    <td>{n(f.views)}</td>
+                    <td>{f.share ?? "–"}</td>
+                    <td>{f.save ?? "–"}</td>
+                    <td>{f.watch ?? "–"}</td>
+                    <td>{f.skip ?? "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-1.5 text-xs text-muted">Share and save rates are out of the people each post reached; averages are over every synced post.</p>
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="recs" className="pebble bg-surface p-5">
@@ -134,29 +197,7 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
         {list.length ? (
           <ul className="mt-3 divide-y divide-line">
             {list.map((m) => (
-              <li key={m.media_id}>
-                <a href={m.permalink ?? "#"} target="_blank" rel="noopener noreferrer" className="group flex gap-4 py-4">
-                  <div className="h-20 w-16 shrink-0 overflow-hidden rounded-md">
-                    <Thumb src={m.thumb_url} alt="" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted">
-                      {shortDate(m.posted_at)} · {formatOf(m)}
-                      {top?.media_id === m.media_id && <span className="ml-2 text-ink">best so far</span>}
-                    </p>
-                    <p className="mt-0.5 line-clamp-2 group-hover:underline group-hover:decoration-line group-hover:underline-offset-4">{m.caption?.trim() || "(no caption)"}</p>
-                    {m.seen && <p className="mt-1 line-clamp-2 text-xs text-muted italic">{m.seen}</p>}
-                    <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted tabular-nums">
-                      {m.views != null && <span>{n(m.views)} views</span>}
-                      <span>{n(m.reach)} reach</span>
-                      <span>{n(m.likes)} likes</span>
-                      <span>{n(m.comments)} comments</span>
-                      <span>{n(m.saves)} saves</span>
-                      <span>{n(m.shares)} shares</span>
-                    </p>
-                  </div>
-                </a>
-              </li>
+              <PostRow key={m.media_id} m={m} best={top?.media_id === m.media_id} />
             ))}
           </ul>
         ) : (

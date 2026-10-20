@@ -194,6 +194,28 @@ export async function askAboutImages(opts: { prompt: string; images: { mediaType
   return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
 }
 
+/** Look at a sequence of labelled pictures (slides, video frames) and answer about them. */
+export async function askAboutSequence(opts: { prompt: string; parts: ({ text: string } | { mediaType: string; data: string })[]; maxTokens?: number }) {
+  const res = await anthropic().messages.create({
+    model: MODEL,
+    max_tokens: opts.maxTokens ?? 2000,
+    messages: [
+      {
+        role: "user",
+        content: [
+          ...opts.parts.map((p) =>
+            "text" in p
+              ? { type: "text" as const, text: p.text }
+              : { type: "image" as const, source: { type: "base64" as const, media_type: p.mediaType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: p.data } }
+          ),
+          { type: "text" as const, text: opts.prompt },
+        ],
+      },
+    ],
+  });
+  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+}
+
 export async function ask(opts: { system?: string; messages: { role: "user" | "assistant"; content: string }[]; maxTokens?: number }) {
   const res = await anthropic().messages.create({
     model: MODEL,
