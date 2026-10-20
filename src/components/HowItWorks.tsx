@@ -36,7 +36,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Schedule",
     body: [
       "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any task set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
-      "Add something as Every week (pick the days) or Just once (pick a date), with a part of day, an optional exact time, and an optional project. A one-time task is the same task everywhere: tick it, edit it or delete it here, on Today, or in its project.",
+      "Add something as Just once (pick the day) or Every week (pick the days); anything that lands on today shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time task is the same task everywhere: tick it, edit it or delete it here, on Today, or in its project.",
       "Tap an item's words to edit it, or its time to change when it happens. If something is in your Google Calendar and also here (same name), it shows once: your item, at the calendar's time, with a link to the event. Tap a calendar event to open it in Google Calendar. Weekly items are added to Today each morning; \u201cAdd changes to today\u201d brings in edits right away.",
     ],
   },

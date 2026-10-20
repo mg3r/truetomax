@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { addToSchedule } from "@/app/actions";
 
 const PARTS = [
+  { value: "", label: "Anytime" },
   { value: "morning", label: "Morning" },
   { value: "afternoon", label: "Afternoon" },
   { value: "evening", label: "Evening" },
-  { value: "", label: "Anytime" },
 ];
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -30,10 +31,10 @@ export function ScheduleAdd({
 }) {
   const todayWd = week.find((d) => d.date === today)?.weekday ?? 1;
   const [title, setTitle] = useState("");
-  const [repeat, setRepeat] = useState(true);
+  const [repeat, setRepeat] = useState(false);
   const [days, setDays] = useState<number[]>([todayWd]);
   const [date, setDate] = useState(today);
-  const [part, setPart] = useState("morning");
+  const [part, setPart] = useState("");
   const [time, setTime] = useState("");
   const [project, setProject] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -57,8 +58,8 @@ export function ScheduleAdd({
       <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your week" aria-label="Add to your week" className="field" />
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="How often">
-        <Chip on={repeat} onClick={() => setRepeat(true)}>Every week</Chip>
         <Chip on={!repeat} onClick={() => setRepeat(false)}>Just once</Chip>
+        <Chip on={repeat} onClick={() => setRepeat(true)}>Every week</Chip>
       </div>
 
       <div className="flex flex-wrap gap-2" role="group" aria-label={repeat ? "Which days" : "Which day"}>
@@ -69,7 +70,7 @@ export function ScheduleAdd({
             </Chip>
           ) : (
             <Chip key={d.date} on={date === d.date} onClick={() => setDate(d.date)}>
-              {d.short} {d.num}
+              {d.short}
             </Chip>
           )
         )}
@@ -84,16 +85,19 @@ export function ScheduleAdd({
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Exact time (optional)" className="field ml-1 w-32" />
       </div>
 
-      {projects.length > 0 && (
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Project (optional)">
-          <Chip on={project === null} onClick={() => setProject(null)}>No project</Chip>
-          {projects.map((p) => (
-            <Chip key={p.id} on={project === p.id} onClick={() => setProject(p.id)}>
-              {p.title}
-            </Chip>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Project (optional)">
+        <Chip on={project === null} onClick={() => setProject(null)}>No project</Chip>
+        {projects.map((p) => (
+          <Chip key={p.id} on={project === p.id} onClick={() => setProject(p.id)}>
+            {p.title}
+          </Chip>
+        ))}
+        {!projects.length && (
+          <Link href="/projects" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
+            Start a project to add tasks to it
+          </Link>
+        )}
+      </div>
 
       <button className="btn" disabled={pending || !ready}>Add</button>
     </form>

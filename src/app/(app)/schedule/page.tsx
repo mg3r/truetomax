@@ -87,7 +87,7 @@ export default async function SchedulePage() {
       .in("status", ["todo", "done"])
       .neq("source", "rhythm")
       .order("created_at"),
-    supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
+    supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
   ]);
   const { data: checkRows } = await supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]).lte("day", week[6]);
   const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));

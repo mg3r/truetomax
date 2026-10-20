@@ -790,6 +790,11 @@ export async function addToSchedule(input: {
     const days = [...new Set(input.weekdays.filter((w) => Number.isInteger(w) && w >= 0 && w <= 6))];
     if (!days.length) return;
     await supabase.from("rhythm").insert(days.map((weekday) => ({ title, weekday, at_time, part_of_day, project_id, sort: 100 })));
+    // If it repeats on today's weekday, put it on Today now rather than waiting for tomorrow morning.
+    const day = today();
+    if (days.includes(new Date(day + "T12:00:00Z").getUTCDay())) {
+      await supabase.from("tasks").insert({ title, day, at_time, part_of_day, project_id, source: "rhythm" });
+    }
   } else {
     if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return;
     await supabase.from("tasks").insert({ title, day: input.date, at_time, part_of_day, project_id });
