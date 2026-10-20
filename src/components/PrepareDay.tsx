@@ -31,9 +31,22 @@ export function PrepareDay({ auto = true }: { auto?: boolean }) {
   }, []);
 
   if (!auto) {
+    // A small ↻ beside the date: a fresh affirmation, focus line, reading and question.
+    const label = state === "working" ? "Preparing a fresh take…" : state === "error" ? "Couldn't prepare today. Try again" : "Prepare today again";
     return (
-      <button className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink" disabled={state === "working"} onClick={() => run(true)}>
-        {state === "working" ? "Preparing a fresh take…" : state === "error" ? "Couldn't prepare today. Try again" : "Prepare today again"}
+      <button
+        type="button"
+        title={label}
+        aria-label={label}
+        disabled={state === "working"}
+        onClick={() => run(true)}
+        className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full align-middle text-muted hover:bg-surface hover:text-ink disabled:opacity-60"
+      >
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={state === "working" ? "animate-spin" : ""} aria-hidden="true">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" />
+          <path d="M13.5 2.5v3h-3" />
+        </svg>
+        {state === "error" && <span className="sr-only">{label}</span>}
       </button>
     );
   }

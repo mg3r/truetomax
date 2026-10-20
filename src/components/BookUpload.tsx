@@ -44,7 +44,7 @@ export function BookUpload({ existing }: { existing: { book: string; pages: numb
         const res = await saveBookPages(book.trim() || "The Creative Act", withText.slice(i, i + 40), i === 0);
         if (res.error) throw new Error(res.error);
       }
-      setStatus(`Added ${withText.length} pages. A page will open on Today each morning, starting tomorrow (or tap "Prepare today again").`);
+      setStatus(`Added ${withText.length} pages. A page will open on Today each morning, starting tomorrow (or tap ↻ next to the date on Today).`);
       router.refresh();
     } catch (e) {
       setStatus(null);

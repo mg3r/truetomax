@@ -132,7 +132,10 @@ export default async function TodayPage() {
       <section aria-label="Affirmation" className="relative isolate pt-10 pb-4">
         <div className="morning-form" aria-hidden="true" />
         <Mark size={30} className="mark-draw text-ink" />
-        <p className="mt-6 text-sm text-muted">{prettyDay(day)}</p>
+        <p className="mt-6 text-sm text-muted">
+          {prettyDay(day)}
+          <PrepareDay auto={false} />
+        </p>
         <h1 className="mt-2 max-w-[20ch] font-serif text-[2.15rem] leading-[1.12] font-normal tracking-[-0.02em] sm:text-[3rem]">{d.affirmation}</h1>
         {d.focus && <p className="mt-6 max-w-[52ch] text-muted">{d.focus}</p>}
       </section>
@@ -254,9 +257,6 @@ export default async function TodayPage() {
         <JournalForm key={entry.data?.id ?? "new"} id={entry.data?.id} prompt={d.question} day={day} initial={entry.data?.body ?? ""} />
       </section>
 
-      <footer className="flex justify-center">
-        <PrepareDay auto={false} />
-      </footer>
     </div>
   );
 }
