@@ -20,7 +20,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     body: [
       "Each morning the day is prepared for you: an affirmation, one line naming what would make today count (taken only from what you've set or uploaded yourself: your tasks, projects, schedule, rituals, practices, Vision, journal and docs, never from the partner's own ideas), a reading from your copy of The Creative Act, and a question drawn from it. The reading is a whole section: it starts where the section starts and runs until it ends, even across pages, so it never stops mid-thought. The affirmation and question are written in the partner's own words; the reading is your book.",
       "Today is for doing, not planning: you add things on the other tabs (Actions, Rituals, Practices, Schedule, Projects) and they show up here. Below the reading: your rituals to tick off; Practiced today, where you tap each practice you did; today's Calendar events in their own list; then your Actions for today (from Actions, Schedule and projects), timed ones in time order and the rest by part of day. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
-      "Your partner suggests up to three tasks a day, starting with Up next tasks from your projects. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
+      "Your partner suggests up to three actions a day, starting with Up next ones from your projects. Each comes with the project it serves and the practice it's a session of, when there is one. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
     ],
   },
@@ -28,7 +28,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Actions",
     body: [
       "Every action in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each task shows its day and project when it has one.",
-      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap an action to rename it, move it between Today, Up next and Later, or put it in a project. Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
+      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap an action to rename it, move it between Today, Up next and Later, put it in a project, or mark it as a session of one of your practices (finishing it then logs that practice). Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
       "Import a list: take a photo of a handwritten list, or upload a PDF, Word or text file. Each item is added to Up next, and anything crossed out or ticked is marked done, including tasks you already had.",
     ],
   },

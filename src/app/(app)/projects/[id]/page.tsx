@@ -21,10 +21,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   const [goals, open, done, suggested] = await Promise.all([
     supabase.from("goals").select("id, title, status").eq("project_id", id).neq("status", "dropped").order("created_at"),
-    supabase.from("tasks").select("id, title, status, day, source, reason").eq("project_id", id).eq("status", "todo").order("created_at"),
+    supabase.from("tasks").select("id, title, status, day, source, reason, practice_id").eq("project_id", id).eq("status", "todo").order("created_at"),
     supabase
       .from("tasks")
-      .select("id, title, status, day, source, reason, completed_at")
+      .select("id, title, status, day, source, reason, practice_id, completed_at")
       .eq("project_id", id)
       .eq("status", "done")
       .gte("completed_at", addDays(day, -14))
@@ -33,6 +33,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     supabase.from("tasks").select("id, title, reason").eq("project_id", id).eq("status", "suggested").is("day", null).order("created_at"),
   ]);
 
+  const practices = (await supabase.from("practices").select("id, name").order("sort").order("created_at")).data ?? [];
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
 
   return (
@@ -62,7 +63,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       <section aria-labelledby="tasks">
         <h2 id="tasks" className="section-title">tasks</h2>
         <div className="mt-3">
-          <TaskPanel projectId={id} tasks={tasks} today={day} />
+          <TaskPanel projectId={id} tasks={tasks} today={day} practices={practices} />
         </div>
       </section>
     </div>

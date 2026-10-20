@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { addProjectTask, moveTask, deleteTask, renameTask, setTaskStatus, setTaskProject, type Lane } from "@/app/actions";
+import { addProjectTask, moveTask, deleteTask, renameTask, setTaskStatus, setTaskProject, setTaskPractice, type Lane } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
 
 const UNDATED = "9999-12-31";
 
-export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null };
+export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; practice_id?: string | null };
 type Project = { id: string; title: string };
 type Group = "today" | "scheduled" | "next" | "later" | "done";
 
@@ -36,7 +36,19 @@ const dayLabel = (day: string, today: string) => {
 const pill = (on: boolean) => `rounded-full border px-2.5 py-1 text-xs ${on ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`;
 
 /** Every task in one running checklist: type and press Enter to keep adding, like a Notes list. */
-export function TaskList({ tasks: initial, projects, today, filter }: { tasks: ListTask[]; projects: Project[]; today: string; filter: string | null }) {
+export function TaskList({
+  tasks: initial,
+  projects,
+  practices = [],
+  today,
+  filter,
+}: {
+  tasks: ListTask[];
+  projects: Project[];
+  practices?: { id: string; name: string }[];
+  today: string;
+  filter: string | null;
+}) {
   const [tasks, setTasks] = useState(initial);
   const [open, setOpen] = useState<string | null>(null);
   const [, start] = useTransition();
@@ -45,6 +57,7 @@ export function TaskList({ tasks: initial, projects, today, filter }: { tasks: L
   }, [initial]);
 
   const projName = new Map(projects.map((p) => [p.id, p.title]));
+  const practiceName = new Map(practices.map((p) => [p.id, p.name]));
   const shown = filter ? tasks.filter((t) => t.project_id === filter) : tasks;
 
   function move(id: string, lane: Lane) {
@@ -64,7 +77,7 @@ export function TaskList({ tasks: initial, projects, today, filter }: { tasks: L
             <ul className="mt-1">
               {list.map((t) => {
                 const done = t.status === "done";
-                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ");
+                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.project_id ? projName.get(t.project_id) : null, t.practice_id ? practiceName.get(t.practice_id) : null].filter(Boolean).join(", ");
                 return (
                   <li key={t.id} className="group border-b border-line py-1.5">
                     <div className="flex items-start gap-3">
@@ -126,6 +139,24 @@ export function TaskList({ tasks: initial, projects, today, filter }: { tasks: L
                                 className={pill(t.project_id === p.id)}
                               >
                                 {p.title}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {practices.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1">
+                            {practices.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  const next = t.practice_id === p.id ? null : p.id;
+                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, practice_id: next } : x)));
+                                  start(() => setTaskPractice(t.id, next));
+                                }}
+                                className={pill(t.practice_id === p.id)}
+                              >
+                                {p.name}
                               </button>
                             ))}
                           </div>

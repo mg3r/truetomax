@@ -5,7 +5,7 @@ import { askJSON, buildContext } from "@/lib/ai";
 
 export const maxDuration = 120;
 
-type Step = { title: string; reason: string; category?: string; size?: string };
+type Step = { title: string; reason: string; category?: string; size?: string; practice?: string };
 const CATEGORIES = ["make", "practice", "share", "ask", "learn", "admin", "body", "rest"];
 
 /** Your partner proposes the next few steps for one project, from everything it knows. You keep the ones you want. */
@@ -18,10 +18,12 @@ export async function POST(req: Request) {
   const { data: p } = await supabase.from("projects").select("id, title, description, status").eq("id", projectId).maybeSingle();
   if (!p) return NextResponse.json({ error: "That project isn't there." }, { status: 404 });
 
-  const [goals, tasks] = await Promise.all([
+  const [goals, tasks, practiceRows] = await Promise.all([
     supabase.from("goals").select("title, status").eq("project_id", p.id).neq("status", "dropped"),
     supabase.from("tasks").select("title, status, day").eq("project_id", p.id).in("status", ["todo", "done", "skipped", "suggested"]).order("created_at", { ascending: false }).limit(60),
+    supabase.from("practices").select("id, name").order("sort"),
   ]);
+  const practices = practiceRows.data ?? [];
   const t = tasks.data ?? [];
   const list = (status: string) => t.filter((x) => x.status === status).map((x) => `- ${x.title}`).join("\n") || "(none)";
 
@@ -36,7 +38,7 @@ Done:\n${list("done")}
 Skipped or declined before (don't re-suggest):\n${[list("skipped"), list("suggested")].join("\n")}
 
 Propose the next 3 to 5 concrete steps for this project, in the order he should do them. Use everything you know: this project's goals and tasks, his vision, his own docs and uploads, his journal, his routine and crafts, what you've learned about how he works, and his socials. Each step should be doable in a sitting or two, with a clear finish line, and move the project toward something real: a finished piece, a shared post, an offer sent, a paying person. Don't repeat open tasks.
-Return [{"title": short imperative, "reason": one sentence on why this step now, grounded in what you know, "category": make/practice/share/ask/learn/admin/body/rest, "size": small/medium/large}]`,
+Return [{"title": short imperative, "reason": one sentence on why this step now, grounded in what you know, "category": make/practice/share/ask/learn/admin/body/rest, "size": small/medium/large, "practice": the exact name of the practice it's a session of, from this list, or omit [${practices.map((x) => x.name).join(", ")}]}]`,
       context
     );
     // Clear the previous round of unanswered suggestions for this project, then add the new ones.
@@ -47,6 +49,7 @@ Return [{"title": short imperative, "reason": one sentence on why this step now,
       category: CATEGORIES.includes(s.category ?? "") ? s.category : null,
       size: ["small", "medium", "large"].includes(s.size ?? "") ? s.size : null,
       project_id: p.id,
+      practice_id: practices.find((x) => x.name.toLowerCase() === (s.practice ?? "").trim().toLowerCase())?.id ?? null,
       status: "suggested",
       source: "partner",
       day: null,

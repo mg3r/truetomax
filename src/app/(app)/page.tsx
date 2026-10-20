@@ -89,7 +89,8 @@ export default async function TodayPage() {
   ].filter(Boolean);
 
   const projName = new Map((projects.data ?? []).map((p) => [p.id, p.title]));
-  const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null }));
+  const practiceNames = new Map(((await supabase.from("practices").select("id, name")).data ?? []).map((p) => [p.id, p.name]));
+  const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.practice_id ? practiceNames.get(t.practice_id) : null }));
   const suggestions = all.filter((t) => t.status === "suggested");
   // Rhythm first, then everything else; finished tasks sink to the bottom.
   const list = all

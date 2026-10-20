@@ -858,3 +858,10 @@ export async function updateJournal(id: string, body: string) {
   if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
   refresh();
 }
+
+/** Mark an action as a session of one of your practices, or clear it. */
+export async function setTaskPractice(id: string, practiceId: string | null) {
+  const supabase = await db();
+  await supabase.from("tasks").update({ practice_id: practiceId }).eq("id", id);
+  refresh();
+}

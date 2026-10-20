@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
+import { addProjectTask, moveTask, deleteTask, renameTask, setTaskPractice, type Lane } from "@/app/actions";
 import { Board, LANES, laneOf, type BoardTask } from "./Board";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
@@ -10,7 +10,7 @@ const VIEW_KEY = "ttm-project-view";
 const UNDATED = "9999-12-31";
 
 /** A project's tasks: one place to add (choosing where it goes), shown as a list or a board. */
-export function TaskPanel({ projectId, tasks: initial, today }: { projectId: string; tasks: BoardTask[]; today: string }) {
+export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: { projectId: string; tasks: BoardTask[]; today: string; practices?: { id: string; name: string }[] }) {
   const [tasks, setTasks] = useState(initial);
   const [view, setView] = useState<"list" | "board">("list");
   const [title, setTitle] = useState("");
@@ -138,6 +138,19 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                             {LANES.filter((x) => x.id !== l.id && x.id !== "done").map((x) => (
                               <button key={x.id} className="btn-quiet !px-2.5 !py-1 text-xs" onClick={() => move(t.id, x.id)}>
                                 Move to {x.title}
+                              </button>
+                            ))}
+                            {practices.map((p) => (
+                              <button
+                                key={p.id}
+                                className={`rounded-full border px-2.5 py-1 text-xs ${t.practice_id === p.id ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`}
+                                onClick={() => {
+                                  const next = t.practice_id === p.id ? null : p.id;
+                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, practice_id: next } : x)));
+                                  start(() => setTaskPractice(t.id, next));
+                                }}
+                              >
+                                {p.name}
                               </button>
                             ))}
                           </div>
