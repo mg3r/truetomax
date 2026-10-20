@@ -14,10 +14,12 @@ const UNDATED = "9999-12-31";
 type Kind = "actions" | "projects" | "visions";
 
 const PROMPTS: Record<Kind, string> = {
-  actions: `This is a to-do list (handwritten, typed, or a photo of paper). List every task on it, in order.
+  actions: `This is a to-do list (handwritten, typed, or a photo of paper, possibly sideways). List every task on it, in order.
+Sub-points under a task (indented, arrows like ↳, dashes or bullets beneath it) belong to that task: put them in its "notes", one per line, not as separate tasks.
 For each, say whether it is finished: crossed out, struck through, scribbled over, ticked, or checked off counts as done. Unmarked or an empty box is not done.
 Keep each task's wording, cleaned up only enough to read clearly. Skip headings, dates and doodles.
-Return only JSON: [{"title": "...", "done": true|false}]`,
+EXISTING
+Return only JSON: [{"title": "...", "done": true|false, "notes": "sub-points, one per line, or empty", "existing": number of the existing action it's already covered by, or null}]`,
   projects: `This is a list or write-up of projects (typed, handwritten, or a photo). Pull out each distinct project with everything written about it.
 Keep Max's own wording. Don't invent goals or tasks that aren't there.
 - "description": what it is and what it's for, from the text (empty if nothing is said).
@@ -65,20 +67,26 @@ export async function POST(req: Request) {
       text = doc.text;
     }
 
+    // For actions, the partner sees what's already there (titles and notes), so it recognizes the same thing in other words.
+    const existing = kind === "actions" ? ((await supabase.from("tasks").select("id, title, status, reason").in("status", ["todo", "done"]).neq("source", "rhythm").order("created_at", { ascending: false }).limit(150)).data ?? []) : [];
+    const existingText = existing.length
+      ? `His existing actions are below, numbered, with their notes. If a task on the list (or a sub-point) is already covered by one of them, by its title or anything in its notes, even in different words, set "existing" to that number instead of treating it as new. A sub-point that matches something in an existing action's notes is covered too.\n${existing.map((t, i) => `${i + 1}. ${t.title}${t.status === "done" ? " (done)" : ""}${t.reason ? `\n   notes: ${t.reason.replace(/\s+/g, " ").slice(0, 400)}` : ""}`).join("\n")}`
+      : "";
+    const prompt = PROMPTS[kind].replace("EXISTING", existingText);
     let reply: string;
     if (text.trim()) {
-      reply = await ask({ system: "You read Max's lists and notes precisely and keep his words.", messages: [{ role: "user", content: `${PROMPTS[kind]}\n\nThe text:\n"""\n${text.slice(0, 60000)}\n"""` }], maxTokens: 8000 });
+      reply = await ask({ system: "You read Max's lists and notes precisely and keep his words.", messages: [{ role: "user", content: `${prompt}\n\nThe text:\n"""\n${text.slice(0, 60000)}\n"""` }], maxTokens: 8000 });
     } else if (file instanceof File) {
       const type = file.type === "image/jpg" ? "image/jpeg" : file.type;
       if (!["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"].includes(type)) {
         return NextResponse.json({ error: "Use a photo (JPG or PNG), a PDF, or a Word or text file." }, { status: 400 });
       }
-      reply = await askAboutFile({ prompt: PROMPTS[kind], mediaType: type, data: Buffer.from(await file.arrayBuffer()).toString("base64"), maxTokens: 8000 });
+      reply = await askAboutFile({ prompt, mediaType: type, data: Buffer.from(await file.arrayBuffer()).toString("base64"), maxTokens: 8000 });
     } else {
       return NextResponse.json({ error: "Paste some text, a link, or choose a file first." }, { status: 400 });
     }
 
-    const result = kind === "actions" ? await importActions(supabase, parse(reply), projectId) : kind === "projects" ? await importProjects(supabase, parse(reply)) : await importVisions(supabase, parse(reply));
+    const result = kind === "actions" ? await importActions(supabase, parse(reply), projectId, existing) : kind === "projects" ? await importProjects(supabase, parse(reply)) : await importVisions(supabase, parse(reply));
     revalidatePath("/", "layout");
     return NextResponse.json(result);
   } catch (e) {
@@ -88,25 +96,28 @@ export async function POST(req: Request) {
 
 type SB = Awaited<ReturnType<typeof createClient>>;
 
-async function importActions(supabase: SB, items: { title: string; done: boolean }[], projectId: string | null) {
+type Existing = { id: string; title: string; status: string; reason: string | null };
+
+async function importActions(supabase: SB, items: { title: string; done: boolean; notes?: string; existing?: number | null }[], projectId: string | null, existing: Existing[]) {
   const list = items.filter((i) => typeof i?.title === "string" && i.title.trim());
   if (!list.length) return { note: "Couldn't find any actions in that." };
-  // Check titles and notes: something you already wrote into an action's notes isn't added again.
-  const { data: existing } = await supabase.from("tasks").select("id, title, status, reason").in("status", ["todo", "done"]).neq("source", "rhythm");
   const now = new Date().toISOString();
   let added = 0, finished = 0, already = 0;
   const fresh: Record<string, unknown>[] = [];
   for (const item of list) {
-    const match = (existing ?? []).find((t) => sameThing(t.title, item.title)) ?? (existing ?? []).find((t) => alreadyCovered(item.title, t));
+    // The partner's judgment first (same thing, other words), then a plain check of titles and notes as a backstop.
+    const byPartner = typeof item.existing === "number" ? existing[item.existing - 1] : undefined;
+    const match = byPartner ?? existing.find((t) => sameThing(t.title, item.title)) ?? existing.find((t) => alreadyCovered(item.title, t));
     if (match) {
-      // Crossing something off that lives only in another action's notes doesn't finish that action.
+      // Crossed off on paper finishes the action only when it's that action itself, not a line in its notes.
       if (item.done && match.status !== "done" && sameThing(match.title, item.title)) {
         await supabase.from("tasks").update({ status: "done", completed_at: now }).eq("id", match.id);
         finished++;
       } else already++;
       continue;
     }
-    fresh.push({ title: item.title.trim().slice(0, 300), project_id: projectId, day: item.done ? today() : UNDATED, status: item.done ? "done" : "todo", completed_at: item.done ? now : null });
+    const notes = typeof item.notes === "string" && item.notes.trim() ? item.notes.trim().split(/\n+/).map((l) => (l.trim().startsWith("-") ? l.trim() : `- ${l.trim()}`)).join("\n") : null;
+    fresh.push({ title: item.title.trim().slice(0, 300), reason: notes, project_id: projectId, day: item.done ? today() : UNDATED, status: item.done ? "done" : "todo", completed_at: item.done ? now : null });
     if (item.done) finished++;
     else added++;
   }
