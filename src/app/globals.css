@@ -181,7 +181,8 @@ textarea.field:focus {
 .morning-form {
   position: absolute;
   z-index: -1;
-  inset: -2.5rem -1.5rem auto auto;
+  /* Starts inside the page, with room for its slow turn, so the top is never clipped. */
+  inset: 0.75rem -1.5rem auto auto;
   width: min(78vw, 26rem);
   aspect-ratio: 1;
   background: var(--faint);
