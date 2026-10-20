@@ -740,3 +740,17 @@ export async function deleteConversation(id: string) {
   await supabase.from("conversations").delete().eq("id", id);
   revalidatePath("/partner");
 }
+
+/** Edit one schedule item in place: its words, its part of day, or its time. */
+export async function editRhythm(id: string, fields: { title?: string; part_of_day?: string | null; at_time?: string | null }) {
+  const patch: Record<string, unknown> = {};
+  if (fields.title !== undefined) {
+    if (!fields.title.trim()) return;
+    patch.title = fields.title.trim();
+  }
+  if (fields.part_of_day !== undefined) patch.part_of_day = partOfDay(fields.part_of_day);
+  if (fields.at_time !== undefined) patch.at_time = fields.at_time && /^\d{2}:\d{2}/.test(fields.at_time) ? fields.at_time : null;
+  const supabase = await db();
+  await supabase.from("rhythm").update(patch).eq("id", id);
+  refresh();
+}

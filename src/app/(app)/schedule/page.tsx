@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { today, weekdayOf, WEEKDAYS, addDays } from "@/lib/dates";
-import { addRhythm, updateRhythm, deleteRhythm, applyRoutineToday } from "@/app/actions";
+import { addRhythm, applyRoutineToday } from "@/app/actions";
+import { ScheduleItem } from "@/components/ScheduleItem";
 import { eventsForRange, timeLabel } from "@/lib/google";
-import { Select } from "@/components/Select";
-import { ActionButton, DeleteButton } from "@/components/DeleteButton";
+import { ActionButton } from "@/components/DeleteButton";
 import Link from "next/link";
 import { isDue, type Routine } from "@/lib/routine";
 
@@ -15,14 +15,8 @@ const PARTS = [
   { value: "evening", label: "Evening" },
   { value: "", label: "Anytime" },
 ];
-const PART_ORDER: Record<string, number> = { morning: 0, afternoon: 1, evening: 2 };
 
 type Item = { id: string; weekday: number; title: string; at_time: string | null; part_of_day?: string | null; sort: number };
-
-function clock(t: string) {
-  const [h, m] = t.split(":").map(Number);
-  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
-}
 
 /** Where an item sits in the day: its part of day, or the part its time falls in. */
 function partOf(r: Item) {
@@ -30,6 +24,34 @@ function partOf(r: Item) {
   if (!r.at_time) return null;
   const h = Number(r.at_time.slice(0, 2));
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+}
+
+const BUCKET: Record<string, number> = { morning: 1, afternoon: 2, evening: 3 };
+const partForTime = (t: string) => {
+  const h = Number(t.slice(0, 2));
+  return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+};
+const hhmm = (iso: string) =>
+  new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: process.env.APP_TIMEZONE || "America/New_York" }).format(new Date(iso));
+
+/** A Google Calendar event: shown in place, not editable here. */
+function EventLine({ label, title }: { label: string; title: string }) {
+  return (
+    <li className="flex items-center gap-3 py-2 text-muted">
+      <span className="w-24 shrink-0 text-sm tabular-nums">{label}</span>
+      <span className="min-w-0 flex-1">{title}</span>
+      <span className="shrink-0 text-xs">calendar</span>
+    </li>
+  );
+}
+
+function RoutineLine({ title }: { title: string }) {
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <span className="w-24 shrink-0 text-sm text-muted">routine</span>
+      <Link href="/routine" className="min-w-0 flex-1 hover:underline">{title}</Link>
+    </li>
+  );
 }
 
 export default async function SchedulePage() {
@@ -47,10 +69,6 @@ export default async function SchedulePage() {
   ]);
   const routines = (routineRows.data ?? []) as Routine[];
   const items = (rhythm.data ?? []) as Item[];
-  const ordered = (wd: number) =>
-    items
-      .filter((r) => r.weekday === wd)
-      .sort((a, b) => (PART_ORDER[partOf(a) ?? ""] ?? 3) - (PART_ORDER[partOf(b) ?? ""] ?? 3) || (a.at_time ?? "99").localeCompare(b.at_time ?? "99") || a.sort - b.sort);
 
   return (
     <div className="space-y-12">
@@ -95,12 +113,24 @@ export default async function SchedulePage() {
       <section aria-label="Your week" className="space-y-9">
         {week.map((d) => {
           const wd = weekdayOf(d);
-          const list = ordered(wd);
-          const cal = events?.[d] ?? [];
-          const weekly = routines.filter((r) => r.cadence === "weekly" && isDue(r, d));
           const isToday = d === day;
+          const list = items.filter((r) => r.weekday === wd);
+          const weekly = routines.filter((r) => r.cadence === "weekly" && isDue(r, d));
+          // One list for the day: anytime first, then morning, afternoon, evening. Within each, untimed first, then by time.
+          const entries = [
+            ...(events?.[d] ?? []).map((e) => {
+              const at = e.allDay ? null : hhmm(e.start!);
+              return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} /> };
+            }),
+            ...weekly.map((r) => ({ key: `w-${r.id}`, bucket: 0, at: null, sort: r.sort, node: <RoutineLine key={`w-${r.id}`} title={r.title} /> })),
+            ...list.map((r) => {
+              const part = partOf(r);
+              return { key: r.id, bucket: part ? BUCKET[part] : 0, at: r.at_time?.slice(0, 5) ?? null, sort: r.sort, node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} /> };
+            }),
+          ].sort((x, y) => x.bucket - y.bucket || (x.at ?? "").localeCompare(y.at ?? "") || x.sort - y.sort);
+
           return (
-            <div key={d} className={isToday ? "border-l border-ink pl-4" : ""}>
+            <div key={d}>
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="font-serif text-xl">
                   {WEEKDAYS[wd]}
@@ -112,57 +142,10 @@ export default async function SchedulePage() {
                   </ActionButton>
                 )}
               </div>
-
-              {cal.length > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {cal.map((e) => (
-                    <li key={e.id} className="flex items-baseline gap-3 text-sm text-muted">
-                      <span className="w-24 shrink-0 tabular-nums">{e.allDay ? "all day" : timeLabel(e.start!)}</span>
-                      <span className="min-w-0 flex-1">{e.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {weekly.length > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {weekly.map((r) => (
-                    <li key={r.id} className="flex items-baseline gap-3 text-sm">
-                      <span className="w-24 shrink-0 text-muted">routine</span>
-                      <Link href="/routine" className="min-w-0 flex-1 hover:underline">{r.title}</Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {list.length ? (
-                <ul className="mt-2 divide-y divide-line">
-                  {list.map((r) => {
-                    const part = partOf(r);
-                    return (
-                      <li key={r.id} className="py-2.5">
-                        <details>
-                          <summary className="flex cursor-pointer list-none items-baseline gap-3">
-                            <span className="w-24 shrink-0 text-sm text-muted tabular-nums">
-                              {r.at_time ? clock(r.at_time) : part ? part : "anytime"}
-                            </span>
-                            <span className="min-w-0 flex-1">{r.title}</span>
-                          </summary>
-                          <form action={updateRhythm} className="mt-3 flex flex-wrap items-end gap-3 sm:pl-[6.75rem]">
-                            <input type="hidden" name="id" value={r.id} />
-                            <input name="title" defaultValue={r.title} aria-label="What" className="field min-w-[12rem] flex-1" />
-                            <Select name="part_of_day" label="Part of day" className="w-32" defaultValue={r.part_of_day ?? ""} options={PARTS} />
-                            <input name="at_time" type="time" defaultValue={r.at_time?.slice(0, 5) ?? ""} aria-label="Time (optional)" className="field w-32" />
-                            <button className="btn-quiet">Save</button>
-                            <DeleteButton action={deleteRhythm.bind(null, r.id)} label="Remove" />
-                          </form>
-                        </details>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {entries.length ? (
+                <ul className="mt-2 divide-y divide-line">{entries.map((e) => e.node)}</ul>
               ) : (
-                !cal.length && !weekly.length && <p className="mt-2 text-sm text-muted">Open day.</p>
+                <p className="mt-2 text-sm text-muted">Open day.</p>
               )}
             </div>
           );
