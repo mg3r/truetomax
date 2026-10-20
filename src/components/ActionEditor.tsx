@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useClickAway } from "@/lib/useClickAway";
 import { editTask, moveTask, setTaskProjects, setTaskPractices, type Lane } from "@/app/actions";
 import { PickMany } from "./PickMany";
 import { projectsOf, practicesOf } from "@/lib/links";
@@ -42,7 +43,7 @@ export function laneOfAction(a: EditableAction, today: string): Lane {
 /**
  * The one editor for an action, wherever you tap it (Actions, a project, Schedule):
  * when in the day, where it sits (Today / Up next / Later), its projects, and its practices (as many as fit).
- * Every change saves right away; `onChange` lets the list update instantly.
+ * Every change saves right away; `onChange` lets the list update instantly. Tap outside to close.
  */
 export function ActionEditor({
   action,
@@ -62,6 +63,13 @@ export function ActionEditor({
   showWhere?: boolean;
 }) {
   const [, start] = useTransition();
+  // Tap anywhere outside the action's row (or press Escape) to close; every change has already saved.
+  const box = useRef<HTMLDivElement>(null);
+  const row = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    row.current = box.current?.closest("li") ?? box.current;
+  }, []);
+  useClickAway(row, true, onClose);
   const [time, setTime] = useState(action.at_time?.slice(0, 5) ?? "");
   const lane = laneOfAction(action, today);
   const dated = action.day && action.day !== UNDATED && action.day > today;
@@ -72,7 +80,7 @@ export function ActionEditor({
   };
 
   return (
-    <div className="mt-2 space-y-1.5">
+    <div ref={box} className="mt-2 space-y-1.5">
       <div className="flex flex-wrap items-center gap-1" role="group" aria-label="When in the day">
         {PARTS.map((p) => {
           const on = (action.part_of_day ?? null) === p.value && !action.at_time;
@@ -133,9 +141,6 @@ export function ActionEditor({
         }}
       />
 
-      <button type="button" onClick={onClose} className="text-xs text-muted hover:text-ink">
-        Done
-      </button>
     </div>
   );
 }

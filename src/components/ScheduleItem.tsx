@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useClickAway } from "@/lib/useClickAway";
 import { editRhythm, deleteRhythm, editTask, deleteTask, setTaskStatus, editRoutineWhen } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { ActionEditor, type EditableAction } from "./ActionEditor";
@@ -58,6 +59,8 @@ export function ScheduleItem({
   const [part, setPart] = useState(item.part_of_day);
   const [time, setTime] = useState(item.at_time?.slice(0, 5) ?? "");
   const [open, setOpen] = useState(false);
+  const rowRef = useRef<HTMLLIElement>(null);
+  useClickAway(rowRef, open, () => setOpen(false));
   const [isDone, setDone] = useState(done);
   const [, start] = useTransition();
 
@@ -77,7 +80,7 @@ export function ScheduleItem({
   const removable = kind !== "routine";
 
   return (
-    <li className="group py-2">
+    <li ref={rowRef} className="group py-2">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -188,9 +191,6 @@ export function ScheduleItem({
             aria-label="Exact time (optional)"
             className={`rounded-full border bg-transparent px-2.5 py-0.5 ${time ? "border-ink text-ink" : "border-line text-muted"}`}
           />
-          <button type="button" onClick={() => setOpen(false)} className="ml-1 text-muted hover:text-ink">
-            Done
-          </button>
         </div>
       )}
     </li>

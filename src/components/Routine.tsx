@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { useClickAway } from "@/lib/useClickAway";
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -288,6 +289,8 @@ export function RoutineEditor({
 
 function RoutineRow({ r, week, doneOn, links, today }: { r: Routine; week: string[]; doneOn: Set<string>; links: Link[] | null; today: string }) {
   const [open, setOpen] = useState(false);
+  const rowRef = useRef<HTMLLIElement | null>(null);
+  useClickAway(rowRef, open, () => setOpen(false));
   const [days, setDays] = useOptimistic(new Set(week.filter((d) => doneOn.has(`${r.id}:${d}`))), (cur: Set<string>, { d, on }: { d: string; on: boolean }) => {
     const n = new Set(cur);
     if (on) n.add(d);
@@ -304,7 +307,10 @@ function RoutineRow({ r, week, doneOn, links, today }: { r: Routine; week: strin
 
   return (
     <li
-      ref={setNodeRef}
+      ref={(el) => {
+        setNodeRef(el);
+        rowRef.current = el;
+      }}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`group relative bg-bg py-3 ${isDragging ? "z-10 opacity-80" : ""}`}
     >
@@ -415,11 +421,6 @@ function RoutineRow({ r, week, doneOn, links, today }: { r: Routine; week: strin
           </>
         )}
       </div>
-      )}
-      {open && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
-          <button type="button" onClick={() => setOpen(false)} className="ml-auto text-muted hover:text-ink">Done</button>
-        </div>
       )}
     </li>
   );
