@@ -35,11 +35,15 @@ const hhmm = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: process.env.APP_TIMEZONE || "America/New_York" }).format(new Date(iso));
 
 /** A Google Calendar event: shown in place, not editable here. */
-function EventLine({ label, title }: { label: string; title: string }) {
+function EventLine({ label, title, link }: { label: string; title: string; link?: string }) {
   return (
     <li className="flex items-center gap-3 py-2 text-muted">
       <span className="w-24 shrink-0 text-sm tabular-nums">{label}</span>
-      <span className="min-w-0 flex-1">{title}</span>
+      {link ? (
+        <a href={link} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 hover:text-ink hover:underline">{title}</a>
+      ) : (
+        <span className="min-w-0 flex-1">{title}</span>
+      )}
       <span className="shrink-0 text-xs">calendar</span>
     </li>
   );
@@ -120,7 +124,7 @@ export default async function SchedulePage() {
           const entries = [
             ...(events?.[d] ?? []).map((e) => {
               const at = e.allDay ? null : hhmm(e.start!);
-              return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} /> };
+              return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
             }),
             ...weekly.map((r) => ({ key: `w-${r.id}`, bucket: 0, at: null, sort: r.sort, node: <RoutineLine key={`w-${r.id}`} title={r.title} /> })),
             ...list.map((r) => {

@@ -159,10 +159,10 @@ export default async function TodayPage() {
         </div>
         {(allDay.length > 0 || schedule.length > 0) && (
           <ul className="mt-2 divide-y divide-line">
-            {allDay.map((e) => <EventRow key={e.id} time="all day" title={e.title} calendar={e.calendar} location={e.location} />)}
+            {allDay.map((e) => <EventRow key={e.id} time="all day" title={e.title} calendar={e.calendar} location={e.location} link={e.link} />)}
             {schedule.map((s) =>
               s.event ? (
-                <EventRow key={s.key} time={timeLabel(s.event.start!)} title={s.event.title} calendar={s.event.calendar} location={s.event.location} />
+                <EventRow key={s.key} time={timeLabel(s.event.start!)} title={s.event.title} calendar={s.event.calendar} location={s.event.location} link={s.event.link} />
               ) : (
                 <TaskRow key={s.key} task={s.task!} today={day} showTime />
               )

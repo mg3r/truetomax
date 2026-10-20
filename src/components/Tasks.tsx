@@ -23,13 +23,17 @@ export function clock(t: string) {
 }
 
 /** A calendar event in the day's list: same rhythm as a task row, but nothing to check off. */
-export function EventRow({ time, title, calendar, location }: { time: string; title: string; calendar: string; location?: string }) {
+export function EventRow({ time, title, calendar, location, link }: { time: string; title: string; calendar: string; location?: string; link?: string }) {
   return (
     <li className="flex items-start gap-3 py-2.5">
       <span className="w-16 shrink-0 pt-0.5 text-sm text-muted tabular-nums">{time}</span>
       <span aria-hidden="true" className="mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full bg-muted" />
       <div className="min-w-0 flex-1">
-        <p>{title}</p>
+        {link ? (
+          <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline">{title}</a>
+        ) : (
+          <p>{title}</p>
+        )}
         <p className="text-xs text-muted">{[calendar, location].filter(Boolean).join(", ")}</p>
       </div>
     </li>
