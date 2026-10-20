@@ -11,7 +11,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Rhythm, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
       "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },
@@ -33,6 +33,14 @@ const SECTIONS: { title: string; body: string[] }[] = [
     ],
   },
   {
+    title: "Schedule",
+    body: [
+      "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any action set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
+      "Add something as Just once (pick the day) or Every week (pick the days); anything that lands on today shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time action is the same action everywhere: tick it, edit it or delete it here, on Today, or in its project.",
+      "Tap an item's words to edit it, or its time to change when it happens. If something is in your Google Calendar and also here (same name), it shows once: your item, at the calendar's time, with a link to the event. Tap a calendar event to open it in Google Calendar. Weekly items are added to Today each morning; \u201cAdd changes to today\u201d brings in edits right away.",
+    ],
+  },
+  {
     title: "Rhythm",
     body: [
       "Everything you do on repeat, in one list. Each item is a ritual or a practice. Rituals tend you and keep you grounded: reading, breathwork, yoga, meditation, movement. Practices are what you make and offer: DJing, pottery, cooking, baking, fermenting. They can serve a project or simply be worth doing for their own sake.",
@@ -40,14 +48,6 @@ const SECTIONS: { title: string; body: string[] }[] = [
       "Each item shows one quiet line, like \u201cpractice \u00b7 weekly \u00b7 2\u00d7 \u00b7 any day\u201d. Tap that line (or the name) to open its controls: ritual or practice, how often, the count and days; Done closes them. Drag the dots to reorder, \u00d7 to remove. The seven small dots on each item show the last week.",
       "Practices connect to your actions: mark an action (on Actions or in a project) as a session of a practice, or pick a practice when adding to your Schedule, and finishing it ticks the practice off. On Schedule, rituals and practices get their own lines: each day has Daily rituals and Daily practices at the top and Nightly rituals and Nightly practices in the evening (\u201c2 of 4\u201d); weekly ones get Weekly rituals and Weekly practices lines for the week, and ones set to specific days show on those days marked ritual or practice, where you can tap the time to give them a part of day or an exact time; and days you did a weekly practice show as \u201cpracticed\u201d.",
       "Your partner sees what's holding and what's slipping, which practices are alive and which have gone quiet, and builds suggestions and sharing ideas around them.",
-    ],
-  },
-  {
-    title: "Schedule",
-    body: [
-      "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any action set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
-      "Add something as Just once (pick the day) or Every week (pick the days); anything that lands on today shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time action is the same action everywhere: tick it, edit it or delete it here, on Today, or in its project.",
-      "Tap an item's words to edit it, or its time to change when it happens. If something is in your Google Calendar and also here (same name), it shows once: your item, at the calendar's time, with a link to the event. Tap a calendar event to open it in Google Calendar. Weekly items are added to Today each morning; \u201cAdd changes to today\u201d brings in edits right away.",
     ],
   },
   {
