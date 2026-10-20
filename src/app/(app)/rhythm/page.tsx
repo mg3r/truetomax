@@ -10,10 +10,9 @@ export default async function RhythmPage() {
   const day = today();
   const week = Array.from({ length: 7 }, (_, i) => addDays(day, i - 6)); // the last seven days, ending today
 
-  const [routines, checks, projects, links] = await Promise.all([
+  const [routines, checks, links] = await Promise.all([
     supabase.from("routines").select("*").order("sort").order("created_at"),
     supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]),
-    supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
     supabase.from("routine_projects").select("routine_id, project_id"),
   ]);
 
@@ -27,7 +26,6 @@ export default async function RhythmPage() {
           items={(routines.data ?? []) as Routine[]}
           checks={checks.data ?? []}
           week={week}
-          projects={projects.data ?? []}
           links={links.error ? null : links.data ?? []}
         />
       )}

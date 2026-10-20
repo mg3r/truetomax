@@ -4,12 +4,11 @@ import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { addRoutine, updateRoutine, deleteRoutine, checkRoutine, reorderRoutines, setRoutineKind, linkRoutineProject } from "@/app/actions";
+import { addRoutine, updateRoutine, deleteRoutine, checkRoutine, reorderRoutines, setRoutineKind } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
 import { CADENCES, DAY_LETTERS, timesOf, isPinned, isPractice, type Routine } from "@/lib/routine";
 
-type Project = { id: string; title: string };
 type Link = { routine_id: string; project_id: string };
 const KINDS = [
   { value: "ritual", label: "Ritual" },
@@ -70,15 +69,14 @@ const byWhen = (list: Routine[]) =>
     return px - py || (x.at_time ?? "").localeCompare(y.at_time ?? "") || a.sort - b.sort;
   });
 
-/** One quiet line describing a Rhythm item: "practice · weekly · 2× · any day · for Dinner series". */
-function summaryOf(r: Routine, kinds: boolean, feeds: string[]) {
+/** One quiet line describing a Rhythm item: "practice · weekly · 2× · any day". */
+function summaryOf(r: Routine, kinds: boolean) {
   const when = whenOf(r);
   return [
     kinds ? (isPractice(r) ? "practice" : "ritual") : null,
     r.cadence,
     r.cadence === "weekly" ? (isPinned(r) ? r.weekdays.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DAY_LETTERS[d]).join(", ") : `${timesOf(r)}× · any day`) : null,
     when,
-    feeds.length ? `for ${feeds.join(", ")}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -159,14 +157,12 @@ export function RoutineEditor({
   items: initial,
   checks,
   week,
-  projects = [],
   links = null,
 }: {
   items: Routine[];
   checks: { routine_id: string; day: string }[];
   week: string[];
-  projects?: Project[];
-  /** Which projects each practice feeds; null until the Rhythm migration runs. */
+  /** Present once the Rhythm migration has run (turns on ritual / practice). */
   links?: Link[] | null;
 }) {
   const [items, setItems] = useState(initial);
@@ -261,7 +257,7 @@ export function RoutineEditor({
               <SortableContext items={list.map((r) => r.id)} strategy={verticalListSortingStrategy}>
                 <ul className="mt-2 divide-y divide-line">
                   {list.map((r) => (
-                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} projects={projects} links={links} />
+                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} links={links} />
                   ))}
                 </ul>
               </SortableContext>
@@ -275,9 +271,8 @@ export function RoutineEditor({
   );
 }
 
-function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: string[]; doneOn: Set<string>; projects: Project[]; links: Link[] | null }) {
+function RoutineRow({ r, week, doneOn, links }: { r: Routine; week: string[]; doneOn: Set<string>; links: Link[] | null }) {
   const [open, setOpen] = useState(false);
-  const [feeds, setFeeds] = useOptimistic((links ?? []).filter((l) => l.routine_id === r.id).map((l) => l.project_id));
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: r.id });
   const [title, setTitle] = useState(r.title);
   const [, start] = useTransition();
@@ -322,7 +317,7 @@ function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: st
       </div>
       {!open ? (
         <button type="button" onClick={() => setOpen(true)} className="mt-0.5 block pl-7 text-left text-xs text-muted hover:text-ink">
-          {summaryOf(r, links !== null, projects.filter((p) => feeds.includes(p.id)).map((p) => p.title))}
+          {summaryOf(r, links !== null)}
         </button>
       ) : (
       <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
@@ -382,34 +377,6 @@ function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: st
       )}
       {open && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
-          {isPractice(r) && links !== null && (
-            <>
-          <span className="mr-1 text-muted">For</span>
-          {projects.length ? (
-            projects.map((p) => {
-              const on = feeds.includes(p.id);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() =>
-                    start(async () => {
-                      setFeeds(on ? feeds.filter((x) => x !== p.id) : [...feeds, p.id]);
-                      await linkRoutineProject(r.id, p.id, !on);
-                    })
-                  }
-                  className={`rounded-full border px-1.5 py-0.5 ${on ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
-                >
-                  {p.title}
-                </button>
-              );
-            })
-          ) : (
-            <span className="text-muted">no projects yet</span>
-          )}
-            </>
-          )}
           <button type="button" onClick={() => setOpen(false)} className="ml-auto text-muted hover:text-ink">Done</button>
         </div>
       )}
