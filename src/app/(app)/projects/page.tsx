@@ -1,113 +1,48 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
-import { saveProject, deleteProject, acceptProject } from "@/app/actions";
-import { ActionButton } from "@/components/DeleteButton";
-import { RemoveX } from "@/components/RemoveX";
 import { AskPartner } from "@/components/AskPartner";
-import { ProjectCard, type CardData } from "@/components/PlanParts";
+import { ProjectBoard, type BoardProject } from "@/components/ProjectBoard";
+import { NewProject } from "@/components/NewProject";
 
 export const dynamic = "force-dynamic";
 
-type Task = { project_id: string; title: string; day: string | null; status: string };
+type Task = { project_id: string; title: string; day: string | null };
 
 export default async function ProjectsPage() {
   const supabase = await createClient();
   const day = today();
 
   const [projects, tasks] = await Promise.all([
-    supabase.from("projects").select("id, title, status, status_note").order("created_at"),
-    supabase.from("tasks").select("project_id, title, day, status").not("project_id", "is", null).eq("status", "todo").order("day", { ascending: true, nullsFirst: false }),
+    supabase.from("projects").select("id, title, status").order("created_at"),
+    supabase.from("tasks").select("project_id, title, day").not("project_id", "is", null).eq("status", "todo").order("day", { ascending: true, nullsFirst: false }),
   ]);
 
   const all = (tasks.data ?? []) as Task[];
-  const active = (projects.data ?? []).filter((p) => p.status === "active");
-  const resting = (projects.data ?? []).filter((p) => p.status !== "active");
-
-  const card = (p: (typeof active)[number], i: number): CardData => {
+  const board: BoardProject[] = (projects.data ?? []).map((p) => {
     const todo = all.filter((t) => t.project_id === p.id);
-    return {
-      id: p.id,
-      title: p.title,
-      next: (todo.find((t) => t.day && t.day <= day) ?? todo.find((t) => t.day) ?? todo[0])?.title ?? null,
-      counts: {
-        today: todo.filter((t) => t.day && t.day <= day).length,
-        next: todo.filter((t) => t.day && t.day > day).length,
-        later: todo.filter((t) => !t.day).length,
-      },
-      shape: i % 2 ? "pebble-alt" : "pebble",
-    };
-  };
+    const next = todo.find((t) => t.day && t.day <= day) ?? todo.find((t) => t.day === "9999-12-31") ?? todo.find((t) => t.day) ?? todo[0];
+    return { id: p.id, title: p.title, status: p.status, next: next?.title ?? null, open: todo.length };
+  });
 
   return (
-    <div className="space-y-12">
-      <div>
-        <h1 className="font-serif text-3xl">Projects</h1>
+    <div className="space-y-8">
+      <h1 className="font-serif text-3xl">Projects</h1>
+
+      <div className="space-y-3">
+        <NewProject />
+        <AskPartner
+          endpoint="/api/ideas"
+          body={{ kind: "venture" }}
+          label="Suggest ideas"
+          busyLabel="Thinking it through…"
+          className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink"
+        />
       </div>
 
-      <details id="new" className="pebble scroll-mt-6 border border-dashed border-line p-5" open={!active.length}>
-        <summary className="cursor-pointer font-medium">Start a project</summary>
-        <form action={saveProject} className="mt-4 space-y-4">
-          <input name="title" required placeholder="Project name" aria-label="Project name" className="field" />
-          <textarea name="description" rows={3} placeholder="What it is and what it's for" aria-label="Description" className="field" />
-          <button className="btn">Create project</button>
-        </form>
-      </details>
-
-      {active.length > 0 ? (
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {active.map((p, i) => (
-            <li key={p.id} className="relative">
-              <ProjectCard p={card(p, i)} />
-              <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} className="absolute top-3 right-3" />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-muted">No projects yet. Start one above.</p>
-      )}
-
-
-      {[
-        { id: "review", title: "in review", list: resting.filter((p) => p.status === "review") },
-        { id: "backlog", title: "backlog", list: resting.filter((p) => p.status === "paused") },
-        { id: "done", title: "done", list: resting.filter((p) => p.status === "done" || p.status === "eliminated") },
-      ]
-        .filter((g) => g.list.length || g.id === "review")
-        .map((g) => (
-          <section key={g.id} aria-label={g.title}>
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="section-title">{g.title}</h2>
-              {g.id === "review" && (
-                <AskPartner
-                  endpoint="/api/ideas"
-                  body={{ kind: "venture" }}
-                  label="Suggest ideas"
-                  busyLabel="Thinking it through…"
-                  className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink"
-                />
-              )}
-            </div>
-            {g.id === "review" && !g.list.length && (
-              <p className="mt-1 text-sm text-muted">Ideas for work and income land here. Accept one to start it, or delete it and it won&rsquo;t be suggested again.</p>
-            )}
-            <ul className="mt-2 divide-y divide-line">
-              {g.list.map((p) => (
-                <li key={p.id} className="flex items-center gap-2">
-                  <Link href={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-baseline justify-between gap-4 py-2.5">
-                    <span className={g.id === "review" ? "" : "text-muted"}>{p.title}{p.status_note ? <span className="text-sm text-muted">: {p.status_note}</span> : null}</span>
-                  </Link>
-                  {g.id === "review" && (
-                    <ActionButton action={acceptProject.bind(null, p.id)} className="btn-quiet !px-3 !py-1 text-xs">
-                      Accept
-                    </ActionButton>
-                  )}
-                  <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+      {/* The board is wider than the page's reading column on a computer, so four columns have room. */}
+      <div className="lg:relative lg:left-1/2 lg:w-[min(68rem,calc(100vw-18rem))] lg:-translate-x-1/2">
+        <ProjectBoard projects={board} />
+      </div>
     </div>
   );
 }

@@ -115,7 +115,6 @@ function Section({ v, first, autoFocus, onDelete }: { v: Vision; first: boolean;
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onBlur={() => body !== v.body && save({ body })}
-        placeholder="Write it the way you'd tell a friend. What does it look like when it's real?"
         aria-label={`${title} text`}
         className="mt-2 w-full resize-none overflow-hidden bg-transparent font-serif text-[1.08rem] leading-relaxed placeholder:text-muted focus:outline-none"
       />
