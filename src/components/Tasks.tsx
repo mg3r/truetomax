@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useRef, useState } from "react";
+import { namesOf, projectsOf, practicesOf } from "@/lib/links";
 import { setTaskStatus, deleteTask, addTask } from "@/app/actions";
 import { Select } from "./Select";
 import { RemoveX } from "./RemoveX";
@@ -84,16 +85,16 @@ export function SuggestionRow({
   projects = [],
   practices = [],
 }: {
-  task: Task & { project_id?: string | null; routine_id?: string | null };
+  task: Task & { project_id?: string | null; routine_id?: string | null; project_ids?: string[] | null; routine_ids?: string[] | null };
   today?: string;
   projects?: { id: string; title: string }[];
   practices?: { id: string; name: string }[];
 }) {
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
-  const [a, setA] = useState<EditableAction>({ id: task.id, day: task.day, status: task.status, part_of_day: task.part_of_day ?? null, at_time: task.at_time ?? null, project_id: task.project_id ?? null, routine_id: task.routine_id ?? null });
-  const project = projects.find((p) => p.id === a.project_id)?.title ?? (a.project_id === task.project_id ? task.project : null);
-  const practice = practices.find((p) => p.id === a.routine_id)?.name ?? (a.routine_id === task.routine_id ? task.practice : null);
+  const [a, setA] = useState<EditableAction>({ id: task.id, day: task.day, status: task.status, part_of_day: task.part_of_day ?? null, at_time: task.at_time ?? null, project_id: task.project_id ?? null, routine_id: task.routine_id ?? null, project_ids: task.project_ids ?? null, routine_ids: task.routine_ids ?? null });
+  const project = projects.length ? namesOf(projectsOf(a), new Map(projects.map((p) => [p.id, p.title]))) : task.project;
+  const practice = practices.length ? namesOf(practicesOf(a), new Map(practices.map((p) => [p.id, p.name]))) : task.practice;
   const when = a.at_time ? clock(a.at_time) : a.part_of_day;
   return (
     <li className={`py-3 ${pending ? "opacity-50" : ""}`}>

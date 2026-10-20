@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { projectsOf } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 import { today as todayOf, addDays } from "@/lib/dates";
 import { TaskList, type ListTask } from "@/components/TaskList";
-import { TaskImport } from "@/components/TaskImport";
+import { ImportDialog } from "@/components/ImportDialog";
 import { loadPractices } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
@@ -31,13 +32,13 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
   const projects = allProjects.filter((p) => p.status === "active");
   const hidden = new Set(allProjects.filter((p) => p.status !== "active").map((p) => p.id));
   const filter = projects.some((p) => p.id === project) ? project! : null;
-  const tasks = ([...(open.data ?? []), ...(done.data ?? [])] as ListTask[]).filter((t) => !t.project_id || !hidden.has(t.project_id));
+  const tasks = ([...(open.data ?? []), ...(done.data ?? [])] as ListTask[]).filter((t) => { const ps = projectsOf(t); return !ps.length || ps.some((p) => !hidden.has(p)); });
 
   return (
     <div className="space-y-8">
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="font-serif text-3xl">Actions</h1>
-        <TaskImport projectId={filter} />
+        <ImportDialog kind="actions" projectId={filter} />
       </div>
 
       {projects.length > 0 && (

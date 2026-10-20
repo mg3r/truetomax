@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { PickOne } from "./PickOne";
+import { PickMany } from "./PickMany";
 import { addToSchedule } from "@/app/actions";
 
 const PARTS = [
@@ -36,8 +36,8 @@ export function ScheduleAdd({
   const [date, setDate] = useState(today);
   const [part, setPart] = useState("");
   const [time, setTime] = useState("");
-  const [project, setProject] = useState<string | null>(null);
-  const [practice, setPractice] = useState<string | null>(null);
+  const [project, setProject] = useState<string[]>([]);
+  const [practice, setPractice] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
 
@@ -48,12 +48,12 @@ export function ScheduleAdd({
       onSubmit={(e) => {
         e.preventDefault();
         if (!ready) return;
-        const input = { title, repeat: false, weekdays: [], date, part_of_day: part || null, at_time: time || null, project_id: project, practice_id: practice };
+        const input = { title, repeat: false, weekdays: [], date, part_of_day: part || null, at_time: time || null, project_ids: project, practice_ids: practice };
         start(async () => {
           await addToSchedule(input);
           setTitle("");
           setTime("");
-          setPractice(null);
+          setPractice([]);
           setOpen(false);
         });
       }}
@@ -84,20 +84,20 @@ export function ScheduleAdd({
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Exact time (optional)" className="field ml-1 w-32" />
       </div>
 
-      <PickOne
+      <PickMany
         label="Practice"
         size="md"
         options={practices}
         value={practice}
-        onChange={(id) => {
-          setPractice(id);
+        onChange={(next) => {
+          setPractice(next);
           // Picking a practice names the item for you, unless you've typed something.
-          const name = practices.find((p) => p.id === id)?.name;
-          if (id && name && !title.trim()) setTitle(name);
+          const name = practices.find((p) => p.id === next[0])?.name;
+          if (name && !title.trim()) setTitle(name);
         }}
       />
       {projects.length > 0 ? (
-        <PickOne label="Project" size="md" options={projects.map((p) => ({ id: p.id, name: p.title }))} value={project} onChange={setProject} />
+        <PickMany label="Project" size="md" options={projects.map((p) => ({ id: p.id, name: p.title }))} value={project} onChange={setProject} />
       ) : (
         <Link href="/projects" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
           Start a project to add actions to it

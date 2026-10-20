@@ -28,6 +28,9 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Side navigation on computer (grouped: your day / building / reflecting and sharing, Profile at the bottom); phone keeps a bottom bar of four plus Menu
 - [x] Profile → Docs: how everything works, with a section list to jump around
 
+- [x] Import pop-up for actions, projects (with goals and actions) and visions (as sections): paste text, Google Doc link, file, or photo
+- [x] An action can belong to several projects and several practices (migration 0022)
+- [x] Project ideas below the board
 - [x] Tasks page: one running checklist of every task, Notes-style adding, move and project in place, import a list from a photo/PDF/doc with crossed-off items marked done
 - [x] Today is for doing only (no add field); Up next has no day and is offered in the partner's suggestions
 - [x] Partner suggests next steps inside each project

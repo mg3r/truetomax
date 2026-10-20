@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { namesOf, projectsOf, practicesOf } from "@/lib/links";
 import { addProjectTask, deleteTask, renameTask, setTaskStatus, type Lane } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { ActionEditor } from "./ActionEditor";
@@ -8,7 +9,7 @@ import { LineEdit } from "./LineEdit";
 
 const UNDATED = "9999-12-31";
 
-export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null; part_of_day?: string | null; at_time?: string | null };
+export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null; project_ids?: string[] | null; routine_ids?: string[] | null; part_of_day?: string | null; at_time?: string | null };
 type Project = { id: string; title: string };
 type Group = "today" | "scheduled" | "next" | "later" | "done";
 
@@ -62,7 +63,7 @@ export function TaskList({
 
   const projName = new Map(projects.map((p) => [p.id, p.title]));
   const practiceName = new Map(practices.map((p) => [p.id, p.name]));
-  const shown = filter ? tasks.filter((t) => t.project_id === filter) : tasks;
+  const shown = filter ? tasks.filter((t) => projectsOf(t).includes(filter)) : tasks;
 
 
 
@@ -77,7 +78,7 @@ export function TaskList({
             <ul className="mt-1">
               {list.map((t) => {
                 const done = t.status === "done";
-                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.at_time ? clock(t.at_time) : t.part_of_day, t.project_id ? projName.get(t.project_id) : null, t.routine_id ? practiceName.get(t.routine_id) : null].filter(Boolean).join(", ");
+                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.at_time ? clock(t.at_time) : t.part_of_day, namesOf(projectsOf(t), projName), namesOf(practicesOf(t), practiceName)].filter(Boolean).join(", ");
                 return (
                   <li key={t.id} className="group border-b border-line py-1.5">
                     <div className="flex items-start gap-3">
@@ -134,7 +135,7 @@ export function TaskList({
               {g.addTo && (
                 <QuickAdd
                   onAdd={(title) => {
-                    const temp = { id: `new-${crypto.randomUUID()}`, title, status: "todo", day: g.addTo === "later" ? null : g.addTo === "today" ? today : UNDATED, project_id: filter };
+                    const temp = { id: `new-${crypto.randomUUID()}`, title, status: "todo", day: g.addTo === "later" ? null : g.addTo === "today" ? today : UNDATED, project_id: filter, project_ids: filter ? [filter] : [] };
                     setTasks((ts) => [...ts, temp]);
                     start(() => addProjectTask(filter, title, g.addTo!));
                   }}

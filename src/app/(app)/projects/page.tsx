@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
 import { IdeaList } from "@/components/IdeaList";
 import { ProjectBoard, type BoardProject } from "@/components/ProjectBoard";
+import { ImportDialog } from "@/components/ImportDialog";
 import { SidePanel } from "@/components/SidePanel";
 import { ProjectDetail } from "@/components/ProjectDetail";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -31,14 +32,17 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-8">
-      <h1 className="font-serif text-3xl">Projects</h1>
-
-      <IdeaList kind="venture" ideas={ideaRows.data ?? []} />
+      <div className="flex items-baseline justify-between gap-4">
+        <h1 className="font-serif text-3xl">Projects</h1>
+        <ImportDialog kind="projects" />
+      </div>
 
       {/* The board is wider than the page's reading column on a computer, so four columns have room. */}
       <div className="lg:relative lg:left-1/2 lg:w-[min(68rem,calc(100vw-18rem))] lg:-translate-x-1/2">
         <ProjectBoard projects={board} selected={selected ?? null} />
       </div>
+
+      <IdeaList kind="venture" ideas={ideaRows.data ?? []} />
 
       {selected && board.some((b) => b.id === selected) && (
         <SidePanel

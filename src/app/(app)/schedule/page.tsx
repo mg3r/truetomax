@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { inActiveWork, namesOf, projectsOf, practicesOf } from "@/lib/links";
 import { today, weekdayOf, WEEKDAYS, addDays } from "@/lib/dates";
 import { ScheduleAdd } from "@/components/ScheduleAdd";
 import { ScheduleItem } from "@/components/ScheduleItem";
@@ -97,7 +98,7 @@ export default async function SchedulePage() {
   const projName = new Map(projects.map((p) => [p.id, p.title]));
   // Only actions from projects you've accepted (In progress) appear on your Schedule.
   const activeIds = new Set(projects.map((p) => p.id));
-  const tasks = (taskRows.data ?? []).filter((t) => !t.project_id || activeIds.has(t.project_id));
+  const tasks = (taskRows.data ?? []).filter((t) => inActiveWork(t, activeIds));
   const routines = (routineRows.data ?? []) as Routine[];
   const dailyItems = routines.filter((r) => r.cadence === "daily");
   const nightlyItems = routines.filter((r) => r.cadence === "nightly");
@@ -246,10 +247,10 @@ export default async function SchedulePage() {
                     key={`t-${t.id}`}
                     kind="task"
                     item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
-                    project={[t.routine_id ? practiceName.get(t.routine_id) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ") || null}
+                    project={[namesOf(practicesOf(t), practiceName), namesOf(projectsOf(t), projName)].filter(Boolean).join(", ") || null}
                     done={t.status === "done"}
                     calendar={cal}
-                    action={{ id: t.id, day: t.day, status: t.status, part_of_day: t.part_of_day ?? null, at_time: t.at_time ?? null, project_id: t.project_id ?? null, routine_id: t.routine_id ?? null }}
+                    action={{ id: t.id, day: t.day, status: t.status, part_of_day: t.part_of_day ?? null, at_time: t.at_time ?? null, project_id: t.project_id ?? null, routine_id: t.routine_id ?? null, project_ids: t.project_ids ?? null, routine_ids: t.routine_ids ?? null }}
                     today={day}
                     projects={projects}
                     practices={practices}

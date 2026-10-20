@@ -1,5 +1,6 @@
 "use server";
 
+import { projectsOf, practicesOf } from "@/lib/links";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
@@ -68,10 +69,11 @@ export async function setTaskStatus(id: string, status: "todo" | "done" | "skipp
     .eq("id", id);
 
   // An action that's a session of a practice ticks that practice off in your Rhythm when it's done.
-  if (before.routine_id && (status === "done" || before.status === "done")) {
+  const practiceIds = practicesOf(before);
+  if (practiceIds.length && (status === "done" || before.status === "done")) {
     const day = before.day && before.day !== UNDATED ? before.day : today();
-    if (status === "done") await supabase.from("routine_checks").upsert({ routine_id: before.routine_id, day }, { onConflict: "routine_id,day" });
-    else await supabase.from("routine_checks").delete().eq("routine_id", before.routine_id).eq("day", day);
+    if (status === "done") await supabase.from("routine_checks").upsert(practiceIds.map((routine_id) => ({ routine_id, day })), { onConflict: "routine_id,day" });
+    else await supabase.from("routine_checks").delete().in("routine_id", practiceIds).eq("day", day);
   }
 
   // Finishing an action that puts your work in front of people (or asks to be paid) counts as a move; undoing it takes it back.
@@ -716,12 +718,9 @@ export async function checkRoutine(id: string, day: string, done: boolean) {
   if (done) await supabase.from("routine_checks").upsert({ routine_id: id, day }, { onConflict: "routine_id,day" });
   else await supabase.from("routine_checks").delete().eq("routine_id", id).eq("day", day);
   // Anything on that day's actions for this practice is done (or not) along with it.
-  await supabase
-    .from("tasks")
-    .update(done ? { status: "done", completed_at: new Date().toISOString() } : { status: "todo", completed_at: null })
-    .eq("routine_id", id)
-    .eq("day", day)
-    .in("status", done ? ["todo"] : ["done"]);
+  const patch = done ? { status: "done", completed_at: new Date().toISOString() } : { status: "todo", completed_at: null };
+  const { error } = await supabase.from("tasks").update(patch).or(`routine_id.eq.${id},routine_ids.cs.{${id}}`).eq("day", day).in("status", done ? ["todo"] : ["done"]);
+  if (error) await supabase.from("tasks").update(patch).eq("routine_id", id).eq("day", day).in("status", done ? ["todo"] : ["done"]);
   refresh();
 }
 
@@ -729,9 +728,16 @@ export async function checkRoutine(id: string, day: string, done: boolean) {
 export async function deleteProject(id: string, goBack = false) {
   const supabase = await db();
   // Gone means gone: the partner's memory of it goes too.
-  const { data: tasks } = await supabase.from("tasks").select("id").eq("project_id", id);
-  const taskIds = (tasks ?? []).map((t) => t.id);
-  await supabase.from("tasks").delete().eq("project_id", id);
+  // Its actions go with it, unless they're in another project too; then they just leave this one.
+  let found = await supabase.from("tasks").select("*").or(`project_id.eq.${id},project_ids.cs.{${id}}`);
+  if (found.error) found = await supabase.from("tasks").select("*").eq("project_id", id);
+  const shared = (found.data ?? []).filter((t) => projectsOf(t).some((p) => p !== id));
+  const taskIds = (found.data ?? []).filter((t) => !shared.includes(t)).map((t) => t.id);
+  for (const t of shared) {
+    const rest = projectsOf(t).filter((p) => p !== id);
+    await supabase.from("tasks").update({ project_id: rest[0], project_ids: rest }).eq("id", t.id);
+  }
+  if (taskIds.length) await supabase.from("tasks").delete().in("id", taskIds);
   // A project that started as one of the partner's ideas: deleting it is eliminating that idea, so it isn't suggested again.
   const { data: proj } = await supabase.from("projects").select("title").eq("id", id).maybeSingle();
   await supabase.from("ideas").update({ status: "eliminated", status_note: "deleted from projects" }).eq("project_id", id);
@@ -792,16 +798,19 @@ export async function addToSchedule(input: {
   date: string | null;
   part_of_day: string | null;
   at_time: string | null;
-  project_id: string | null;
-  practice_id?: string | null;
+  project_ids: string[];
+  practice_ids?: string[];
 }) {
   const title = input.title.trim();
   if (!title) return;
   const supabase = await db();
   const part_of_day = partOfDay(input.part_of_day);
   const at_time = input.at_time && /^\d{2}:\d{2}/.test(input.at_time) ? input.at_time : null;
-  const project_id = input.project_id || null;
-  const practice = input.practice_id ? { routine_id: input.practice_id } : {};
+  const projectList = ids(input.project_ids ?? []);
+  const practiceList = ids(input.practice_ids ?? []);
+  const project_id = projectList[0] ?? null;
+  const practice = practiceList[0] ? { routine_id: practiceList[0] } : {};
+  const many = { project_ids: projectList, routine_ids: practiceList };
   if (input.repeat) {
     const days = [...new Set(input.weekdays.filter((w) => Number.isInteger(w) && w >= 0 && w <= 6))];
     if (!days.length) return;
@@ -813,17 +822,23 @@ export async function addToSchedule(input: {
     }
   } else {
     if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return;
-    await supabase.from("tasks").insert({ title, day: input.date, at_time, part_of_day, project_id, ...practice });
+    const row: Record<string, unknown> = { title, day: input.date, at_time, part_of_day, project_id, ...practice };
+    const { error } = await supabase.from("tasks").insert({ ...row, ...many });
+    if (error) await supabase.from("tasks").insert(row);
   }
   refresh();
 }
 
 
 
-/** Put a task in a project, or take it out of one. */
-export async function setTaskProject(id: string, projectId: string | null) {
+const ids = (list: string[]) => [...new Set(list.filter((x) => /^[0-9a-f-]{36}$/i.test(x)))];
+
+/** Put an action in any number of projects (or none). The first is kept as its main one. */
+export async function setTaskProjects(id: string, projectIds: string[]) {
   const supabase = await db();
-  await supabase.from("tasks").update({ project_id: projectId }).eq("id", id);
+  const list = ids(projectIds);
+  const { error } = await supabase.from("tasks").update({ project_id: list[0] ?? null, project_ids: list }).eq("id", id);
+  if (error) await supabase.from("tasks").update({ project_id: list[0] ?? null }).eq("id", id);
   refresh();
 }
 
@@ -835,10 +850,12 @@ export async function answerProjectSuggestion(id: string, keep: boolean) {
   refresh();
 }
 
-/** Mark an action as a session of one of your practices, or clear it. */
-export async function setTaskPractice(id: string, practiceId: string | null) {
+/** Mark an action as a session of any of your practices (or none). */
+export async function setTaskPractices(id: string, practiceIds: string[]) {
   const supabase = await db();
-  await supabase.from("tasks").update({ routine_id: practiceId }).eq("id", id);
+  const list = ids(practiceIds);
+  const { error } = await supabase.from("tasks").update({ routine_id: list[0] ?? null, routine_ids: list }).eq("id", id);
+  if (error) await supabase.from("tasks").update({ routine_id: list[0] ?? null }).eq("id", id);
   refresh();
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { editTask, moveTask, setTaskProject, setTaskPractice, type Lane } from "@/app/actions";
-import { PickOne } from "./PickOne";
+import { editTask, moveTask, setTaskProjects, setTaskPractices, type Lane } from "@/app/actions";
+import { PickMany } from "./PickMany";
+import { projectsOf, practicesOf } from "@/lib/links";
 
 const UNDATED = "9999-12-31";
 
@@ -14,6 +15,8 @@ export type EditableAction = {
   at_time?: string | null;
   project_id?: string | null;
   routine_id?: string | null;
+  project_ids?: string[] | null;
+  routine_ids?: string[] | null;
 };
 
 const PARTS = [
@@ -38,7 +41,7 @@ export function laneOfAction(a: EditableAction, today: string): Lane {
 
 /**
  * The one editor for an action, wherever you tap it (Actions, a project, Schedule):
- * when in the day, where it sits (Today / Up next / Later), its project, and its practice.
+ * when in the day, where it sits (Today / Up next / Later), its projects, and its practices (as many as fit).
  * Every change saves right away; `onChange` lets the list update instantly.
  */
 export function ActionEditor({
@@ -111,22 +114,22 @@ export function ActionEditor({
         </div>
       )}
 
-      <PickOne
+      <PickMany
         label="Project"
         options={projects.map((p) => ({ id: p.id, name: p.title }))}
-        value={action.project_id}
+        value={projectsOf(action)}
         onChange={(next) => {
-          onChange({ project_id: next });
-          start(() => setTaskProject(action.id, next));
+          onChange({ project_id: next[0] ?? null, project_ids: next });
+          start(() => setTaskProjects(action.id, next));
         }}
       />
-      <PickOne
+      <PickMany
         label="Practice"
         options={practices}
-        value={action.routine_id}
+        value={practicesOf(action)}
         onChange={(next) => {
-          onChange({ routine_id: next });
-          start(() => setTaskPractice(action.id, next));
+          onChange({ routine_id: next[0] ?? null, routine_ids: next });
+          start(() => setTaskPractices(action.id, next));
         }}
       />
 

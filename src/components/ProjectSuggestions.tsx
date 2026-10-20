@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { namesOf, practicesOf } from "@/lib/links";
 import { ActionEditor, type EditableAction } from "./ActionEditor";
 import { answerProjectSuggestion } from "@/app/actions";
 import { AskPartner } from "./AskPartner";
 
-type Step = { id: string; title: string; reason: string | null; day: string | null; status: string; part_of_day?: string | null; at_time?: string | null; project_id?: string | null; routine_id?: string | null };
+type Step = { id: string; title: string; reason: string | null; day: string | null; status: string; part_of_day?: string | null; at_time?: string | null; project_id?: string | null; routine_id?: string | null; project_ids?: string[] | null; routine_ids?: string[] | null };
 
 /** Next steps your partner suggests for this project. Keep one and it goes to Up next. */
 export function ProjectSuggestions({ projectId, steps, today, practices = [] }: { projectId: string; steps: Step[]; today: string; practices?: { id: string; name: string }[] }) {
@@ -45,8 +46,8 @@ export function ProjectSuggestions({ projectId, steps, today, practices = [] }: 
 /** A suggested step: tap its title to set when, and which practice it's a session of, before keeping it. */
 function StepDetails({ s, today, practices }: { s: Step; today: string; practices: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
-  const [a, setA] = useState<EditableAction>({ id: s.id, day: s.day, status: s.status, part_of_day: s.part_of_day ?? null, at_time: s.at_time ?? null, project_id: s.project_id ?? null, routine_id: s.routine_id ?? null });
-  const practice = practices.find((p) => p.id === a.routine_id)?.name;
+  const [a, setA] = useState<EditableAction>({ id: s.id, day: s.day, status: s.status, part_of_day: s.part_of_day ?? null, at_time: s.at_time ?? null, project_id: s.project_id ?? null, routine_id: s.routine_id ?? null, project_ids: s.project_ids ?? null, routine_ids: s.routine_ids ?? null });
+  const practice = namesOf(practicesOf(a), new Map(practices.map((p) => [p.id, p.name])));
   const when = a.at_time ? a.at_time.slice(0, 5) : a.part_of_day;
   return (
     <>

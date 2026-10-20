@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { VisionDoc } from "@/components/VisionList";
+import { ImportDialog } from "@/components/ImportDialog";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,10 @@ export default async function VisionPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="font-serif text-3xl">Vision</h1>
+      <div className="flex items-baseline justify-between gap-4">
+        <h1 className="font-serif text-3xl">Vision</h1>
+        <ImportDialog kind="visions" />
+      </div>
       <VisionDoc visions={visions} />
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { inActiveWork, namesOf, projectsOf, practicesOf } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 import { today, prettyDay, addDays, weekdayOf } from "@/lib/dates";
 import { MovesLine, type Move } from "@/components/Moves";
@@ -80,7 +81,7 @@ export default async function TodayPage() {
   const practiceNames = new Map(practiceList.map((p) => [p.id, p.name]));
   // Actions from projects that aren't In progress (in review, backlog, done) stay inside their project.
   const activeIds = new Set((projects.data ?? []).map((p) => p.id));
-  const all: Task[] = (tasks.data ?? []).filter((t) => !t.project_id || activeIds.has(t.project_id)).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.routine_id ? practiceNames.get(t.routine_id) : null }));
+  const all: Task[] = (tasks.data ?? []).filter((t) => inActiveWork(t, activeIds)).map((t) => ({ ...t, project: namesOf(projectsOf(t), projName), practice: namesOf(practicesOf(t), practiceNames) }));
   const suggestions = all.filter((t) => t.status === "suggested");
   // Rhythm first, then everything else; finished tasks sink to the bottom.
   const list = all

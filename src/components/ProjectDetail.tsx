@@ -16,11 +16,14 @@ export async function ProjectDetail({ id }: { id: string }) {
   const { data: p } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   if (!p) return <p className="text-muted">This project isn&rsquo;t here anymore.</p>;
 
+  // An action can be in several projects; before the 0022 setup runs, only the single link exists.
+  const probe = await supabase.from("tasks").select("id").contains("project_ids", [id]).limit(1);
+  const inThis = () => (probe.error ? supabase.from("tasks").select("*").eq("project_id", id) : supabase.from("tasks").select("*").or(`project_id.eq.${id},project_ids.cs.{${id}}`));
   const [goals, open, done, suggested, practices] = await Promise.all([
     supabase.from("goals").select("id, title, status").eq("project_id", id).neq("status", "dropped").order("created_at"),
-    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "todo").order("created_at"),
-    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "done").gte("completed_at", addDays(day, -14)).order("completed_at", { ascending: false }).limit(20),
-    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "suggested").is("day", null).order("created_at"),
+    inThis().eq("status", "todo").order("created_at"),
+    inThis().eq("status", "done").gte("completed_at", addDays(day, -14)).order("completed_at", { ascending: false }).limit(20),
+    inThis().eq("status", "suggested").is("day", null).order("created_at"),
     loadPractices(supabase),
   ]);
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
