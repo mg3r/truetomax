@@ -710,3 +710,18 @@ export async function checkRoutine(id: string, day: string, done: boolean) {
   else await supabase.from("routine_checks").delete().eq("routine_id", id).eq("day", day);
   refresh();
 }
+
+/* Deleting a project takes its tasks and goals with it. */
+export async function deleteProject(id: string, goBack = false) {
+  const supabase = await db();
+  await supabase.from("tasks").delete().eq("project_id", id);
+  await supabase.from("projects").delete().eq("id", id);
+  refresh();
+  if (goBack) redirect("/projects");
+}
+
+export async function reorderRoutines(ids: string[]) {
+  const supabase = await db();
+  await Promise.all(ids.map((id, i) => supabase.from("routines").update({ sort: i }).eq("id", id)));
+  refresh();
+}

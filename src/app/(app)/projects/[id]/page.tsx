@@ -5,6 +5,8 @@ import { today, addDays } from "@/lib/dates";
 import { type BoardTask } from "@/components/Board";
 import { TaskPanel } from "@/components/TaskPanel";
 import { ProjectHeader, GoalList } from "@/components/ProjectEditor";
+import { DeleteButton } from "@/components/DeleteButton";
+import { deleteProject } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   return (
     <div className="space-y-12">
       <div>
-        <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
+        <div className="flex items-baseline justify-between">
+          <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
+          <DeleteButton action={deleteProject.bind(null, id, true)} label="Delete project" confirm={`Delete "${p.title}" and its tasks?`} />
+        </div>
         <ProjectHeader p={p} />
       </div>
 

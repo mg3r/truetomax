@@ -13,6 +13,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { moveTask, deleteTask, type Lane } from "@/app/actions";
+import { RemoveX } from "./RemoveX";
 
 export type BoardTask = { id: string; title: string; status: string; day: string | null; source: string; reason: string | null };
 
@@ -148,14 +149,15 @@ function Card({ task, lane, today, onMove, onDelete }: { task: BoardTask; lane: 
 
   return (
     <li ref={setNodeRef} className={isDragging ? "opacity-30" : ""}>
-      <div className="pebble border border-line bg-bg">
+      <div className="pebble relative border border-line bg-bg">
+        <RemoveX label={`Delete ${task.title}`} action={() => onDelete(task.id)} className="absolute top-1 right-1 !h-6 !w-6" />
         <button
           type="button"
           {...listeners}
           {...attributes}
           aria-label={`${task.title}. Drag to move, or press to see options.`}
           onClick={() => setOpen((o) => !o)}
-          className="w-full cursor-grab touch-manipulation px-3 py-2.5 text-left active:cursor-grabbing"
+          className="w-full cursor-grab touch-manipulation py-2.5 pr-8 pl-3 text-left active:cursor-grabbing"
         >
           <span className={`block text-[0.95rem] leading-snug ${lane === "done" ? "text-muted line-through decoration-line" : ""}`}>{task.title}</span>
           {meta.length > 0 && <span className="mt-1 block text-xs text-muted">{meta.join(", ")}</span>}
@@ -167,9 +169,6 @@ function Card({ task, lane, today, onMove, onDelete }: { task: BoardTask; lane: 
                 {l.id === "done" ? "Mark done" : `Move to ${l.title}`}
               </button>
             ))}
-            <button type="button" className="ml-auto text-xs text-muted hover:text-danger" onClick={() => onDelete(task.id)}>
-              Delete
-            </button>
           </div>
         )}
       </div>

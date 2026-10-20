@@ -1,7 +1,11 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
-import { addRoutine, updateRoutine, deleteRoutine, checkRoutine } from "@/app/actions";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { addRoutine, updateRoutine, deleteRoutine, checkRoutine, reorderRoutines } from "@/app/actions";
+import { RemoveX } from "./RemoveX";
 import { CADENCES, DAY_LETTERS, type Routine } from "@/lib/routine";
 
 // Monday first, like the Schedule.
@@ -82,7 +86,19 @@ export function RoutineToday({ items, checked, day }: { items: Routine[]; checke
 }
 
 /** The routine itself: add at the top, edit in place, and see the last week at a glance. */
-export function RoutineEditor({ items, checks, week }: { items: Routine[]; checks: { routine_id: string; day: string }[]; week: string[] }) {
+export function RoutineEditor({ items: initial, checks, week }: { items: Routine[]; checks: { routine_id: string; day: string }[]; week: string[] }) {
+  const [items, setItems] = useState(initial);
+  useEffect(() => setItems(initial), [initial]);
+  const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 4 } }), useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }));
+  const onDragEnd = (e: DragEndEvent) => {
+    if (!e.over || e.active.id === e.over.id) return;
+    const from = items.findIndex((r) => r.id === e.active.id);
+    const to = items.findIndex((r) => r.id === e.over!.id);
+    if (items[from]?.cadence !== items[to]?.cadence) return;
+    const next = arrayMove(items, from, to);
+    setItems(next);
+    start(() => reorderRoutines(next.map((r) => r.id)));
+  };
   const [title, setTitle] = useState("");
   const [cadence, setCadence] = useState<Routine["cadence"]>("daily");
   const [days, setDays] = useState<number[]>([]);
@@ -131,11 +147,15 @@ export function RoutineEditor({ items, checks, week }: { items: Routine[]; check
         return (
           <section key={c.value} aria-label={c.label}>
             <h2 className="font-serif text-xl">{c.label}</h2>
-            <ul className="mt-2 divide-y divide-line">
-              {list.map((r) => (
-                <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} />
-              ))}
-            </ul>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={list.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+                <ul className="mt-2 divide-y divide-line">
+                  {list.map((r) => (
+                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           </section>
         );
       })}
@@ -146,6 +166,7 @@ export function RoutineEditor({ items, checks, week }: { items: Routine[]; check
 }
 
 function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: Set<string> }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: r.id });
   const [title, setTitle] = useState(r.title);
   const [, start] = useTransition();
   const toggleDay = (d: number) => {
@@ -154,8 +175,23 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
   };
 
   return (
-    <li className="group py-3">
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`group relative bg-bg py-3 ${isDragging ? "z-10 opacity-80" : ""}`}
+    >
       <div className="flex items-center gap-3">
+        <button
+          ref={setActivatorNodeRef}
+          {...listeners}
+          {...attributes}
+          aria-label={`Drag to reorder ${r.title}`}
+          className="-ml-1 cursor-grab touch-none p-1 text-muted hover:text-ink active:cursor-grabbing"
+        >
+          <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true">
+            {[3, 8, 13].map((y) => [2.5, 7.5].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.2" fill="currentColor" />))}
+          </svg>
+        </button>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -170,15 +206,9 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
             <span key={d} aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${doneOn.has(`${r.id}:${d}`) ? "bg-ink" : "bg-line"}`} />
           ))}
         </span>
-        <button
-          aria-label={`Remove "${r.title}"`}
-          onClick={() => confirm(`Remove "${r.title}" from your routine?`) && start(() => deleteRoutine(r.id))}
-          className="text-sm text-muted opacity-100 hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-        >
-          ×
-        </button>
+        <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your routine?`} action={() => deleteRoutine(r.id)} />
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+      <div className="mt-1.5 flex flex-wrap gap-1.5 pl-7 text-xs">
         {CADENCES.map((c) => (
           <button
             key={c.value}

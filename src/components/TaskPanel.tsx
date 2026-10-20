@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
 import { Board, LANES, laneOf, type BoardTask } from "./Board";
+import { RemoveX } from "./RemoveX";
 
 const VIEW_KEY = "ttm-project-view";
 
@@ -98,12 +99,12 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                   {mine.map((t) => {
                     const done = t.status === "done";
                     return (
-                      <li key={t.id} className="py-2.5">
-                        <div className="flex items-start gap-3">
+                      <li key={t.id} className="py-1.5">
+                        <div className="flex items-center gap-3">
                           <button
                             aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
                             onClick={() => move(t.id, done ? "today" : "done")}
-                            className={`ring-check mt-0.5 grid h-5 w-5 shrink-0 place-items-center border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
+                            className={`ring-check grid h-5 w-5 shrink-0 place-items-center border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
                           >
                             {done && (
                               <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
@@ -120,6 +121,13 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                               start(() => renameTask(t.id, title));
                             }}
                           />
+                          <RemoveX
+                            label={`Delete ${t.title}`}
+                            action={() => {
+                              setTasks((ts) => ts.filter((x) => x.id !== t.id));
+                              return deleteTask(t.id);
+                            }}
+                          />
                         </div>
                         {open === t.id && (
                           <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
@@ -128,15 +136,6 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                                 Move to {x.title}
                               </button>
                             ))}
-                            <button
-                              className="ml-auto text-xs text-muted hover:text-danger"
-                              onClick={() => {
-                                setTasks((ts) => ts.filter((x) => x.id !== t.id));
-                                start(() => deleteTask(t.id));
-                              }}
-                            >
-                              Delete
-                            </button>
                           </div>
                         )}
                       </li>

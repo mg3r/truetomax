@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
-import { saveProject } from "@/app/actions";
+import { saveProject, deleteProject } from "@/app/actions";
+import { RemoveX } from "@/components/RemoveX";
 import { ProjectCard, type CardData } from "@/components/PlanParts";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,10 @@ export default async function ProjectsPage() {
       {active.length > 0 ? (
         <ul className="grid gap-4 sm:grid-cols-2">
           {active.map((p, i) => (
-            <li key={p.id}><ProjectCard p={card(p, i)} /></li>
+            <li key={p.id} className="relative">
+              <ProjectCard p={card(p, i)} />
+              <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its tasks?`} className="absolute top-3 right-3" />
+            </li>
           ))}
         </ul>
       ) : (
@@ -68,11 +72,12 @@ export default async function ProjectsPage() {
           <h2 id="resting" className="section-title">paused, finished and eliminated</h2>
           <ul className="mt-2 divide-y divide-line">
             {resting.map((p) => (
-              <li key={p.id}>
-                <Link href={`/projects/${p.id}`} className="flex items-baseline justify-between gap-4 py-2.5">
+              <li key={p.id} className="flex items-center gap-2">
+                <Link href={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-baseline justify-between gap-4 py-2.5">
                   <span className="text-muted">{p.title}{p.status_note ? <span className="text-sm">: {p.status_note}</span> : null}</span>
                   <span className="shrink-0 text-xs text-muted">{p.status === "done" ? "finished" : p.status}</span>
                 </Link>
+                <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its tasks?`} />
               </li>
             ))}
           </ul>

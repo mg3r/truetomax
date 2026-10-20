@@ -12,7 +12,7 @@ export type CardData = {
 export function ProjectCard({ p }: { p: CardData }) {
   return (
     <Link href={`/projects/${p.id}`} className={`${p.shape} flex h-full flex-col bg-surface p-5 transition-shadow hover:shadow-[0_0_0_1px_var(--ink)]`}>
-      <h3 className="font-serif text-xl leading-tight">{p.title}</h3>
+      <h3 className="pr-7 font-serif text-xl leading-tight">{p.title}</h3>
       <div className="mt-4">
         <p className="text-xs text-muted">Next step</p>
         <p className="mt-0.5 leading-snug">{p.next ?? <span className="text-muted">None yet. Open it and add one.</span>}</p>

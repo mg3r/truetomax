@@ -3,6 +3,7 @@
 import { useTransition, useRef } from "react";
 import { setTaskStatus, deleteTask, addTask } from "@/app/actions";
 import { Select } from "./Select";
+import { RemoveX } from "./RemoveX";
 
 export type Task = {
   id: string;
@@ -62,16 +63,11 @@ export function TaskRow({ task, today, showProject = true, aside, showTime = fal
       </div>
       {aside && <div className="shrink-0 self-center">{aside}</div>}
       {!done && (
-        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-          <button className="text-xs text-muted hover:text-ink" onClick={() => start(() => setTaskStatus(task.id, "skipped"))}>
-            Skip
-          </button>
-          <span className="text-xs text-line">/</span>
-          <button className="text-xs text-muted hover:text-danger" onClick={() => start(() => deleteTask(task.id))}>
-            Delete
-          </button>
-        </div>
+        <button className="self-center text-xs text-muted hover:text-ink sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100" onClick={() => start(() => setTaskStatus(task.id, "skipped"))}>
+          Skip
+        </button>
       )}
+      <RemoveX label={`Delete ${task.title}`} action={() => deleteTask(task.id)} className="-my-1 self-center" />
     </li>
   );
 }
