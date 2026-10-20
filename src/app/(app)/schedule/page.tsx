@@ -81,9 +81,8 @@ export default async function SchedulePage() {
     supabase
       .from("tasks")
       .select("*")
-      .gte("day", week[0])
-      .lte("day", week[6])
-      .in("status", ["todo", "done"])
+      // This week's actions, plus unfinished ones from before today: those carry over and show on today, as on Today and Actions.
+      .or(`and(day.gte.${week[0]},day.lte.${week[6]},status.in.(todo,done)),and(day.lt.${day},status.eq.todo)`)
       .neq("source", "rhythm")
       .order("created_at"),
     supabase.from("projects").select("id, title").order("created_at"),
@@ -150,7 +149,7 @@ export default async function SchedulePage() {
           const list = items.filter((r) => r.weekday === wd);
           const weekly = routines.filter((r) => isPinned(r) && isDue(r, d));
           // One list for the day: anytime first, then morning, afternoon, evening. Within each, untimed first, then by time.
-          const dayTasks = tasks.filter((t) => t.day === d);
+          const dayTasks = tasks.filter((t) => (t.status === "todo" && t.day < day ? day : t.day) === d);
           // A calendar event with the same name as something here shows once: the app's item, at the event's time, linked to the calendar.
           const dayEvents = events?.[d] ?? [];
           const used = new Set<string>();
