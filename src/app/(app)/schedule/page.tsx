@@ -49,7 +49,7 @@ function EventLine({ label, title, link }: { label: string; title: string; link?
 function RoutineSummary({ label, done, total, ahead }: { label: string; done: number; total: number; ahead: boolean }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted">rhythm</span>
+      <span className="w-24 shrink-0 text-sm text-muted">{label.startsWith("Nightly") ? "evening" : "anytime"}</span>
       <Link href="/rhythm" className="min-w-0 flex-1 hover:underline">{label}</Link>
       <span className="shrink-0 text-xs text-muted tabular-nums">{ahead ? total : `${done} of ${total}`}</span>
     </li>
@@ -66,12 +66,12 @@ function PracticedLine({ name }: { name: string }) {
   );
 }
 
-function RoutineLine({ title, cal }: { title: string; cal?: { link?: string; label: string } | null }) {
+function RoutineLine({ title, cal, kind }: { title: string; cal?: { link?: string; label: string } | null; kind: string }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : "rhythm"}</span>
+      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : kind}</span>
       <Link href="/rhythm" className="min-w-0 flex-1 hover:underline">{title}</Link>
-      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">rhythm, calendar</a> : <span className="shrink-0 text-xs text-muted">rhythm, calendar</span>)}
+      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">{kind}, calendar</a> : <span className="shrink-0 text-xs text-muted">{kind}, calendar</span>)}
     </li>
   );
 }
@@ -112,8 +112,20 @@ export default async function SchedulePage() {
   const nightlyItems = routines.filter((r) => r.cadence === "nightly");
   // Weekly items on any day aren't tied to a date: one line for the week, with how many you've done.
   const anyDay = routines.filter((r) => r.cadence === "weekly" && !isPinned(r));
-  const anyDayDone = anyDay.reduce((n, r) => n + Math.min(timesOf(r), (checkRows ?? []).filter((c) => c.routine_id === r.id).length), 0);
-  const anyDayTotal = anyDay.reduce((n, r) => n + timesOf(r), 0);
+  // Rituals and practices get their own lines: "Daily rituals", "Weekly practices"…
+  const KIND = [
+    { practice: false, word: "rituals" },
+    { practice: true, word: "practices" },
+  ];
+  const weeklyGroups = KIND.map((k) => {
+    const list = anyDay.filter((r) => isPractice(r) === k.practice);
+    return {
+      ...k,
+      list,
+      done: list.reduce((n, r) => n + Math.min(timesOf(r), (checkRows ?? []).filter((c) => c.routine_id === r.id).length), 0),
+      total: list.reduce((n, r) => n + timesOf(r), 0),
+    };
+  }).filter((g) => g.list.length);
   const items = (rhythm.data ?? []) as Item[];
 
   return (
@@ -129,13 +141,17 @@ export default async function SchedulePage() {
         practices={practices}
       />
 
-      {anyDay.length > 0 && (
-        <Link href="/rhythm" className="flex items-baseline justify-between gap-3 border-y border-line py-3 hover:text-ink">
-          <span>
-            Weekly rhythm <span className="text-sm text-muted">· any day: {anyDay.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
-          </span>
-          <span className="shrink-0 text-sm text-muted tabular-nums">{anyDayDone} of {anyDayTotal} this week</span>
-        </Link>
+      {weeklyGroups.length > 0 && (
+        <div className="divide-y divide-line border-y border-line">
+          {weeklyGroups.map((g) => (
+            <Link key={g.word} href="/rhythm" className="flex items-baseline justify-between gap-3 py-3 hover:text-ink">
+              <span>
+                Weekly {g.word} <span className="text-sm text-muted">· any day: {g.list.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
+              </span>
+              <span className="shrink-0 text-sm text-muted tabular-nums">{g.done} of {g.total} this week</span>
+            </Link>
+          ))}
+        </div>
       )}
 
       <section aria-label="Your week" className="space-y-9">
@@ -170,18 +186,34 @@ export default async function SchedulePage() {
               const at = e.allDay ? null : hhmm(e.start!);
               return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
             }),
-            ...(dailyItems.length
-              ? [{ key: "rd", bucket: 0, at: null, sort: -1, node: <RoutineSummary key="rd" label="Daily rhythm" total={dailyItems.length} done={dailyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
-              : []),
-            ...(nightlyItems.length
-              ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly rhythm" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
-              : []),
+            ...[
+              { items: dailyItems, when: "Daily", bucket: 0, at: null as string | null, sort: -1 },
+              { items: nightlyItems, when: "Nightly", bucket: 3, at: "99:99", sort: 0 },
+            ].flatMap((w) =>
+              KIND.map((k) => ({ k, list: w.items.filter((r) => isPractice(r) === k.practice) }))
+                .filter(({ list }) => list.length)
+                .map(({ k, list }) => ({
+                  key: `r-${w.when}-${k.word}`,
+                  bucket: w.bucket,
+                  at: w.at,
+                  sort: w.sort + (k.practice ? 0.1 : 0),
+                  node: (
+                    <RoutineSummary
+                      key={`r-${w.when}-${k.word}`}
+                      label={`${w.when} ${k.word}`}
+                      total={list.length}
+                      done={list.filter((r) => checked.has(`${r.id}:${d}`)).length}
+                      ahead={d > day}
+                    />
+                  ),
+                }))
+            ),
             ...weeklyMatched.map(({ r, cal }) => ({
               key: `w-${r.id}`,
               bucket: cal?.at ? BUCKET[partForTime(cal.at)] : 0,
               at: cal?.at ?? null,
               sort: r.sort,
-              node: <RoutineLine key={`w-${r.id}`} title={r.title} cal={cal} />,
+              node: <RoutineLine key={`w-${r.id}`} title={r.title} cal={cal} kind={isPractice(r) ? "practice" : "ritual"} />,
             })),
             ...listMatched.map(({ r, cal }) => {
               const own = r.at_time?.slice(0, 5) ?? null;
