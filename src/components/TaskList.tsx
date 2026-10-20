@@ -132,9 +132,8 @@ export function TaskList({
                       {/* On the same line, by the ×: this action has notes. Tap it (or the title) to read them. */}
                       {t.reason && open !== t.id && (
                         <button type="button" onClick={() => setOpen(t.id)} aria-label="Has notes. Open" title="Has notes" className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted hover:bg-line/50 hover:text-ink">
-                          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="M3 1.75h5.5L11 4.25v8H3z" />
-                            <path d="M5 6.5h4M5 8.75h4M5 11h2.5" />
+                          <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+                            <path d="M2.5 3.5h7M2.5 6h7M2.5 8.5h4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                           </svg>
                         </button>
                       )}
