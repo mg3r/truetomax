@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { editRhythm, deleteRhythm, editTask, deleteTask, setTaskStatus, editRoutineWhen } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
+import { ActionEditor, type EditableAction } from "./ActionEditor";
 import { LineEdit } from "./LineEdit";
 
 const PARTS = [
@@ -35,8 +36,17 @@ export function ScheduleItem({
   project,
   done = false,
   calendar,
+  action,
+  today,
+  projects = [],
+  practices = [],
 }: {
   item: RhythmItem;
+  /** For a one-time action: everything the shared action editor needs. */
+  action?: EditableAction;
+  today?: string;
+  projects?: { id: string; title: string }[];
+  practices?: { id: string; name: string }[];
   /** "rhythm": a weekly Schedule item; "task": a one-time action; "routine": a Rhythm item (ritual or practice) shown on its day. */
   kind?: "rhythm" | "task" | "routine";
   project?: string | null;
@@ -131,7 +141,22 @@ export function ScheduleItem({
         )}
       </div>
 
-      {open && (
+      {open && kind === "task" && action && today && (
+        <div className="sm:pl-[6.75rem]">
+          <ActionEditor
+            action={{ ...action, part_of_day: part, at_time: time || null }}
+            today={today}
+            projects={projects}
+            practices={practices}
+            onChange={(patch) => {
+              if ("part_of_day" in patch) setPart(patch.part_of_day ?? null);
+              if ("at_time" in patch) setTime(patch.at_time?.slice(0, 5) ?? "");
+            }}
+            onClose={() => setOpen(false)}
+          />
+        </div>
+      )}
+      {open && !(kind === "task" && action && today) && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs sm:pl-[6.75rem]">
           {PARTS.map((p) => {
             const on = (part ?? null) === p.value && !time;

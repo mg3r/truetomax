@@ -249,6 +249,10 @@ export default async function SchedulePage() {
                     project={[t.routine_id ? practiceName.get(t.routine_id) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ") || null}
                     done={t.status === "done"}
                     calendar={cal}
+                    action={{ id: t.id, day: t.day, status: t.status, part_of_day: t.part_of_day ?? null, at_time: t.at_time ?? null, project_id: t.project_id ?? null, routine_id: t.routine_id ?? null }}
+                    today={day}
+                    projects={projects}
+                    practices={practices}
                   />
                 ),
               };

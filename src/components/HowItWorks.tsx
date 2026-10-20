@@ -28,7 +28,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Actions",
     body: [
       "Every action in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each action shows its day and project when it has one.",
-      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap an action to rename it, move it between Today, Up next and Later, put it in a project, or mark it as a session of one of your practices (finishing it then logs that practice). Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
+      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap an action to rename it and open its editor, which is the same everywhere you meet an action (here, in a project, on Schedule): when in the day (Anytime, Morning, Afternoon, Evening, or an exact time), where it sits (Today, Up next, Later), its project, and the practice it's a session of (finishing it then ticks that practice off). Your partner's suggestions work the same way: tap a suggestion's title to adjust it before you add it. Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
       "Import a list: take a photo of a handwritten list, or upload a PDF, Word or text file. Each item is added to Up next, and anything crossed out or ticked is marked done, including actions you already had.",
     ],
   },

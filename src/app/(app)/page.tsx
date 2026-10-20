@@ -80,7 +80,8 @@ export default async function TodayPage() {
   ].filter(Boolean);
 
   const projName = new Map((projects.data ?? []).map((p) => [p.id, p.title]));
-  const practiceNames = new Map((await loadPractices(supabase)).map((p) => [p.id, p.name]));
+  const practiceList = await loadPractices(supabase);
+  const practiceNames = new Map(practiceList.map((p) => [p.id, p.name]));
   const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.routine_id ? practiceNames.get(t.routine_id) : null }));
   const suggestions = all.filter((t) => t.status === "suggested");
   // Rhythm first, then everything else; finished tasks sink to the bottom.
@@ -220,7 +221,7 @@ export default async function TodayPage() {
           <div className="mt-8 pebble bg-surface p-4 sm:p-5">
             <h3 className="section-title">your partner suggests</h3>
             <ul className="divide-y divide-line">
-              {suggestions.map((t) => <SuggestionRow key={t.id} task={t} />)}
+              {suggestions.map((t) => <SuggestionRow key={t.id} task={t} today={day} projects={projects.data ?? []} practices={practiceList} />)}
             </ul>
           </div>
         )}

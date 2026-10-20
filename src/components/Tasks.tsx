@@ -1,9 +1,10 @@
 "use client";
 
-import { useTransition, useRef } from "react";
+import { useTransition, useRef, useState } from "react";
 import { setTaskStatus, deleteTask, addTask } from "@/app/actions";
 import { Select } from "./Select";
 import { RemoveX } from "./RemoveX";
+import { ActionEditor, type EditableAction } from "./ActionEditor";
 
 export type Task = {
   id: string;
@@ -77,13 +78,33 @@ export function TaskRow({ task, today, showProject = true, aside, showTime = fal
   );
 }
 
-export function SuggestionRow({ task }: { task: Task }) {
+export function SuggestionRow({
+  task,
+  today = "",
+  projects = [],
+  practices = [],
+}: {
+  task: Task & { project_id?: string | null; routine_id?: string | null };
+  today?: string;
+  projects?: { id: string; title: string }[];
+  practices?: { id: string; name: string }[];
+}) {
   const [pending, start] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [a, setA] = useState<EditableAction>({ id: task.id, day: task.day, status: task.status, part_of_day: task.part_of_day ?? null, at_time: task.at_time ?? null, project_id: task.project_id ?? null, routine_id: task.routine_id ?? null });
+  const project = projects.find((p) => p.id === a.project_id)?.title ?? (a.project_id === task.project_id ? task.project : null);
+  const practice = practices.find((p) => p.id === a.routine_id)?.name ?? (a.routine_id === task.routine_id ? task.practice : null);
+  const when = a.at_time ? clock(a.at_time) : a.part_of_day;
   return (
     <li className={`py-3 ${pending ? "opacity-50" : ""}`}>
-      {(task.project || task.practice) && <p className="text-xs text-muted">{[task.project && `From ${task.project}`, task.practice].filter(Boolean).join(" · ")}</p>}
-      <p className="font-medium">{task.title}</p>
+      {(project || practice || when) && <p className="text-xs text-muted">{[project && `From ${project}`, practice, when].filter(Boolean).join(" · ")}</p>}
+      <button type="button" onClick={() => setOpen((o) => !o)} className="text-left font-medium hover:underline hover:decoration-line hover:underline-offset-4">
+        {task.title}
+      </button>
       {task.reason && <p className="mt-0.5 text-sm text-muted">{task.reason}</p>}
+      {open && (
+        <ActionEditor action={a} today={today} projects={projects} practices={practices} showWhere={false} onChange={(patch) => setA((x) => ({ ...x, ...patch }))} onClose={() => setOpen(false)} />
+      )}
       <div className="mt-2 flex gap-2">
         <button className="btn-quiet !border-ink !text-ink" onClick={() => start(() => setTaskStatus(task.id, "todo"))}>
           Add to today

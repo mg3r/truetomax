@@ -31,7 +31,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       .gte("completed_at", addDays(day, -14))
       .order("completed_at", { ascending: false })
       .limit(20),
-    supabase.from("tasks").select("id, title, reason").eq("project_id", id).eq("status", "suggested").is("day", null).order("created_at"),
+    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "suggested").is("day", null).order("created_at"),
   ]);
 
   const practices = await loadPractices(supabase);
@@ -57,7 +57,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       <section aria-labelledby="suggested">
         <h2 id="suggested" className="section-title">your partner suggests</h2>
         <div className="mt-2">
-          <ProjectSuggestions projectId={id} steps={suggested.data ?? []} />
+          <ProjectSuggestions projectId={id} steps={suggested.data ?? []} today={day} practices={practices} />
         </div>
       </section>
 

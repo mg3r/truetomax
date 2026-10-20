@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { addProjectTask, moveTask, deleteTask, renameTask, setTaskStatus, setTaskProject, setTaskPractice, type Lane } from "@/app/actions";
+import { addProjectTask, deleteTask, renameTask, setTaskStatus, type Lane } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
+import { ActionEditor } from "./ActionEditor";
 import { LineEdit } from "./LineEdit";
 
 const UNDATED = "9999-12-31";
 
-export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null };
+export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null; part_of_day?: string | null; at_time?: string | null };
 type Project = { id: string; title: string };
 type Group = "today" | "scheduled" | "next" | "later" | "done";
 
@@ -33,7 +34,10 @@ const dayLabel = (day: string, today: string) => {
   return diff < 7 ? d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }) : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 };
 
-const pill = (on: boolean) => `rounded-full border px-2.5 py-1 text-xs ${on ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`;
+const clock = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
 
 /** Every task in one running checklist: type and press Enter to keep adding, like a Notes list. */
 export function TaskList({
@@ -60,11 +64,7 @@ export function TaskList({
   const practiceName = new Map(practices.map((p) => [p.id, p.name]));
   const shown = filter ? tasks.filter((t) => t.project_id === filter) : tasks;
 
-  function move(id: string, lane: Lane) {
-    setOpen(null);
-    setTasks((ts) => ts.map((t) => (t.id !== id ? t : lane === "done" ? { ...t, status: "done" } : { ...t, status: "todo", day: lane === "later" ? null : lane === "today" ? today : UNDATED })));
-    start(() => moveTask(id, lane));
-  }
+
 
   return (
     <div className="space-y-8">
@@ -77,7 +77,7 @@ export function TaskList({
             <ul className="mt-1">
               {list.map((t) => {
                 const done = t.status === "done";
-                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.project_id ? projName.get(t.project_id) : null, t.routine_id ? practiceName.get(t.routine_id) : null].filter(Boolean).join(", ");
+                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.at_time ? clock(t.at_time) : t.part_of_day, t.project_id ? projName.get(t.project_id) : null, t.routine_id ? practiceName.get(t.routine_id) : null].filter(Boolean).join(", ");
                 return (
                   <li key={t.id} className="group border-b border-line py-1.5">
                     <div className="flex items-start gap-3">
@@ -117,50 +117,15 @@ export function TaskList({
                       />
                     </div>
                     {open === t.id && !done && (
-                      <div className="mt-2 space-y-1 pl-8">
-                        <div className="flex flex-wrap items-center gap-1">
-                          {(["today", "next", "later"] as const).map((l) => (
-                            <button key={l} type="button" onClick={() => move(t.id, l)} className={pill(groupOf(t, today) === l)}>
-                              {l === "today" ? "Today" : l === "next" ? "Up next" : "Later"}
-                            </button>
-                          ))}
-                        </div>
-                        {projects.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1">
-                            {projects.map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => {
-                                  const next = t.project_id === p.id ? null : p.id;
-                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, project_id: next } : x)));
-                                  start(() => setTaskProject(t.id, next));
-                                }}
-                                className={pill(t.project_id === p.id)}
-                              >
-                                {p.title}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {practices.length > 0 && (
-                          <div className="flex flex-wrap items-center gap-1">
-                            {practices.map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => {
-                                  const next = t.routine_id === p.id ? null : p.id;
-                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, routine_id: next } : x)));
-                                  start(() => setTaskPractice(t.id, next));
-                                }}
-                                className={pill(t.routine_id === p.id)}
-                              >
-                                {p.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                      <div className="pl-8">
+                        <ActionEditor
+                          action={t}
+                          today={today}
+                          projects={projects}
+                          practices={practices}
+                          onChange={(patch) => setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, ...patch } : x)))}
+                          onClose={() => setOpen(null)}
+                        />
                       </div>
                     )}
                   </li>

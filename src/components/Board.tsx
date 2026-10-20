@@ -15,7 +15,7 @@ import {
 import { moveTask, deleteTask, type Lane } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 
-export type BoardTask = { id: string; title: string; status: string; day: string | null; source: string; reason: string | null; routine_id?: string | null };
+export type BoardTask = { id: string; title: string; status: string; day: string | null; source: string; reason: string | null; routine_id?: string | null; project_id?: string | null; part_of_day?: string | null; at_time?: string | null };
 
 export const LANES: { id: Lane; title: string; hint: string; empty: string }[] = [
   { id: "later", title: "Later", hint: "Not scheduled", empty: "Someday actions wait here." },

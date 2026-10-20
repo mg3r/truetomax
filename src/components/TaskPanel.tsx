@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { addProjectTask, moveTask, deleteTask, renameTask, setTaskPractice, type Lane } from "@/app/actions";
+import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
+import { ActionEditor } from "./ActionEditor";
 import { Board, LANES, laneOf, type BoardTask } from "./Board";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
@@ -134,25 +135,15 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
                           />
                         </div>
                         {open === t.id && (
-                          <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
-                            {LANES.filter((x) => x.id !== l.id && x.id !== "done").map((x) => (
-                              <button key={x.id} className="btn-quiet !px-2.5 !py-1 text-xs" onClick={() => move(t.id, x.id)}>
-                                Move to {x.title}
-                              </button>
-                            ))}
-                            {practices.map((p) => (
-                              <button
-                                key={p.id}
-                                className={`rounded-full border px-2.5 py-1 text-xs ${t.routine_id === p.id ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`}
-                                onClick={() => {
-                                  const next = t.routine_id === p.id ? null : p.id;
-                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, routine_id: next } : x)));
-                                  start(() => setTaskPractice(t.id, next));
-                                }}
-                              >
-                                {p.name}
-                              </button>
-                            ))}
+                          <div className="pl-8">
+                            <ActionEditor
+                              action={t}
+                              today={today}
+                              projects={[]}
+                              practices={practices}
+                              onChange={(patch) => setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, ...patch } : x)))}
+                              onClose={() => setOpen(null)}
+                            />
                           </div>
                         )}
                       </li>
