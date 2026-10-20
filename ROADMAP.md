@@ -14,7 +14,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Daily affirmation, a random page from your copy of *The Creative Act*, a question from that page (swappable), journal
 - [x] Today combines routine, Google Calendar events and project tasks
 - [x] Routine: daily, nightly and weekly habits; tick them off on Today, weekly ones show on their day in Schedule, last-7-days dots, and the partner sees what holds and what slips (run `0009_routine.sql`)
-- [x] Schedule: weekly rhythm by morning / afternoon / evening (time optional), plus the week's calendar
+- [x] Schedule: the whole week — weekly items, Google Calendar events and one-time tasks (from Today, Schedule or projects) in one ordered list; add Every week or Just once, with an optional project; edit in place
 - [x] Vision: one running doc, new sections on top, drag to reorder, edit in place
 - [x] Context: partner chat, your docs (upload PDF/Word/text or link Google Docs), book, settings
 - [x] Projects: simple cards; inside, goals plus one place to add a task (Today / Up next / Later / Done), shown as a list or a board

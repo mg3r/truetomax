@@ -27,8 +27,9 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Schedule",
     body: [
-      "Your weekly rhythm: things you do on set days, as morning, afternoon, evening or anytime, with an exact time if you want one. Each day shows these with your Google Calendar events, anytime first, then morning, afternoon and evening.",
-      "Tap an item's words to edit it, or its time to change when it happens. Tap a calendar event to open it in Google Calendar. Schedule items are added to Today each morning; “Add changes to today” brings in edits right away.",
+      "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any task set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
+      "Add something as Every week (pick the days) or Just once (pick a date), with a part of day, an optional exact time, and an optional project. A one-time task is the same task everywhere: tick it, edit it or delete it here, on Today, or in its project.",
+      "Tap an item's words to edit it, or its time to change when it happens. Tap a calendar event to open it in Google Calendar. Weekly items are added to Today each morning; \u201cAdd changes to today\u201d brings in edits right away.",
     ],
   },
   {

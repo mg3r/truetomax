@@ -754,3 +754,44 @@ export async function editRhythm(id: string, fields: { title?: string; part_of_d
   await supabase.from("rhythm").update(patch).eq("id", id);
   refresh();
 }
+
+/** Edit a one-time task where it sits on Schedule: words, part of day, or time. */
+export async function editTask(id: string, fields: { title?: string; part_of_day?: string | null; at_time?: string | null }) {
+  const patch: Record<string, unknown> = {};
+  if (fields.title !== undefined) {
+    if (!fields.title.trim()) return;
+    patch.title = fields.title.trim();
+  }
+  if (fields.part_of_day !== undefined) patch.part_of_day = partOfDay(fields.part_of_day);
+  if (fields.at_time !== undefined) patch.at_time = fields.at_time && /^\d{2}:\d{2}/.test(fields.at_time) ? fields.at_time : null;
+  const supabase = await db();
+  await supabase.from("tasks").update(patch).eq("id", id);
+  refresh();
+}
+
+/** Add to Schedule: every week on chosen days, or just once on a date. Either can belong to a project. */
+export async function addToSchedule(input: {
+  title: string;
+  repeat: boolean;
+  weekdays: number[];
+  date: string | null;
+  part_of_day: string | null;
+  at_time: string | null;
+  project_id: string | null;
+}) {
+  const title = input.title.trim();
+  if (!title) return;
+  const supabase = await db();
+  const part_of_day = partOfDay(input.part_of_day);
+  const at_time = input.at_time && /^\d{2}:\d{2}/.test(input.at_time) ? input.at_time : null;
+  const project_id = input.project_id || null;
+  if (input.repeat) {
+    const days = [...new Set(input.weekdays.filter((w) => Number.isInteger(w) && w >= 0 && w <= 6))];
+    if (!days.length) return;
+    await supabase.from("rhythm").insert(days.map((weekday) => ({ title, weekday, at_time, part_of_day, project_id, sort: 100 })));
+  } else {
+    if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return;
+    await supabase.from("tasks").insert({ title, day: input.date, at_time, part_of_day, project_id });
+  }
+  refresh();
+}
