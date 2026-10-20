@@ -65,6 +65,13 @@ export async function setTaskStatus(id: string, status: "todo" | "done" | "skipp
     })
     .eq("id", id);
 
+  // A task that is a practice session logs the practice when it's done.
+  if (before.practice_id && (status === "done" || before.status === "done")) {
+    const day = before.day && before.day !== UNDATED ? before.day : today();
+    if (status === "done") await supabase.from("practice_sessions").upsert({ practice_id: before.practice_id, day }, { onConflict: "practice_id,day" });
+    else await supabase.from("practice_sessions").delete().eq("practice_id", before.practice_id).eq("day", day);
+  }
+
   // Finishing a share or ask task counts as a move.
   if (before.category === "share" || before.category === "ask") {
     if (status === "done") {
@@ -438,7 +445,7 @@ export async function applyRoutineToday() {
   const day = today();
   const weekday = new Date(day + "T12:00:00Z").getUTCDay();
   const [{ data: rhythm }, { data: existing }] = await Promise.all([
-    supabase.from("rhythm").select("title, project_id, at_time, part_of_day").eq("weekday", weekday).order("sort"),
+    supabase.from("rhythm").select("title, project_id, practice_id, at_time, part_of_day").eq("weekday", weekday).order("sort"),
     supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm"),
   ]);
   const have = new Set((existing ?? []).map((t) => t.title));
@@ -754,6 +761,7 @@ export async function addToSchedule(input: {
   part_of_day: string | null;
   at_time: string | null;
   project_id: string | null;
+  practice_id?: string | null;
 }) {
   const title = input.title.trim();
   if (!title) return;
@@ -761,18 +769,19 @@ export async function addToSchedule(input: {
   const part_of_day = partOfDay(input.part_of_day);
   const at_time = input.at_time && /^\d{2}:\d{2}/.test(input.at_time) ? input.at_time : null;
   const project_id = input.project_id || null;
+  const practice = input.practice_id ? { practice_id: input.practice_id } : {};
   if (input.repeat) {
     const days = [...new Set(input.weekdays.filter((w) => Number.isInteger(w) && w >= 0 && w <= 6))];
     if (!days.length) return;
-    await supabase.from("rhythm").insert(days.map((weekday) => ({ title, weekday, at_time, part_of_day, project_id, sort: 100 })));
+    await supabase.from("rhythm").insert(days.map((weekday) => ({ title, weekday, at_time, part_of_day, project_id, ...practice, sort: 100 })));
     // If it repeats on today's weekday, put it on Today now rather than waiting for tomorrow morning.
     const day = today();
     if (days.includes(new Date(day + "T12:00:00Z").getUTCDay())) {
-      await supabase.from("tasks").insert({ title, day, at_time, part_of_day, project_id, source: "rhythm" });
+      await supabase.from("tasks").insert({ title, day, at_time, part_of_day, project_id, ...practice, source: "rhythm" });
     }
   } else {
     if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return;
-    await supabase.from("tasks").insert({ title, day: input.date, at_time, part_of_day, project_id });
+    await supabase.from("tasks").insert({ title, day: input.date, at_time, part_of_day, project_id, ...practice });
   }
   refresh();
 }
@@ -836,5 +845,7 @@ export async function logPractice(id: string, day: string, on: boolean) {
   const supabase = await db();
   if (on) await supabase.from("practice_sessions").upsert({ practice_id: id, day }, { onConflict: "practice_id,day" });
   else await supabase.from("practice_sessions").delete().eq("practice_id", id).eq("day", day);
+  // Anything on today's list for this practice is done (or not) along with it.
+  await supabase.from("tasks").update(on ? { status: "done", completed_at: new Date().toISOString() } : { status: "todo", completed_at: null }).eq("practice_id", id).eq("day", day).in("status", on ? ["todo"] : ["done"]);
   refresh();
 }

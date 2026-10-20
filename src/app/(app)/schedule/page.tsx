@@ -12,7 +12,7 @@ import { isDue, isPinned, timesOf, type Routine } from "@/lib/routine";
 export const dynamic = "force-dynamic";
 
 
-type Item = { id: string; weekday: number; title: string; at_time: string | null; part_of_day?: string | null; sort: number; project_id?: string | null };
+type Item = { id: string; weekday: number; title: string; at_time: string | null; part_of_day?: string | null; sort: number; project_id?: string | null; practice_id?: string | null };
 
 /** Where an item sits in the day: its part of day, or the part its time falls in. */
 function partOf(r: Item) {
@@ -56,6 +56,16 @@ function RoutineSummary({ label, done, total, ahead }: { label: string; done: nu
   );
 }
 
+function PracticedLine({ name }: { name: string }) {
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <span className="w-24 shrink-0 text-sm text-muted">practiced</span>
+      <Link href="/practices" className="min-w-0 flex-1 hover:underline">{name}</Link>
+      <span className="shrink-0 text-xs text-muted">done</span>
+    </li>
+  );
+}
+
 function RoutineLine({ title, cal }: { title: string; cal?: { link?: string; label: string } | null }) {
   return (
     <li className="flex items-center gap-3 py-2">
@@ -81,7 +91,7 @@ export default async function SchedulePage() {
     // One-time tasks dated this week: the same ones Today and your projects show. Schedule's own weekly items are shown as themselves.
     supabase
       .from("tasks")
-      .select("id, title, day, status, at_time, part_of_day, project_id, source")
+      .select("id, title, day, status, at_time, part_of_day, project_id, practice_id, source")
       .gte("day", week[0])
       .lte("day", week[6])
       .in("status", ["todo", "done"])
@@ -89,6 +99,13 @@ export default async function SchedulePage() {
       .order("created_at"),
     supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
   ]);
+  // Practices: to schedule a session, and the days you practiced.
+  const [practiceRows, sessionRows] = await Promise.all([
+    supabase.from("practices").select("id, name").order("sort").order("created_at"),
+    supabase.from("practice_sessions").select("practice_id, day").gte("day", week[0]).lte("day", week[6]),
+  ]);
+  const practices = sessionRows.error ? [] : practiceRows.data ?? [];
+  const practiceName = new Map(practices.map((p) => [p.id, p.name]));
   const { data: checkRows } = await supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]).lte("day", week[6]);
   const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));
   const projects = projectRows.data ?? [];
@@ -113,6 +130,7 @@ export default async function SchedulePage() {
         week={week.map((d) => ({ date: d, weekday: weekdayOf(d), short: WEEKDAYS[weekdayOf(d)].slice(0, 3), num: Number(d.slice(8)) }))}
         today={day}
         projects={projects}
+        practices={practices}
       />
 
       {anyDay.length > 0 && (
@@ -143,7 +161,13 @@ export default async function SchedulePage() {
           const weeklyMatched = weekly.map((r) => ({ r, cal: eventFor(r.title) }));
           const listMatched = list.map((r) => ({ r, cal: eventFor(r.title) }));
           const tasksMatched = dayTasks.map((t) => ({ t, cal: eventFor(t.title) }));
+          // Practices you logged that day, unless a scheduled item for that practice already shows it.
+          const covered = new Set([...list, ...dayTasks].map((x) => (x as { practice_id?: string | null }).practice_id).filter(Boolean));
+          const practicedLines = (sessionRows.data ?? [])
+            .filter((x) => x.day === d && !covered.has(x.practice_id) && practiceName.has(x.practice_id))
+            .map((x) => ({ key: `p-${x.practice_id}`, bucket: 0, at: null, sort: -0.5, node: <PracticedLine key={`p-${x.practice_id}`} name={practiceName.get(x.practice_id)!} /> }));
           const entries = [
+            ...practicedLines,
             ...dayEvents.filter((e) => !used.has(e.id)).map((e) => {
               const at = e.allDay ? null : hhmm(e.start!);
               return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
@@ -170,7 +194,7 @@ export default async function SchedulePage() {
                 bucket: part ? BUCKET[part] : 0,
                 at,
                 sort: r.sort,
-                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={r.project_id ? projName.get(r.project_id) : null} calendar={cal} />,
+                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={[r.practice_id ? practiceName.get(r.practice_id) : null, r.project_id ? projName.get(r.project_id) : null].filter(Boolean).join(", ") || null} calendar={cal} />,
               };
             }),
             ...tasksMatched.map(({ t, cal }) => {
@@ -187,7 +211,7 @@ export default async function SchedulePage() {
                     key={`t-${t.id}`}
                     kind="task"
                     item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
-                    project={t.project_id ? projName.get(t.project_id) : null}
+                    project={[t.practice_id ? practiceName.get(t.practice_id) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ") || null}
                     done={t.status === "done"}
                     calendar={cal}
                   />

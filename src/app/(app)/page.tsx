@@ -122,15 +122,17 @@ export default async function TodayPage() {
     return true;
   });
   const timed = list.map((t) => (taskTime.get(t.id) ? { ...t, at_time: taskTime.get(t.id)! } : t));
+  // Calendar events get their own list; your actions follow, timed ones in time order, then the rest by part of day.
   const allDay = shownEvents.filter((e) => e.allDay);
-  const schedule = [
-    ...shownEvents.filter((e) => !e.allDay).map((e) => ({ key: `e-${e.id}`, at: hhmm(e.start!), event: e, task: null as Task | null })),
-    ...timed.filter((t) => t.at_time).map((t) => ({ key: t.id, at: t.at_time!.slice(0, 5), event: null, task: t })),
-  ].sort((a, b) => a.at.localeCompare(b.at));
+  const timedEvents = shownEvents.filter((e) => !e.allDay).sort((x, y) => hhmm(x.start!).localeCompare(hhmm(y.start!)));
   const PART: Record<string, number> = { morning: 0, afternoon: 1, evening: 2 };
-  const untimed = timed
-    .filter((t) => !t.at_time)
-    .sort((a, b) => Number(a.status === "done") - Number(b.status === "done") || (PART[a.part_of_day ?? ""] ?? 3) - (PART[b.part_of_day ?? ""] ?? 3));
+  const actions = [...timed].sort(
+    (x, y) =>
+      Number(x.status === "done") - Number(y.status === "done") ||
+      Number(!x.at_time) - Number(!y.at_time) ||
+      (x.at_time ?? "").localeCompare(y.at_time ?? "") ||
+      (PART[x.part_of_day ?? ""] ?? 3) - (PART[y.part_of_day ?? ""] ?? 3)
+  );
 
   return (
     <div className="space-y-16">
@@ -215,31 +217,30 @@ export default async function TodayPage() {
         </section>
       )}
 
-      <section aria-labelledby="tasks">
-        <div className="flex items-baseline justify-between">
-          <h2 id="tasks" className="section-title">What to do today</h2>
-          {list.length > 0 && <span className="text-sm text-muted">{doneCount} of {list.length} done</span>}
-        </div>
-        {(allDay.length > 0 || schedule.length > 0) && (
+      {(allDay.length > 0 || timedEvents.length > 0) && (
+        <section aria-labelledby="calendar">
+          <h2 id="calendar" className="section-title">Calendar</h2>
           <ul className="mt-2 divide-y divide-line">
             {allDay.map((e) => <EventRow key={e.id} time="all day" title={e.title} calendar={e.calendar} location={e.location} link={e.link} />)}
-            {schedule.map((s) =>
-              s.event ? (
-                <EventRow key={s.key} time={timeLabel(s.event.start!)} title={s.event.title} calendar={s.event.calendar} location={s.event.location} link={s.event.link} />
-              ) : (
-                <TaskRow key={s.key} task={s.task!} today={day} showTime />
-              )
-            )}
+            {timedEvents.map((e) => <EventRow key={e.id} time={timeLabel(e.start!)} title={e.title} calendar={e.calendar} location={e.location} link={e.link} />)}
           </ul>
-        )}
-        {untimed.length > 0 && (
-          <ul className={`divide-y divide-line ${schedule.length || allDay.length ? "mt-4 border-t border-line" : "mt-2"}`}>
-            {untimed.map((t) => <TaskRow key={t.id} task={t} today={day} />)}
+        </section>
+      )}
+
+      <section aria-labelledby="tasks">
+        <div className="flex items-baseline justify-between">
+          <h2 id="tasks" className="section-title">
+            <Link href="/actions" className="hover:text-ink">Actions</Link>
+          </h2>
+          {list.length > 0 && <span className="text-sm text-muted">{doneCount} of {list.length} done</span>}
+        </div>
+        {actions.length > 0 ? (
+          <ul className="mt-2 divide-y divide-line">
+            {actions.map((t) => <TaskRow key={t.id} task={t} today={day} showTime={actions.some((x) => x.at_time)} />)}
           </ul>
-        )}
-        {!list.length && !events?.length && (
+        ) : (
           <p className="mt-2 text-muted">
-            Nothing set for today yet. <Link href="/tasks" className="text-ink underline decoration-line underline-offset-4">Add tasks</Link>, or pick from your partner&rsquo;s suggestions.
+            Nothing set for today yet. <Link href="/actions" className="text-ink underline decoration-line underline-offset-4">Add actions</Link>, or pick from your partner&rsquo;s suggestions.
           </p>
         )}
         {googleConfigured() && !google.data && (

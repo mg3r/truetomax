@@ -24,10 +24,12 @@ export function ScheduleAdd({
   week,
   today,
   projects,
+  practices = [],
 }: {
   week: { date: string; weekday: number; short: string; num: number }[];
   today: string;
   projects: { id: string; title: string }[];
+  practices?: { id: string; name: string }[];
 }) {
   const todayWd = week.find((d) => d.date === today)?.weekday ?? 1;
   const [title, setTitle] = useState("");
@@ -37,6 +39,7 @@ export function ScheduleAdd({
   const [part, setPart] = useState("");
   const [time, setTime] = useState("");
   const [project, setProject] = useState<string | null>(null);
+  const [practice, setPractice] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   const ready = title.trim() && (repeat ? days.length > 0 : !!date);
@@ -46,11 +49,12 @@ export function ScheduleAdd({
       onSubmit={(e) => {
         e.preventDefault();
         if (!ready) return;
-        const input = { title, repeat, weekdays: days, date: repeat ? null : date, part_of_day: part || null, at_time: time || null, project_id: project };
+        const input = { title, repeat, weekdays: days, date: repeat ? null : date, part_of_day: part || null, at_time: time || null, project_id: project, practice_id: practice };
         start(async () => {
           await addToSchedule(input);
           setTitle("");
           setTime("");
+          setPractice(null);
         });
       }}
       className="pebble space-y-4 bg-surface p-5"
@@ -84,6 +88,25 @@ export function ScheduleAdd({
         ))}
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Exact time (optional)" className="field ml-1 w-32" />
       </div>
+
+      {practices.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Practice (optional)">
+          {practices.map((p) => (
+            <Chip
+              key={p.id}
+              on={practice === p.id}
+              onClick={() => {
+                const on = practice === p.id;
+                setPractice(on ? null : p.id);
+                // Picking a practice names the item for you, unless you've typed something.
+                if (!on && !title.trim()) setTitle(p.name);
+              }}
+            >
+              {p.name}
+            </Chip>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Project (optional)">
         {projects.map((p) => (

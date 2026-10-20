@@ -97,11 +97,11 @@ function Row({ p, projects, linked, days, today, weekStart }: { p: Practice; pro
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
   const [name, setName] = useState(p.name);
   const [open, setOpen] = useState(false);
-  const [done, setDone] = useOptimistic(days.includes(today));
+  const done = days.includes(today);
   const [links, setLinks] = useOptimistic(linked);
   const [, start] = useTransition();
 
-  const thisWeek = days.filter((d) => d >= weekStart).length + (done && !days.includes(today) ? 1 : 0) - (!done && days.includes(today) ? 1 : 0);
+  const thisWeek = days.filter((d) => d >= weekStart).length;
   const last = done ? today : [...days].filter((d) => d !== today).sort().pop();
   const feeds = projects.filter((x) => links.includes(x.id)).map((x) => x.title);
 
@@ -131,19 +131,6 @@ function Row({ p, projects, linked, days, today, weekStart }: { p: Practice; pro
             {feeds.length ? ` · feeds ${feeds.join(", ")}` : ""}
           </button>
         </div>
-        <button
-          type="button"
-          aria-pressed={done}
-          onClick={() =>
-            start(async () => {
-              setDone(!done);
-              await logPractice(p.id, today, !done);
-            })
-          }
-          className={pill(done)}
-        >
-          {done ? "Practiced today" : "Practiced today?"}
-        </button>
         <RemoveX label={`Remove ${p.name}`} confirm={`Remove "${p.name}"?`} action={() => removePractice(p.id)} className="sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100" />
       </div>
       {open && (

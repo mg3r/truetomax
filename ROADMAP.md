@@ -36,6 +36,8 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Routine renamed Rituals; new Practices tab (what you make and offer, linked to the projects it feeds, sessions logged here or on Today) — run `0014_practices.sql`
 - [x] The daily focus line comes only from what Max set or uploaded
 
+- [x] Tasks renamed Actions (`/actions`); Today shows Calendar separately from Actions; Practices tab is information only, logged on Today, schedulable on Schedule
+
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
 2. **Your setup steps still to confirm:** run migrations `0009` to `0014` in order if any haven't been run; check the 7am notification arrives.

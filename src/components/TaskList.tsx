@@ -178,8 +178,8 @@ function QuickAdd({ onAdd }: { onAdd: (title: string) => void }) {
             setValue("");
           }
         }}
-        placeholder="Add a task"
-        aria-label="Add a task"
+        placeholder="Add an action"
+        aria-label="Add an action"
         className="min-w-0 flex-1 bg-transparent py-0.5 placeholder:text-muted/70 focus:outline-none"
       />
     </li>

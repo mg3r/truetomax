@@ -11,24 +11,24 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Tasks, Rituals, Practices, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
-      "On your phone, the bar at the bottom has Today, Tasks, Projects and Partner; Menu opens everything else.",
+      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Rituals, Practices, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },
   {
     title: "Today",
     body: [
       "Each morning the day is prepared for you: an affirmation, one line naming what would make today count (taken only from what you've set or uploaded yourself: your tasks, projects, schedule, rituals, practices, Vision, journal and docs, never from the partner's own ideas), a reading from your copy of The Creative Act, and a question drawn from it. The reading is a whole section: it starts where the section starts and runs until it ends, even across pages, so it never stops mid-thought. The affirmation and question are written in the partner's own words; the reading is your book.",
-      "Today is for doing, not planning: you add things on the other tabs (Tasks, Rituals, Practices, Schedule, Projects) and they show up here. Below the reading: your rituals to tick off, the practices you did today (tap to log them), then what to do today, which joins your Google Calendar events, today's Schedule items, and tasks set for today, in time order. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
+      "Today is for doing, not planning: you add things on the other tabs (Actions, Rituals, Practices, Schedule, Projects) and they show up here. Below the reading: your rituals to tick off; Practiced today, where you tap each practice you did; today's Calendar events in their own list; then your Actions for today (from Actions, Schedule and projects), timed ones in time order and the rest by part of day. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
       "Your partner suggests up to three tasks a day, starting with Up next tasks from your projects. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
     ],
   },
   {
-    title: "Tasks",
+    title: "Actions",
     body: [
-      "Every task in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each task shows its day and project when it has one.",
-      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap a task to rename it, move it between Today, Up next and Later, or put it in a project. Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
+      "Every action in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each task shows its day and project when it has one.",
+      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap an action to rename it, move it between Today, Up next and Later, or put it in a project. Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
       "Import a list: take a photo of a handwritten list, or upload a PDF, Word or text file. Each item is added to Up next, and anything crossed out or ticked is marked done, including tasks you already had.",
     ],
   },
@@ -67,7 +67,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Practices",
     body: [
       "What you make and offer: DJing, pottery, cooking, baking, fermenting. Where rituals keep you grounded, practices are the work you share, and they feed your projects.",
-      "Add one at the top; rename, reorder (drag the dots) or remove it in place. Tap a practice to link the projects it feeds. Each shows how many times you did it this week and when you last did. Log a session with \u201cPracticed today?\u201d here, or by tapping it under Practiced today on Today.",
+      "Add one at the top; rename, reorder (drag the dots) or remove it in place. Tap a practice to link the projects it feeds. Each shows how many times you did it this week and when you last did. This tab is information only: you log a session on Today, under Practiced today. You can also put a practice on your Schedule (pick it when adding there); finishing that item on Today logs the practice, and days you practiced show on Schedule.",
       "Your partner sees which practices are alive and which have gone quiet, which projects they feed, and builds suggestions and sharing ideas around them.",
     ],
   },
