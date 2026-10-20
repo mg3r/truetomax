@@ -28,7 +28,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Routine",
     body: [
       "The things that keep you regulated: daily, nightly, and weekly. Daily and nightly items show on Today as a checklist that starts fresh each morning.",
-      "Weekly items are about how often, not which day: \u201cSauna, 2\u00d7 a week\u201d. They sit in their own Weekly part of Today's checklist (below today and tonight) with how many you've done this week, and once you've hit the number they step aside until Monday. If you want one on set days, pick the days instead and it shows on just those days.",
+      "Weekly items are about how often, not which day: \u201cSauna, 2\u00d7 a week\u201d. They sit in their own Weekly part of Today's checklist (below today and tonight) with how many you've done this week, and once you've hit the number they step aside until Monday. If you want one on set days, pick the days instead: it shows on just those days, still with its count for the week (\u201c1 of 3 this week\u201d).",
       "On Schedule, each day has a Daily routine line at the top and a Nightly routine line in the evening, with how many you did (\u201c2 of 4\u201d); weekly items on any day get one line for the whole week. Drag the dots to reorder. The seven small dots on each item show the last week. Your partner sees what's holding and what's slipping.",
     ],
   },

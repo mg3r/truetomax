@@ -89,7 +89,7 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
                   <Check done={on} title={r.title} onClick={() => toggle(r.id)} />
                   <span className={`min-w-0 flex-1 ${on ? "text-muted line-through decoration-line" : ""}`}>{r.title}</span>
                   {r.id in times && <span className="shrink-0 text-xs text-muted tabular-nums">{times[r.id] || "calendar"}</span>}
-                  {r.cadence === "weekly" && !isPinned(r) && (
+                  {r.cadence === "weekly" && (
                     <span className="shrink-0 text-xs text-muted tabular-nums">
                       {(weekDone[r.id] ?? 0) + (on ? 1 : 0)} of {timesOf(r)} this week
                     </span>
