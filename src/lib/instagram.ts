@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { today } from "./dates";
+import { salvage } from "./socials";
 
 /**
  * Instagram API with Instagram Login (professional accounts, no Facebook Page needed). Read-only.
@@ -305,7 +306,7 @@ type Child = { media_type?: string; media_url?: string; thumbnail_url?: string }
 export async function lookAtPosts(supabase: SupabaseClient, limit = 8, only?: string) {
   if (!instagramConfigured()) return 0;
   let q = supabase.from("instagram_media").select("*");
-  q = only ? q.eq("media_id", only) : q.is("seen", null).order("posted_at", { ascending: false }).limit(limit);
+  q = only ? q.eq("media_id", only) : q.or('seen.is.null,seen.like."{*"').order("posted_at", { ascending: false }).limit(limit);
   const { data: rows, error } = await q;
   if (error || !rows?.length) return 0;
   // How his posts usually do, so each one can be read against the rest.
@@ -386,7 +387,7 @@ export async function lookAtPosts(supabase: SupabaseClient, limit = 8, only?: st
     const kind = carousel ? `a carousel of ${items.length} slides` : info.media_type === "VIDEO" || m.product_type === "REELS" ? "a reel" : "a photo";
     const reply = await askAboutSequence({
       parts,
-      maxTokens: 2500,
+      maxTokens: 8000,
       prompt: `That is one of Max's Instagram posts: ${kind}, all of it.
 Caption: "${(m.caption ?? "").slice(0, 800)}"
 Its numbers: ${numbers}. His posts usually get about ${Math.round(usual.views ?? 0)} views, a ${f1(usual.share)}% share rate and a ${f1(usual.save)}% save rate (out of reach), and ${Math.round(usual.comments ?? 0)} comments.
@@ -394,9 +395,10 @@ First describe what's actually there, with no praise or advice. Sound isn't avai
 Return only JSON:
 {"summary": "2–3 plain sentences: the subject (food, pottery, music, people, place), whether Max is in it, the setting and light, the style (close-up, process, finished piece, candid, polished)",
  "hook": "what the very first frame or slide shows, the moment someone decides to stay or scroll",
+ "takeaway": "2–3 honest sentences on what this post teaches about his content: how it did against his usual, and what in it most likely explains that (the opening, the subject, whether he's in it, the words, the format). Say plainly when the numbers are too few to tell.",
  "parts": [${carousel ? `{"label": "Slide 1", "text": "what this slide shows, in a sentence or two"}, one per slide` : kind === "a reel" ? `{"label": "0–4s", "text": "what happens in this stretch"}, covering the whole video in order` : `{"label": "Photo", "text": "what's in it"}`}],
- "on_screen_text": "every bit of text shown on screen, in order (empty if none)",
- "takeaway": "2–3 honest sentences on what this post teaches about his content: how it did against his usual, and what in it most likely explains that (the opening, the subject, whether he's in it, the words, the format). Say plainly when the numbers are too few to tell."}`,
+ "on_screen_text": "every bit of text shown on screen, in order, exactly as written (empty if none)"}
+Keep each part to a sentence or two; the full words belong in on_screen_text.`,
     });
     const s0 = reply.indexOf("{");
     const e0 = reply.lastIndexOf("}");
@@ -404,7 +406,7 @@ Return only JSON:
     try {
       parsed = JSON.parse(reply.slice(s0, e0 + 1));
     } catch {
-      parsed = { summary: reply.slice(0, 800) };
+      parsed = salvage(reply);
     }
     const detail: SeenDetail = {
       parts: (parsed.parts ?? []).filter((x) => x?.text).slice(0, 30),

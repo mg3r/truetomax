@@ -1,5 +1,6 @@
 import { ActionButton } from "./DeleteButton";
 import { AskPartner } from "./AskPartner";
+import { Collapsible } from "./Collapsible";
 import { contentIdeaToTask, ideaToProject, letGoOfIdea } from "@/app/actions";
 
 type Idea = { id: string; title: string; body: string | null; first_step: string | null; money_path: string | null };
@@ -8,9 +9,11 @@ type Idea = { id: string; title: string; body: string | null; first_step: string
 export function IdeaList({ kind, ideas }: { kind: "content" | "venture"; ideas: Idea[] }) {
   const projects = kind === "venture";
   return (
-    <section aria-labelledby={`${kind}-ideas`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 id={`${kind}-ideas`} className="section-title">{projects ? "project ideas" : "post ideas"}</h2>
+    <Collapsible
+      id={`${kind}-ideas`}
+      title={projects ? "project ideas" : "post ideas"}
+      count={ideas.length}
+      action={
         <AskPartner
           endpoint="/api/ideas"
           body={{ kind }}
@@ -18,11 +21,12 @@ export function IdeaList({ kind, ideas }: { kind: "content" | "venture"; ideas: 
           busyLabel="Thinking it through…"
           className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink"
         />
-      </div>
+      }
+    >
       {ideas.length ? (
-        <ul className="mt-2 grid gap-x-8 lg:grid-cols-3">
+        <ul className="mt-2 divide-y divide-line">
           {ideas.map((i) => (
-            <li key={i.id} className="border-t border-line py-3">
+            <li key={i.id} className="py-3">
               <p className="font-medium">{i.title}</p>
               {i.body && <p className="mt-0.5 text-sm text-muted">{i.body}</p>}
               {i.money_path && <p className="mt-1 text-sm"><span className="text-muted">Money path: </span>{i.money_path}</p>}
@@ -46,6 +50,6 @@ export function IdeaList({ kind, ideas }: { kind: "content" | "venture"; ideas: 
           {projects ? "Ask for feasible ways to earn from what you already do." : "Ask for ideas built from what you're making this week and what's landing."}
         </p>
       )}
-    </section>
+    </Collapsible>
   );
 }

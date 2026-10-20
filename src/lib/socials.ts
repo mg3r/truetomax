@@ -27,6 +27,27 @@ export type Post = {
   seen_detail?: { parts: { label: string; text: string }[]; hook?: string; on_screen_text?: string; watched?: string; takeaway?: string } | null;
 };
 
+/** A reply that ran long and got cut off: keep every field that finished, and every complete slide. */
+export function salvage(reply: string) {
+  const field = (k: string) => {
+    const m = new RegExp(`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`).exec(reply);
+    if (!m) return undefined;
+    try {
+      return JSON.parse(`"${m[1]}"`) as string;
+    } catch {
+      return m[1];
+    }
+  };
+  const parts: { label: string; text: string }[] = [];
+  for (const m of reply.matchAll(/\{\s*"label"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}/g)) {
+    try {
+      parts.push({ label: JSON.parse(`"${m[1]}"`), text: JSON.parse(`"${m[2]}"`) });
+    } catch {}
+  }
+  const summary = field("summary") ?? (reply.trim().startsWith("{") ? "" : reply.slice(0, 800));
+  return { summary, hook: field("hook"), takeaway: field("takeaway"), on_screen_text: field("on_screen_text"), parts };
+}
+
 /** A share of people reached, as a percent (null when there's nothing to divide by). */
 export const rateOf = (part: number | null | undefined, of: number | null | undefined) => (part != null && of ? (100 * part) / of : null);
 

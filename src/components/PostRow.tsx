@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Thumb } from "./Thumb";
-import { type Post, formatOf, rateOf, skipPct } from "@/lib/socials";
+import { type Post, formatOf, rateOf, skipPct, salvage } from "@/lib/socials";
 
 const n = (v: number | null | undefined) => (v == null ? "–" : v >= 10000 ? `${(v / 1000).toFixed(v >= 100000 ? 0 : 1)}k` : v.toLocaleString());
 const pct = (v: number | null) => (v == null ? null : `${v < 10 ? v.toFixed(1) : Math.round(v)}%`);
@@ -25,7 +25,10 @@ export function PostRow({ m, best }: { m: Post; best: boolean }) {
     setLooking(false);
   };
   const reel = m.product_type === "REELS";
-  const d = m.seen_detail;
+  // An older read that got cut off mid-reply: show the parts that came through until it's looked at again.
+  const broken = m.seen?.trim().startsWith("{") ? salvage(m.seen) : null;
+  const seen = broken ? broken.summary || null : m.seen;
+  const d = broken ? { parts: broken.parts, hook: broken.hook, takeaway: broken.takeaway, on_screen_text: broken.on_screen_text, watched: m.seen_detail?.watched } : m.seen_detail;
   const skip = skipPct(m.skip_rate);
 
   const more: [string, string | null][] = [
@@ -57,9 +60,9 @@ export function PostRow({ m, best }: { m: Post; best: boolean }) {
           <a href={m.permalink ?? "#"} target="_blank" rel="noopener noreferrer" className="mt-0.5 line-clamp-2 hover:underline hover:decoration-line hover:underline-offset-4">
             {m.caption?.trim() || "(no caption)"}
           </a>
-          {m.seen && (
+          {seen && (
             <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-1 block w-full text-left text-xs text-muted italic hover:text-ink">
-              <span className={open ? "" : "line-clamp-2"}>{m.seen}</span>
+              <span className={open ? "" : "line-clamp-2"}>{seen}</span>
             </button>
           )}
           <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted tabular-nums">
@@ -95,10 +98,10 @@ export function PostRow({ m, best }: { m: Post; best: boolean }) {
                   <p className="mt-0.5 font-serif text-base leading-relaxed">{d.takeaway}</p>
                 </div>
               )}
-              {m.seen && (
+              {seen && (
                 <div>
                   <h4 className="text-xs text-muted">What&rsquo;s in it</h4>
-                  <p className="mt-0.5">{m.seen}</p>
+                  <p className="mt-0.5">{seen}</p>
                 </div>
               )}
               {d?.watched && <p className="text-xs text-muted">{d.watched}</p>}
@@ -137,9 +140,9 @@ export function PostRow({ m, best }: { m: Post; best: boolean }) {
                   ))}
                 </dl>
               )}
-              {!d && m.seen && (
+              {(broken || (!m.seen_detail && m.seen)) && (
                 <p className="text-xs text-muted">
-                  This is from an earlier, quicker look.{" "}
+                  {broken ? "This read got cut off." : "This is from an earlier, quicker look."}{" "}
                   <button type="button" onClick={lookNow} disabled={looking} className="underline decoration-line underline-offset-4 hover:text-ink">
                     {looking ? "Looking…" : "Look again, all of it"}
                   </button>
