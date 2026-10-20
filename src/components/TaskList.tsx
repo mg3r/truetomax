@@ -7,7 +7,7 @@ import { LineEdit } from "./LineEdit";
 
 const UNDATED = "9999-12-31";
 
-export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; practice_id?: string | null };
+export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null };
 type Project = { id: string; title: string };
 type Group = "today" | "scheduled" | "next" | "later" | "done";
 
@@ -77,7 +77,7 @@ export function TaskList({
             <ul className="mt-1">
               {list.map((t) => {
                 const done = t.status === "done";
-                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.project_id ? projName.get(t.project_id) : null, t.practice_id ? practiceName.get(t.practice_id) : null].filter(Boolean).join(", ");
+                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.project_id ? projName.get(t.project_id) : null, t.routine_id ? practiceName.get(t.routine_id) : null].filter(Boolean).join(", ");
                 return (
                   <li key={t.id} className="group border-b border-line py-1.5">
                     <div className="flex items-start gap-3">
@@ -150,11 +150,11 @@ export function TaskList({
                                 key={p.id}
                                 type="button"
                                 onClick={() => {
-                                  const next = t.practice_id === p.id ? null : p.id;
-                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, practice_id: next } : x)));
+                                  const next = t.routine_id === p.id ? null : p.id;
+                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, routine_id: next } : x)));
                                   start(() => setTaskPractice(t.id, next));
                                 }}
-                                className={pill(t.practice_id === p.id)}
+                                className={pill(t.routine_id === p.id)}
                               >
                                 {p.name}
                               </button>

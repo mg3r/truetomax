@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { askJSON, buildContext } from "@/lib/ai";
+import { loadPractices } from "@/lib/routine";
 
 export const maxDuration = 120;
 
@@ -21,9 +22,9 @@ export async function POST(req: Request) {
   const [goals, tasks, practiceRows] = await Promise.all([
     supabase.from("goals").select("title, status").eq("project_id", p.id).neq("status", "dropped"),
     supabase.from("tasks").select("title, status, day").eq("project_id", p.id).in("status", ["todo", "done", "skipped", "suggested"]).order("created_at", { ascending: false }).limit(60),
-    supabase.from("practices").select("id, name").order("sort"),
+    loadPractices(supabase),
   ]);
-  const practices = practiceRows.data ?? [];
+  const practices = practiceRows;
   const t = tasks.data ?? [];
   const list = (status: string) => t.filter((x) => x.status === status).map((x) => `- ${x.title}`).join("\n") || "(none)";
 
@@ -49,7 +50,9 @@ Return [{"title": short imperative, "reason": one sentence on why this step now,
       category: CATEGORIES.includes(s.category ?? "") ? s.category : null,
       size: ["small", "medium", "large"].includes(s.size ?? "") ? s.size : null,
       project_id: p.id,
-      practice_id: practices.find((x) => x.name.toLowerCase() === (s.practice ?? "").trim().toLowerCase())?.id ?? null,
+      ...(practices.find((x) => x.name.toLowerCase() === (s.practice ?? "").trim().toLowerCase())
+        ? { routine_id: practices.find((x) => x.name.toLowerCase() === (s.practice ?? "").trim().toLowerCase())!.id }
+        : {}),
       status: "suggested",
       source: "partner",
       day: null,

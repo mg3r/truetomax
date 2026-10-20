@@ -5,6 +5,7 @@ import { today, addDays } from "@/lib/dates";
 import { type BoardTask } from "@/components/Board";
 import { TaskPanel } from "@/components/TaskPanel";
 import { ProjectSuggestions } from "@/components/ProjectSuggestions";
+import { loadPractices } from "@/lib/routine";
 import { ProjectHeader, GoalList } from "@/components/ProjectEditor";
 import { DeleteButton } from "@/components/DeleteButton";
 import { deleteProject } from "@/app/actions";
@@ -21,10 +22,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   const [goals, open, done, suggested] = await Promise.all([
     supabase.from("goals").select("id, title, status").eq("project_id", id).neq("status", "dropped").order("created_at"),
-    supabase.from("tasks").select("id, title, status, day, source, reason, practice_id").eq("project_id", id).eq("status", "todo").order("created_at"),
+    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "todo").order("created_at"),
     supabase
       .from("tasks")
-      .select("id, title, status, day, source, reason, practice_id, completed_at")
+      .select("*")
       .eq("project_id", id)
       .eq("status", "done")
       .gte("completed_at", addDays(day, -14))
@@ -33,7 +34,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     supabase.from("tasks").select("id, title, reason").eq("project_id", id).eq("status", "suggested").is("day", null).order("created_at"),
   ]);
 
-  const practices = (await supabase.from("practices").select("id, name").order("sort").order("created_at")).data ?? [];
+  const practices = await loadPractices(supabase);
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
 
   return (

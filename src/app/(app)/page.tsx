@@ -10,9 +10,8 @@ import { TaskRow, SuggestionRow, EventRow, type Task } from "@/components/Tasks"
 import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
 import { RoutineToday } from "@/components/Routine";
-import { isDue, isPinned, timesOf, mondayOf, type Routine } from "@/lib/routine";
+import { isDue, isPinned, timesOf, mondayOf, loadPractices, type Routine } from "@/lib/routine";
 import { sameThing } from "@/lib/match";
-import { PracticeToday, type Practice } from "@/components/Practices";
 import { sectionAround, type Passage } from "@/lib/passage";
 
 export const dynamic = "force-dynamic";
@@ -69,14 +68,6 @@ export default async function TodayPage() {
     passage = sectionAround({ page: page.data.page, text: page.data.text }, around ?? []);
   }
 
-  // Practices: tap what you practiced today.
-  const [practiceRows, practiceToday] = await Promise.all([
-    supabase.from("practices").select("id, name, sort").order("sort").order("created_at"),
-    supabase.from("practice_sessions").select("practice_id").eq("day", day),
-  ]);
-  const practices = practiceToday.error ? [] : ((practiceRows.data ?? []) as Practice[]);
-  const practiced = (practiceToday.data ?? []).map((p) => p.practice_id as string);
-
   const mv = moves.data ?? [];
   const shares = mv.filter((m) => m.kind === "shared").length;
   const asks = mv.filter((m) => m.kind === "asked").length;
@@ -89,8 +80,8 @@ export default async function TodayPage() {
   ].filter(Boolean);
 
   const projName = new Map((projects.data ?? []).map((p) => [p.id, p.title]));
-  const practiceNames = new Map(((await supabase.from("practices").select("id, name")).data ?? []).map((p) => [p.id, p.name]));
-  const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.practice_id ? practiceNames.get(t.practice_id) : null }));
+  const practiceNames = new Map((await loadPractices(supabase)).map((p) => [p.id, p.name]));
+  const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.routine_id ? practiceNames.get(t.routine_id) : null }));
   const suggestions = all.filter((t) => t.status === "suggested");
   // Rhythm first, then everything else; finished tasks sink to the bottom.
   const list = all
@@ -197,7 +188,7 @@ export default async function TodayPage() {
         <section aria-labelledby="routine">
           <div className="flex items-baseline justify-between">
             <h2 id="routine" className="section-title">
-              <Link href="/rituals" className="hover:text-ink">Rituals</Link>
+              <Link href="/rhythm" className="hover:text-ink">Rhythm</Link>
             </h2>
             <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
           </div>
@@ -207,16 +198,6 @@ export default async function TodayPage() {
         </section>
       )}
 
-      {practices.length > 0 && (
-        <section aria-labelledby="practiced">
-          <h2 id="practiced" className="section-title">
-            <Link href="/practices" className="hover:text-ink">Practiced today</Link>
-          </h2>
-          <div className="mt-3">
-            <PracticeToday practices={practices} practiced={practiced} today={day} />
-          </div>
-        </section>
-      )}
 
       {(allDay.length > 0 || timedEvents.length > 0) && (
         <section aria-labelledby="calendar">

@@ -104,24 +104,24 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     .map((r: Row) => {
       const pinned = r.cadence === "weekly" && (r.weekdays as number[]).length > 0;
       const times = pinned ? (r.weekdays as number[]).length : Math.max(1, Number(r.times_per_week ?? 1));
-      const days = r.cadence !== "weekly" ? "" : pinned ? ` on ${(r.weekdays as number[]).map((w) => WEEKDAYS[w].slice(0, 3)).join(", ")}` : `, ${times}× a week on any day (a regulating practice, not a scheduled event)`;
+      const days = r.cadence !== "weekly" ? "" : pinned ? ` on ${(r.weekdays as number[]).map((w) => WEEKDAYS[w].slice(0, 3)).join(", ")}` : `, ${times}× a week on any day, not a scheduled event`;
       const possible = r.cadence === "weekly" ? times * 2 : 14;
-      return `- ${r.title} (${r.cadence}${days}) — done ${routineCount.get(r.id as string) ?? 0} of ${possible} times in the last 2 weeks`;
+      return `- ${r.title} (${r.kind === "practice" ? "practice" : "ritual"}, ${r.cadence}${days}) — done ${routineCount.get(r.id as string) ?? 0} of ${possible} times in the last 2 weeks`;
     })
     .join("\n");
-  // Practices: what he makes and offers, which projects each feeds, and how often he's actually doing it.
-  const [practiceRows, practiceLinks, practiceSessions] = await Promise.all([
-    supabase.from("practices").select("id, name").order("sort"),
-    supabase.from("project_practices").select("practice_id, project_id"),
-    supabase.from("practice_sessions").select("practice_id, day").gte("day", addDays(day, -28)),
+  // Practices (Rhythm items marked as practices): what he makes and offers, which projects each feeds, and how often he does it.
+  const [practiceLinks, practiceChecks] = await Promise.all([
+    supabase.from("routine_projects").select("routine_id, project_id"),
+    supabase.from("routine_checks").select("routine_id, day").gte("day", addDays(day, -28)),
   ]);
-  const practiceText = practiceSessions.error
+  const practiceText = practiceLinks.error
     ? ""
-    : (practiceRows.data ?? [])
+    : (routineRows.data ?? [])
+        .filter((r: Row) => r.kind === "practice")
         .map((p: Row) => {
-          const ds = (practiceSessions.data ?? []).filter((x: Row) => x.practice_id === p.id).map((x: Row) => x.day as string).sort();
-          const feeds = (practiceLinks.data ?? []).filter((l: Row) => l.practice_id === p.id).map((l: Row) => (projects.data ?? []).find((x: Row) => x.id === l.project_id)?.title).filter(Boolean);
-          return `- ${p.name}: ${ds.filter((d) => d >= since).length}× in the last 2 weeks, ${ds.length}× in 4 weeks${ds.length ? `, last ${ds[ds.length - 1]}` : ", not logged yet"}${feeds.length ? `; feeds ${feeds.join(", ")}` : ""}`;
+          const ds = (practiceChecks.data ?? []).filter((x: Row) => x.routine_id === p.id).map((x: Row) => x.day as string).sort();
+          const feeds = (practiceLinks.data ?? []).filter((l: Row) => l.routine_id === p.id).map((l: Row) => (projects.data ?? []).find((x: Row) => x.id === l.project_id)?.title).filter(Boolean);
+          return `- ${p.title}: ${ds.length}× in the last 4 weeks${ds.length ? `, last ${ds[ds.length - 1]}` : ", not done yet"}${feeds.length ? `; feeds ${feeds.join(", ")}` : ""}`;
         })
         .join("\n");
   const elimIdeas = await supabase.from("ideas").select("title, status_note").eq("status", "eliminated").limit(20);
@@ -149,7 +149,7 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `## Projects (the live list right now; anything not here was deleted or never existed)\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,
     `## Weekly rhythm — today\n${todayRhythm.map((t) => `- ${t}`).join("\n") || "(nothing fixed today)"}`,
-    `## Rituals (daily, nightly and weekly practices that keep him grounded and regulated, set by him; notice what's holding and what's slipping)\n${routineText || "(none set)"}`,
+    `## Rhythm (what he does on repeat, set by him: rituals keep him grounded and regulated, practices are what he makes and offers; notice what's holding and what's slipping)\n${routineText || "(none set)"}`,
     practiceText ? `## Practices (what he makes and offers; build suggestions and sharing ideas around these, and notice which have gone quiet)\n${practiceText}` : "",
     `## Done in the last 2 weeks\n${(done.data ?? []).map((t: Row) => `- ${t.title}`).join("\n") || "(nothing logged)"}`,
     `## Skipped in the last 2 weeks\n${(skipped.data ?? []).map((t: Row) => `- ${t.title} (${t.source})`).join("\n") || "(none)"}`,

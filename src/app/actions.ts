@@ -65,11 +65,11 @@ export async function setTaskStatus(id: string, status: "todo" | "done" | "skipp
     })
     .eq("id", id);
 
-  // A task that is a practice session logs the practice when it's done.
-  if (before.practice_id && (status === "done" || before.status === "done")) {
+  // An action that's a session of a practice ticks that practice off in your Rhythm when it's done.
+  if (before.routine_id && (status === "done" || before.status === "done")) {
     const day = before.day && before.day !== UNDATED ? before.day : today();
-    if (status === "done") await supabase.from("practice_sessions").upsert({ practice_id: before.practice_id, day }, { onConflict: "practice_id,day" });
-    else await supabase.from("practice_sessions").delete().eq("practice_id", before.practice_id).eq("day", day);
+    if (status === "done") await supabase.from("routine_checks").upsert({ routine_id: before.routine_id, day }, { onConflict: "routine_id,day" });
+    else await supabase.from("routine_checks").delete().eq("routine_id", before.routine_id).eq("day", day);
   }
 
   // Finishing a share or ask task counts as a move.
@@ -445,12 +445,15 @@ export async function applyRoutineToday() {
   const day = today();
   const weekday = new Date(day + "T12:00:00Z").getUTCDay();
   const [{ data: rhythm }, { data: existing }] = await Promise.all([
-    supabase.from("rhythm").select("title, project_id, practice_id, at_time, part_of_day").eq("weekday", weekday).order("sort"),
+    supabase.from("rhythm").select("*").eq("weekday", weekday).order("sort"),
     supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm"),
   ]);
   const have = new Set((existing ?? []).map((t) => t.title));
   const add = (rhythm ?? []).filter((r) => !have.has(r.title));
-  if (add.length) await supabase.from("tasks").insert(add.map((r) => ({ ...r, day, source: "rhythm" })));
+  if (add.length)
+    await supabase.from("tasks").insert(
+      add.map((r) => ({ title: r.title, project_id: r.project_id, at_time: r.at_time, part_of_day: r.part_of_day, ...(r.routine_id ? { routine_id: r.routine_id } : {}), day, source: "rhythm" }))
+    );
   refresh();
 }
 
@@ -650,7 +653,7 @@ export async function removeDriveFolder(folderId: string) {
 const cadenceOf = (v: unknown) => (v === "daily" || v === "nightly" || v === "weekly" ? v : null);
 const cleanDays = (days: number[]) => [...new Set(days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
 
-export async function addRoutine(title: string, cadence: string, weekdays: number[], times = 1) {
+export async function addRoutine(title: string, cadence: string, weekdays: number[], times = 1, kind: "ritual" | "practice" = "ritual") {
   const c = cadenceOf(cadence);
   const days = cleanDays(weekdays);
   if (!title.trim() || !c) return;
@@ -658,9 +661,10 @@ export async function addRoutine(title: string, cadence: string, weekdays: numbe
   const { data: last } = await supabase.from("routines").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();
   const row: Record<string, unknown> = { title: title.trim(), cadence: c, weekdays: c === "weekly" ? days : [], sort: (last?.sort ?? 0) + 1 };
   const t = Math.min(7, Math.max(1, Math.round(times) || 1));
-  const { error } = await supabase.from("routines").insert(c === "weekly" ? { ...row, times_per_week: days.length || t } : row);
-  // Before the weekly-count migration runs, save without the count.
-  if (error && /times_per_week/.test(error.message)) await supabase.from("routines").insert(row);
+  const full = { ...row, ...(c === "weekly" ? { times_per_week: days.length || t } : {}), ...(kind === "practice" ? { kind } : {}) };
+  const { error } = await supabase.from("routines").insert(full);
+  // Before the weekly-count or Rhythm migrations run, save without what they add.
+  if (error && /times_per_week|kind/.test(error.message)) await supabase.from("routines").insert(row);
   refresh();
 }
 
@@ -694,6 +698,13 @@ export async function checkRoutine(id: string, day: string, done: boolean) {
   const supabase = await db();
   if (done) await supabase.from("routine_checks").upsert({ routine_id: id, day }, { onConflict: "routine_id,day" });
   else await supabase.from("routine_checks").delete().eq("routine_id", id).eq("day", day);
+  // Anything on that day's actions for this practice is done (or not) along with it.
+  await supabase
+    .from("tasks")
+    .update(done ? { status: "done", completed_at: new Date().toISOString() } : { status: "todo", completed_at: null })
+    .eq("routine_id", id)
+    .eq("day", day)
+    .in("status", done ? ["todo"] : ["done"]);
   refresh();
 }
 
@@ -769,7 +780,7 @@ export async function addToSchedule(input: {
   const part_of_day = partOfDay(input.part_of_day);
   const at_time = input.at_time && /^\d{2}:\d{2}/.test(input.at_time) ? input.at_time : null;
   const project_id = input.project_id || null;
-  const practice = input.practice_id ? { practice_id: input.practice_id } : {};
+  const practice = input.practice_id ? { routine_id: input.practice_id } : {};
   if (input.repeat) {
     const days = [...new Set(input.weekdays.filter((w) => Number.isInteger(w) && w >= 0 && w <= 6))];
     if (!days.length) return;
@@ -803,50 +814,26 @@ export async function answerProjectSuggestion(id: string, keep: boolean) {
   refresh();
 }
 
-/* Practices: what you make and offer, feeding your projects */
-export async function createPractice(name: string) {
-  if (!name.trim()) return;
+/** Mark an action as a session of one of your practices, or clear it. */
+export async function setTaskPractice(id: string, practiceId: string | null) {
   const supabase = await db();
-  const { data: last } = await supabase.from("practices").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();
-  await supabase.from("practices").insert({ name: name.trim(), sort: (last?.sort ?? 0) + 1 });
+  await supabase.from("tasks").update({ routine_id: practiceId }).eq("id", id);
   refresh();
 }
 
-export async function renamePracticeTo(id: string, name: string) {
-  if (!name.trim()) return;
+/** Rhythm: whether an item is a ritual (tends you) or a practice (what you make and offer). */
+export async function setRoutineKind(id: string, kind: "ritual" | "practice") {
+  if (kind !== "ritual" && kind !== "practice") return;
   const supabase = await db();
-  await supabase.from("practices").update({ name: name.trim() }).eq("id", id);
-  refresh();
-}
-
-export async function removePractice(id: string) {
-  const supabase = await db();
-  await supabase.from("practices").delete().eq("id", id);
-  refresh();
-}
-
-export async function reorderPractices(ids: string[]) {
-  const supabase = await db();
-  await Promise.all(ids.map((id, i) => supabase.from("practices").update({ sort: i }).eq("id", id)));
+  await supabase.from("routines").update({ kind }).eq("id", id);
   refresh();
 }
 
 /** Link a practice to a project it feeds, or unlink it. */
-export async function linkPractice(practiceId: string, projectId: string, on: boolean) {
+export async function linkRoutineProject(routineId: string, projectId: string, on: boolean) {
   const supabase = await db();
-  if (on) await supabase.from("project_practices").upsert({ practice_id: practiceId, project_id: projectId }, { onConflict: "project_id,practice_id" });
-  else await supabase.from("project_practices").delete().eq("practice_id", practiceId).eq("project_id", projectId);
-  refresh();
-}
-
-/** You practiced today (or take it back). */
-export async function logPractice(id: string, day: string, on: boolean) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
-  const supabase = await db();
-  if (on) await supabase.from("practice_sessions").upsert({ practice_id: id, day }, { onConflict: "practice_id,day" });
-  else await supabase.from("practice_sessions").delete().eq("practice_id", id).eq("day", day);
-  // Anything on today's list for this practice is done (or not) along with it.
-  await supabase.from("tasks").update(on ? { status: "done", completed_at: new Date().toISOString() } : { status: "todo", completed_at: null }).eq("practice_id", id).eq("day", day).in("status", on ? ["todo"] : ["done"]);
+  if (on) await supabase.from("routine_projects").upsert({ routine_id: routineId, project_id: projectId }, { onConflict: "routine_id,project_id" });
+  else await supabase.from("routine_projects").delete().eq("routine_id", routineId).eq("project_id", projectId);
   refresh();
 }
 
@@ -856,12 +843,5 @@ export async function updateJournal(id: string, body: string) {
   const supabase = await db();
   const { data: entry } = await supabase.from("journal_entries").update({ body: body.trim(), updated_at: new Date().toISOString() }).eq("id", id).select("id, day, prompt, body").single();
   if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
-  refresh();
-}
-
-/** Mark an action as a session of one of your practices, or clear it. */
-export async function setTaskPractice(id: string, practiceId: string | null) {
-  const supabase = await db();
-  await supabase.from("tasks").update({ practice_id: practiceId }).eq("id", id);
   refresh();
 }

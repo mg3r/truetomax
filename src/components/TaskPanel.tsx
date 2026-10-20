@@ -143,10 +143,10 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
                             {practices.map((p) => (
                               <button
                                 key={p.id}
-                                className={`rounded-full border px-2.5 py-1 text-xs ${t.practice_id === p.id ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`}
+                                className={`rounded-full border px-2.5 py-1 text-xs ${t.routine_id === p.id ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`}
                                 onClick={() => {
-                                  const next = t.practice_id === p.id ? null : p.id;
-                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, practice_id: next } : x)));
+                                  const next = t.routine_id === p.id ? null : p.id;
+                                  setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, routine_id: next } : x)));
                                   start(() => setTaskPractice(t.id, next));
                                 }}
                               >

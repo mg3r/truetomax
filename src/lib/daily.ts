@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sectionAround } from "./passage";
+import { loadPractices } from "./routine";
 import { askJSON, buildContext } from "./ai";
 import { today, weekdayOf } from "./dates";
 import { seedIfNeeded } from "./seed";
@@ -47,9 +48,20 @@ export async function prepareDay(supabase: SupabaseClient, { force = false, user
   // 1. Weekly rhythm becomes today's fixed tasks.
   const { count } = await supabase.from("tasks").select("id", { count: "exact", head: true }).eq("day", day).eq("source", "rhythm");
   if (!count) {
-    const full = await supabase.from("rhythm").select("title, project_id, practice_id, at_time, part_of_day").eq("weekday", weekdayOf(day)).order("sort");
+    const full = await supabase.from("rhythm").select("*").eq("weekday", weekdayOf(day)).order("sort");
     if (!full.error && full.data?.length) {
-      await supabase.from("tasks").insert(full.data.map((r) => ({ ...r, day, source: "rhythm", ...owner })));
+      await supabase.from("tasks").insert(
+        full.data.map((r) => ({
+          title: r.title,
+          project_id: r.project_id,
+          at_time: r.at_time ?? null,
+          part_of_day: r.part_of_day ?? null,
+          ...(r.routine_id ? { routine_id: r.routine_id } : {}),
+          day,
+          source: "rhythm",
+          ...owner,
+        }))
+      );
     } else if (full.error) {
       // Before the setup files run, rhythm may not have time or part-of-day columns yet.
       const { data: rhythm } = await supabase.from("rhythm").select("title, project_id").eq("weekday", weekdayOf(day)).order("sort");
@@ -77,8 +89,8 @@ export async function prepareDay(supabase: SupabaseClient, { force = false, user
   let plan: DayPlan | null = null;
   let maxSuggestions = 3;
   // Work you've already planned: Up next tasks, in a project or not. The partner offers these first.
-  const practiceList = (await supabase.from("practices").select("id, name").order("sort")).data ?? [];
-  const upNextRes = await supabase.from("tasks").select("id, title, project_id, practice_id").eq("status", "todo").eq("day", "9999-12-31").order("created_at").limit(20);
+  const practiceList = await loadPractices(supabase);
+  const upNextRes = await supabase.from("tasks").select("*").eq("status", "todo").eq("day", "9999-12-31").order("created_at").limit(20);
   const upNext = upNextRes.data ?? [];
   try {
     const { data: projects } = await supabase.from("projects").select("id, title").eq("status", "active");
@@ -126,7 +138,7 @@ Don't repeat anything already open or skipped recently. If he has made no moves 
         status: "suggested",
         source: "partner",
         project_id: from?.project_id ?? projects?.find((p) => p.title === t.project)?.id ?? null,
-        ...(practiceOf(from?.practice_id, t.practice) ? { practice_id: practiceOf(from?.practice_id, t.practice) } : {}),
+        ...(practiceOf(from?.routine_id, t.practice) ? { routine_id: practiceOf(from?.routine_id, t.practice) } : {}),
         ...(from ? { origin_task_id: from.id } : {}),
         ...owner,
       };

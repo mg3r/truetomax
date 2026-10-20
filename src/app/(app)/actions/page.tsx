@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { today as todayOf, addDays } from "@/lib/dates";
 import { TaskList, type ListTask } from "@/components/TaskList";
 import { TaskImport } from "@/components/TaskImport";
+import { loadPractices } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,10 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
 
   // Every one-time task: open ones, plus what you finished in the last two weeks. Things that repeat live on Schedule.
   const [open, done, projectRows] = await Promise.all([
-    supabase.from("tasks").select("id, title, status, day, project_id, practice_id").eq("status", "todo").neq("source", "rhythm").order("created_at"),
+    supabase.from("tasks").select("*").eq("status", "todo").neq("source", "rhythm").order("created_at"),
     supabase
       .from("tasks")
-      .select("id, title, status, day, project_id, practice_id")
+      .select("*")
       .eq("status", "done")
       .neq("source", "rhythm")
       .gte("completed_at", addDays(day, -14))
@@ -24,7 +25,7 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
       .limit(40),
     supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
   ]);
-  const practices = (await supabase.from("practices").select("id, name").order("sort").order("created_at")).data ?? [];
+  const practices = await loadPractices(supabase);
   const projects = projectRows.data ?? [];
   const filter = projects.some((p) => p.id === project) ? project! : null;
   const tasks = [...(open.data ?? []), ...(done.data ?? [])] as ListTask[];

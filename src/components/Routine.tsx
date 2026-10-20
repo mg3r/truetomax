@@ -4,10 +4,17 @@ import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { addRoutine, updateRoutine, deleteRoutine, checkRoutine, reorderRoutines } from "@/app/actions";
+import { addRoutine, updateRoutine, deleteRoutine, checkRoutine, reorderRoutines, setRoutineKind, linkRoutineProject } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
-import { CADENCES, DAY_LETTERS, timesOf, isPinned, type Routine } from "@/lib/routine";
+import { CADENCES, DAY_LETTERS, timesOf, isPinned, isPractice, type Routine } from "@/lib/routine";
+
+type Project = { id: string; title: string };
+type Link = { routine_id: string; project_id: string };
+const KINDS = [
+  { value: "ritual", label: "Ritual" },
+  { value: "practice", label: "Practice" },
+] as const;
 
 // Monday first, like the Schedule.
 const WEEK = [1, 2, 3, 4, 5, 6, 0];
@@ -88,7 +95,10 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
               return (
                 <li key={r.id} className="flex items-start gap-3 py-2.5">
                   <Check done={on} title={r.title} onClick={() => toggle(r.id)} />
-                  <span className={`min-w-0 flex-1 ${on ? "text-muted line-through decoration-line" : ""}`}>{r.title}</span>
+                  <span className={`min-w-0 flex-1 ${on ? "text-muted line-through decoration-line" : ""}`}>
+                    {r.title}
+                    {isPractice(r) && <span className="ml-2 text-xs text-muted">practice</span>}
+                  </span>
                   {r.id in times && <span className="shrink-0 text-xs text-muted tabular-nums">{times[r.id] || "calendar"}</span>}
                   {r.cadence === "weekly" && (
                     <span className="shrink-0 text-xs text-muted tabular-nums">
@@ -105,8 +115,21 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
   );
 }
 
-/** The routine itself: add at the top, edit in place, and see the last week at a glance. */
-export function RoutineEditor({ items: initial, checks, week }: { items: Routine[]; checks: { routine_id: string; day: string }[]; week: string[] }) {
+/** Your rhythm: rituals and practices. Add at the top, edit in place, and see the last week at a glance. */
+export function RoutineEditor({
+  items: initial,
+  checks,
+  week,
+  projects = [],
+  links = null,
+}: {
+  items: Routine[];
+  checks: { routine_id: string; day: string }[];
+  week: string[];
+  projects?: Project[];
+  /** Which projects each practice feeds; null until the Rhythm migration runs. */
+  links?: Link[] | null;
+}) {
   const [items, setItems] = useState(initial);
   useEffect(() => {
     setItems(initial);
@@ -123,6 +146,7 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
   };
   const [title, setTitle] = useState("");
   const [cadence, setCadence] = useState<Routine["cadence"]>("daily");
+  const [kind, setKind] = useState<"ritual" | "practice">("ritual");
   const [days, setDays] = useState<number[]>([]);
   const [times, setTimes] = useState(1);
   const [pending, start] = useTransition();
@@ -133,7 +157,7 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
     if (!title.trim()) return;
     const t = title;
     start(async () => {
-      await addRoutine(t, cadence, days, times);
+      await addRoutine(t, cadence, days, times, kind);
       setTitle("");
       setDays([]);
     });
@@ -142,8 +166,17 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
   return (
     <div className="space-y-12">
       <form onSubmit={add} className="pebble bg-surface p-5">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add a ritual" aria-label="Add a ritual" className="field" />
-        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="How often">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your rhythm" aria-label="Add to your rhythm" className="field" />
+        {links !== null && (
+          <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Ritual or practice">
+            {KINDS.map((k) => (
+              <Chip key={k.value} on={kind === k.value} onClick={() => setKind(k.value)}>
+                {k.label}
+              </Chip>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="How often">
           {CADENCES.map((c) => (
             <Chip key={c.value} on={cadence === c.value} onClick={() => setCadence(c.value)}>
               {c.label}
@@ -189,7 +222,7 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
               <SortableContext items={list.map((r) => r.id)} strategy={verticalListSortingStrategy}>
                 <ul className="mt-2 divide-y divide-line">
                   {list.map((r) => (
-                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} />
+                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} projects={projects} links={links} />
                   ))}
                 </ul>
               </SortableContext>
@@ -198,12 +231,14 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
         );
       })}
 
-      {!items.length && <p className="text-muted">Nothing here yet. Start with the one thing you want to do every day.</p>}
+      {!items.length && <p className="text-muted">Nothing here yet. Add a ritual that keeps you grounded, or a practice you make and offer.</p>}
     </div>
   );
 }
 
-function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: Set<string> }) {
+function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: string[]; doneOn: Set<string>; projects: Project[]; links: Link[] | null }) {
+  const [open, setOpen] = useState(false);
+  const [feeds, setFeeds] = useOptimistic((links ?? []).filter((l) => l.routine_id === r.id).map((l) => l.project_id));
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: r.id });
   const [title, setTitle] = useState(r.title);
   const [, start] = useTransition();
@@ -233,6 +268,7 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
         <LineEdit
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onFocus={() => setOpen(true)}
           onBlur={() => title.trim() && title !== r.title && start(() => updateRoutine(r.id, { title }))}
           aria-label="What"
           className="min-w-0 flex-1 bg-transparent focus:outline-none"
@@ -246,6 +282,20 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
         <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your rituals?`} action={() => deleteRoutine(r.id)} />
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
+        {links !== null && (
+          <>
+            {KINDS.map((k) => (
+              <button
+                key={k.value}
+                onClick={() => (r.kind ?? "ritual") !== k.value && start(() => setRoutineKind(r.id, k.value))}
+                className={`rounded-full px-1.5 py-0.5 ${(r.kind ?? "ritual") === k.value ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+              >
+                {k.label.toLowerCase()}
+              </button>
+            ))}
+            <span aria-hidden="true" className="mx-1 h-3 self-center border-l border-line" />
+          </>
+        )}
         {CADENCES.map((c) => (
           <button
             key={c.value}
@@ -285,6 +335,35 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
           </>
         )}
       </div>
+      {open && isPractice(r) && links !== null && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
+          <span className="mr-1 text-muted">Feeds</span>
+          {projects.length ? (
+            projects.map((p) => {
+              const on = feeds.includes(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    start(async () => {
+                      setFeeds(on ? feeds.filter((x) => x !== p.id) : [...feeds, p.id]);
+                      await linkRoutineProject(r.id, p.id, !on);
+                    })
+                  }
+                  className={`rounded-full border px-1.5 py-0.5 ${on ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
+                >
+                  {p.title}
+                </button>
+              );
+            })
+          ) : (
+            <span className="text-muted">no projects yet</span>
+          )}
+          <button type="button" onClick={() => setOpen(false)} className="ml-1 text-muted hover:text-ink">Done</button>
+        </div>
+      )}
     </li>
   );
 }

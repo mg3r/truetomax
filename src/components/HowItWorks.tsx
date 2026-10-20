@@ -11,7 +11,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Rituals, Practices, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Rhythm, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
       "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },
@@ -19,7 +19,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Today",
     body: [
       "Each morning the day is prepared for you: an affirmation, one line naming what would make today count (taken only from what you've set or uploaded yourself: your tasks, projects, schedule, rituals, practices, Vision, journal and docs, never from the partner's own ideas), a reading from your copy of The Creative Act, and a question drawn from it. The reading is a whole section: it starts where the section starts and runs until it ends, even across pages, so it never stops mid-thought. The affirmation and question are written in the partner's own words; the reading is your book.",
-      "Today is for doing, not planning: you add things on the other tabs (Actions, Rituals, Practices, Schedule, Projects) and they show up here. Below the reading: your rituals to tick off; Practiced today, where you tap each practice you did; today's Calendar events in their own list; then your Actions for today (from Actions, Schedule and projects), timed ones in time order and the rest by part of day. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
+      "Today is for doing, not planning: you add things on the other tabs (Actions, Rhythm, Schedule, Projects) and they show up here. Below the reading: your Rhythm to tick off (rituals and practices, with practices marked); today's Calendar events in their own list; then your Actions for today (from Actions, Schedule and projects), timed ones in time order and the rest by part of day. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
       "Your partner suggests up to three actions a day, starting with Up next ones from your projects. Each comes with the project it serves and the practice it's a session of, when there is one. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
     ],
@@ -33,11 +33,13 @@ const SECTIONS: { title: string; body: string[] }[] = [
     ],
   },
   {
-    title: "Rituals",
+    title: "Rhythm",
     body: [
-      "The things that keep you regulated: daily, nightly, and weekly. Daily and nightly items show on Today as a checklist that starts fresh each morning.",
-      "Weekly items are about how often, not which day: \u201cSauna, 2\u00d7 a week\u201d. They sit in their own Weekly part of Today's checklist (below today and tonight) with how many you've done this week, and once you've hit the number they step aside until Monday. If you want one on set days, pick the days instead: it shows on just those days, still with its count for the week (\u201c1 of 3 this week\u201d).",
-      "On Schedule, each day has a Daily rituals line at the top and a Nightly rituals line in the evening, with how many you did (\u201c2 of 4\u201d); weekly ones on any day get one line for the whole week. Drag the dots to reorder. The seven small dots on each item show the last week. Your partner sees what's holding and what's slipping.",
+      "Everything you do on repeat, in one list. Each item is a ritual or a practice. Rituals tend you and keep you grounded: reading, breathwork, yoga, meditation, movement. Practices are what you make and offer: DJing, pottery, cooking, baking, fermenting. They feed your projects.",
+      "Add one at the top: choose Ritual or Practice, then daily, nightly or weekly. Daily and nightly items show on Today as a checklist that starts fresh each morning. Weekly items are about how often, not which day: \u201cPottery, 2\u00d7 a week\u201d. They sit in their own Weekly part of Today's checklist with how many you've done this week, and once you've hit the number they step aside until Monday. If you want one on set days, pick the days instead.",
+      "Everything edits in place: switch ritual or practice, change how often, drag the dots to reorder, \u00d7 to remove. Tap a practice's name to link the projects it feeds. The seven small dots on each item show the last week.",
+      "Practices connect to your actions: mark an action (on Actions or in a project) as a session of a practice, or pick a practice when adding to your Schedule, and finishing it ticks the practice off. On Schedule, each day has a Daily rhythm line at the top and a Nightly rhythm line in the evening (\u201c2 of 4\u201d), weekly ones get one line for the week, and days you did a weekly practice show as \u201cpracticed\u201d.",
+      "Your partner sees what's holding and what's slipping, which practices are alive and which have gone quiet, and which projects they feed, and builds suggestions and sharing ideas around them.",
     ],
   },
   {
@@ -61,14 +63,6 @@ const SECTIONS: { title: string; body: string[] }[] = [
       "A project's actions sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned and waiting. It shows in your Actions list, and your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d); adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
       "Your partner suggests next steps for each project: tap \u201cSuggest next steps\u201d and it proposes 3\u20135, drawing on the project's goals and tasks, your vision, your docs and uploads, your journal, your socials and what it has learned about how you work. Keep the ones you want (they go to Up next); let the rest go.",
       "Deleting a project removes its tasks and goals, and your partner forgets them too.",
-    ],
-  },
-  {
-    title: "Practices",
-    body: [
-      "What you make and offer: DJing, pottery, cooking, baking, fermenting. Where rituals keep you grounded, practices are the work you share, and they feed your projects.",
-      "Add one at the top; rename, reorder (drag the dots) or remove it in place. Tap a practice to link the projects it feeds. Each shows how many times you did it this week and when you last did. This tab is information only: you log a session on Today, under Practiced today. You can also put a practice on your Schedule (pick it when adding there); finishing that item on Today logs the practice, and days you practiced show on Schedule.",
-      "Your partner sees which practices are alive and which have gone quiet, which projects they feed, and builds suggestions and sharing ideas around them.",
     ],
   },
   {

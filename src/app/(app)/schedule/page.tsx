@@ -7,12 +7,12 @@ import { sameThing } from "@/lib/match";
 import { eventsForRange, timeLabel } from "@/lib/google";
 import { ActionButton } from "@/components/DeleteButton";
 import Link from "next/link";
-import { isDue, isPinned, timesOf, type Routine } from "@/lib/routine";
+import { isDue, isPinned, isPractice, timesOf, loadPractices, type Routine } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
 
-type Item = { id: string; weekday: number; title: string; at_time: string | null; part_of_day?: string | null; sort: number; project_id?: string | null; practice_id?: string | null };
+type Item = { id: string; weekday: number; title: string; at_time: string | null; part_of_day?: string | null; sort: number; project_id?: string | null; routine_id?: string | null };
 
 /** Where an item sits in the day: its part of day, or the part its time falls in. */
 function partOf(r: Item) {
@@ -49,8 +49,8 @@ function EventLine({ label, title, link }: { label: string; title: string; link?
 function RoutineSummary({ label, done, total, ahead }: { label: string; done: number; total: number; ahead: boolean }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted">ritual</span>
-      <Link href="/rituals" className="min-w-0 flex-1 hover:underline">{label}</Link>
+      <span className="w-24 shrink-0 text-sm text-muted">rhythm</span>
+      <Link href="/rhythm" className="min-w-0 flex-1 hover:underline">{label}</Link>
       <span className="shrink-0 text-xs text-muted tabular-nums">{ahead ? total : `${done} of ${total}`}</span>
     </li>
   );
@@ -60,7 +60,7 @@ function PracticedLine({ name }: { name: string }) {
   return (
     <li className="flex items-center gap-3 py-2">
       <span className="w-24 shrink-0 text-sm text-muted">practiced</span>
-      <Link href="/practices" className="min-w-0 flex-1 hover:underline">{name}</Link>
+      <Link href="/rhythm" className="min-w-0 flex-1 hover:underline">{name}</Link>
       <span className="shrink-0 text-xs text-muted">done</span>
     </li>
   );
@@ -69,9 +69,9 @@ function PracticedLine({ name }: { name: string }) {
 function RoutineLine({ title, cal }: { title: string; cal?: { link?: string; label: string } | null }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : "ritual"}</span>
-      <Link href="/rituals" className="min-w-0 flex-1 hover:underline">{title}</Link>
-      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">ritual, calendar</a> : <span className="shrink-0 text-xs text-muted">ritual, calendar</span>)}
+      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : "rhythm"}</span>
+      <Link href="/rhythm" className="min-w-0 flex-1 hover:underline">{title}</Link>
+      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">rhythm, calendar</a> : <span className="shrink-0 text-xs text-muted">rhythm, calendar</span>)}
     </li>
   );
 }
@@ -91,7 +91,7 @@ export default async function SchedulePage() {
     // One-time tasks dated this week: the same ones Today and your projects show. Schedule's own weekly items are shown as themselves.
     supabase
       .from("tasks")
-      .select("id, title, day, status, at_time, part_of_day, project_id, practice_id, source")
+      .select("*")
       .gte("day", week[0])
       .lte("day", week[6])
       .in("status", ["todo", "done"])
@@ -99,12 +99,8 @@ export default async function SchedulePage() {
       .order("created_at"),
     supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
   ]);
-  // Practices: to schedule a session, and the days you practiced.
-  const [practiceRows, sessionRows] = await Promise.all([
-    supabase.from("practices").select("id, name").order("sort").order("created_at"),
-    supabase.from("practice_sessions").select("practice_id, day").gte("day", week[0]).lte("day", week[6]),
-  ]);
-  const practices = sessionRows.error ? [] : practiceRows.data ?? [];
+  // Practices from your Rhythm: to schedule a session, and to show the days you practiced.
+  const practices = await loadPractices(supabase);
   const practiceName = new Map(practices.map((p) => [p.id, p.name]));
   const { data: checkRows } = await supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]).lte("day", week[6]);
   const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));
@@ -134,9 +130,9 @@ export default async function SchedulePage() {
       />
 
       {anyDay.length > 0 && (
-        <Link href="/rituals" className="flex items-baseline justify-between gap-3 border-y border-line py-3 hover:text-ink">
+        <Link href="/rhythm" className="flex items-baseline justify-between gap-3 border-y border-line py-3 hover:text-ink">
           <span>
-            Weekly rituals <span className="text-sm text-muted">· any day: {anyDay.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
+            Weekly rhythm <span className="text-sm text-muted">· any day: {anyDay.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
           </span>
           <span className="shrink-0 text-sm text-muted tabular-nums">{anyDayDone} of {anyDayTotal} this week</span>
         </Link>
@@ -162,10 +158,12 @@ export default async function SchedulePage() {
           const listMatched = list.map((r) => ({ r, cal: eventFor(r.title) }));
           const tasksMatched = dayTasks.map((t) => ({ t, cal: eventFor(t.title) }));
           // Practices you logged that day, unless a scheduled item for that practice already shows it.
-          const covered = new Set([...list, ...dayTasks].map((x) => (x as { practice_id?: string | null }).practice_id).filter(Boolean));
-          const practicedLines = (sessionRows.data ?? [])
-            .filter((x) => x.day === d && !covered.has(x.practice_id) && practiceName.has(x.practice_id))
-            .map((x) => ({ key: `p-${x.practice_id}`, bucket: 0, at: null, sort: -0.5, node: <PracticedLine key={`p-${x.practice_id}`} name={practiceName.get(x.practice_id)!} /> }));
+          // Weekly practices aren't tied to a day, so the days you did them show here (unless a scheduled item already does).
+          const covered = new Set([...list, ...dayTasks].map((x) => (x as { routine_id?: string | null }).routine_id).filter(Boolean));
+          const weeklyPractice = new Set(routines.filter((r) => isPractice(r) && r.cadence === "weekly" && !isPinned(r)).map((r) => r.id));
+          const practicedLines = (checkRows ?? [])
+            .filter((x) => x.day === d && weeklyPractice.has(x.routine_id) && !covered.has(x.routine_id))
+            .map((x) => ({ key: `p-${x.routine_id}`, bucket: 0, at: null, sort: -0.5, node: <PracticedLine key={`p-${x.routine_id}`} name={practiceName.get(x.routine_id) ?? ""} /> }));
           const entries = [
             ...practicedLines,
             ...dayEvents.filter((e) => !used.has(e.id)).map((e) => {
@@ -173,10 +171,10 @@ export default async function SchedulePage() {
               return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
             }),
             ...(dailyItems.length
-              ? [{ key: "rd", bucket: 0, at: null, sort: -1, node: <RoutineSummary key="rd" label="Daily rituals" total={dailyItems.length} done={dailyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
+              ? [{ key: "rd", bucket: 0, at: null, sort: -1, node: <RoutineSummary key="rd" label="Daily rhythm" total={dailyItems.length} done={dailyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
               : []),
             ...(nightlyItems.length
-              ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly rituals" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
+              ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly rhythm" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
               : []),
             ...weeklyMatched.map(({ r, cal }) => ({
               key: `w-${r.id}`,
@@ -194,7 +192,7 @@ export default async function SchedulePage() {
                 bucket: part ? BUCKET[part] : 0,
                 at,
                 sort: r.sort,
-                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={[r.practice_id ? practiceName.get(r.practice_id) : null, r.project_id ? projName.get(r.project_id) : null].filter(Boolean).join(", ") || null} calendar={cal} />,
+                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={[r.routine_id ? practiceName.get(r.routine_id) : null, r.project_id ? projName.get(r.project_id) : null].filter(Boolean).join(", ") || null} calendar={cal} />,
               };
             }),
             ...tasksMatched.map(({ t, cal }) => {
@@ -211,7 +209,7 @@ export default async function SchedulePage() {
                     key={`t-${t.id}`}
                     kind="task"
                     item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
-                    project={[t.practice_id ? practiceName.get(t.practice_id) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ") || null}
+                    project={[t.routine_id ? practiceName.get(t.routine_id) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ") || null}
                     done={t.status === "done"}
                     calendar={cal}
                   />

@@ -13,8 +13,7 @@ const GROUPS = [
     links: [
       { href: "/", label: "Today" },
       { href: "/actions", label: "Actions" },
-      { href: "/rituals", label: "Rituals" },
-      { href: "/practices", label: "Practices" },
+      { href: "/rhythm", label: "Rhythm" },
       { href: "/schedule", label: "Schedule" },
     ],
   },
