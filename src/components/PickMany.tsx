@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 /**
- * A quiet "Practice" or "Project" button that opens its choices only when you tap it.
- * Pick as many as you like; tap one again to take it off. Shows the chosen ones by name.
+ * A quiet property line, like Notion: "Project   Cacao and movement evening" or "Practice   Add".
+ * Tap it to see the choices; pick as many as you like, tap one again to take it off.
  */
 export function PickMany({
   label,
@@ -23,32 +23,37 @@ export function PickMany({
   empty?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  if (!options.length) return empty ? <p className={`${size === "md" ? "text-sm" : "text-xs"} text-muted`}>{empty}</p> : null;
+  const text = size === "md" ? "text-sm" : "text-xs";
+  if (!options.length) return empty ? <p className={`${text} text-muted`}>{empty}</p> : null;
   const chosen = options.filter((o) => value.includes(o.id));
-  const base = size === "md" ? "px-3.5 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
-  const pill = (on: boolean) => `rounded-full border ${base} ${on ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`;
 
   return (
-    <div className="flex flex-wrap items-center gap-1" role="group" aria-label={`${label} (optional)`}>
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={pill(chosen.length > 0)}>
-        {chosen.length ? `${label}: ${chosen.map((c) => c.name).join(", ")}` : label}
+    <div role="group" aria-label={`${label} (optional)`} className={text}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="group grid w-full grid-cols-[4.5rem_1fr] items-baseline gap-2 text-left">
+        <span className="text-muted">{label}</span>
+        <span className={chosen.length ? "text-ink group-hover:underline group-hover:decoration-line group-hover:underline-offset-4" : "text-muted group-hover:text-ink"}>
+          {chosen.length ? chosen.map((c) => c.name).join(", ") : "Add"}
+        </span>
       </button>
-      {open &&
-        options.map((o) => {
-          const on = value.includes(o.id);
-          return (
-            <button
-              key={o.id}
-              type="button"
-              aria-pressed={on}
-              onClick={() => onChange(on ? value.filter((v) => v !== o.id) : [...value, o.id])}
-              className={`rounded-full border ${base} ${on ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink"}`}
-            >
-              {on ? "✓ " : ""}
-              {o.name}
-            </button>
-          );
-        })}
+      {open && (
+        <div className="mt-1.5 flex flex-wrap gap-1 pl-[5rem]">
+          {options.map((o) => {
+            const on = value.includes(o.id);
+            return (
+              <button
+                key={o.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => onChange(on ? value.filter((v) => v !== o.id) : [...value, o.id])}
+                className={`rounded-full border px-2.5 py-1 ${on ? "border-ink text-ink" : "border-line text-muted hover:text-ink"}`}
+              >
+                {on ? "✓ " : ""}
+                {o.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

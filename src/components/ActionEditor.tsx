@@ -133,7 +133,7 @@ export function ActionEditor({
         label="Project"
         empty={
           <>
-            Project: none in progress yet.{" "}
+            <span className="inline-block w-[4.5rem] pr-2 text-muted">Project</span>None in progress yet.{" "}
             <Link href="/projects" className="underline decoration-line underline-offset-4 hover:text-ink">Drag one to In progress</Link> to add actions to it.
           </>
         }
