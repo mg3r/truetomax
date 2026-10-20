@@ -237,14 +237,14 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
         </span>
         <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your routine?`} action={() => deleteRoutine(r.id)} />
       </div>
-      <div className="mt-1.5 flex flex-wrap gap-1.5 pl-7 text-xs">
+      <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
         {CADENCES.map((c) => (
           <button
             key={c.value}
             onClick={() =>
               c.value !== r.cadence && start(() => updateRoutine(r.id, { cadence: c.value, ...(c.value === "weekly" ? { weekdays: [], times_per_week: 1 } : {}) }))
             }
-            className={`rounded-full px-2 py-0.5 ${c.value === r.cadence ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+            className={`rounded-full px-1.5 py-0.5 ${c.value === r.cadence ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
           >
             {c.label.toLowerCase()}
           </button>
@@ -255,12 +255,12 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
           </span>
         )}
         {r.cadence === "weekly" && (
-          <span className="flex flex-wrap items-center gap-1">
-            <span aria-hidden="true" className="mx-1 h-3 border-l border-line" />
+          <>
+            <span aria-hidden="true" className="mx-1 h-3 self-center border-l border-line" />
             <button
               aria-pressed={!isPinned(r)}
               onClick={() => isPinned(r) && start(() => updateRoutine(r.id, { weekdays: [], times_per_week: timesOf(r) }))}
-              className={`rounded-full px-2 py-0.5 ${!isPinned(r) ? "border border-ink text-ink" : "border border-transparent text-muted hover:text-ink"}`}
+              className={`rounded-full px-1.5 py-0.5 ${!isPinned(r) ? "border border-ink text-ink" : "border border-transparent text-muted hover:text-ink"}`}
             >
               any day
             </button>
@@ -269,12 +269,12 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
                 key={d}
                 aria-pressed={r.weekdays.includes(d)}
                 onClick={() => toggleDay(d)}
-                className={`rounded-full px-2 py-0.5 ${r.weekdays.includes(d) ? "border border-ink text-ink" : "border border-transparent text-muted hover:text-ink"}`}
+                className={`rounded-full px-1.5 py-0.5 ${r.weekdays.includes(d) ? "border border-ink text-ink" : "border border-transparent text-muted hover:text-ink"}`}
               >
                 {DAY_LETTERS[d]}
               </button>
             ))}
-          </span>
+          </>
         )}
       </div>
     </li>
