@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
-import { saveProject, deleteProject } from "@/app/actions";
+import { saveProject, deleteProject, acceptProject } from "@/app/actions";
+import { ActionButton } from "@/components/DeleteButton";
 import { RemoveX } from "@/components/RemoveX";
 import { AskPartner } from "@/components/AskPartner";
 import { ProjectCard, type CardData } from "@/components/PlanParts";
@@ -68,15 +69,16 @@ export default async function ProjectsPage() {
 
 
       {[
-        { title: "backlog", list: resting.filter((p) => p.status === "paused") },
-        { title: "done", list: resting.filter((p) => p.status !== "paused") },
+        { id: "review", title: "in review", list: resting.filter((p) => p.status === "review") },
+        { id: "backlog", title: "backlog", list: resting.filter((p) => p.status === "paused") },
+        { id: "done", title: "done", list: resting.filter((p) => p.status === "done" || p.status === "eliminated") },
       ]
-        .filter((g) => g.list.length || g.title === "backlog")
+        .filter((g) => g.list.length || g.id === "review")
         .map((g) => (
-          <section key={g.title} aria-label={g.title}>
+          <section key={g.id} aria-label={g.title}>
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <h2 className="section-title">{g.title}</h2>
-              {g.title === "backlog" && (
+              {g.id === "review" && (
                 <AskPartner
                   endpoint="/api/ideas"
                   body={{ kind: "venture" }}
@@ -86,15 +88,20 @@ export default async function ProjectsPage() {
                 />
               )}
             </div>
-            {g.title === "backlog" && !g.list.length && (
-              <p className="mt-1 text-sm text-muted">Ideas for work and income land here. Start one when it&rsquo;s alive, or delete it and it won&rsquo;t be suggested again.</p>
+            {g.id === "review" && !g.list.length && (
+              <p className="mt-1 text-sm text-muted">Ideas for work and income land here. Accept one to start it, or delete it and it won&rsquo;t be suggested again.</p>
             )}
             <ul className="mt-2 divide-y divide-line">
               {g.list.map((p) => (
                 <li key={p.id} className="flex items-center gap-2">
                   <Link href={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-baseline justify-between gap-4 py-2.5">
-                    <span className="text-muted">{p.title}{p.status_note ? <span className="text-sm">: {p.status_note}</span> : null}</span>
+                    <span className={g.id === "review" ? "" : "text-muted"}>{p.title}{p.status_note ? <span className="text-sm text-muted">: {p.status_note}</span> : null}</span>
                   </Link>
+                  {g.id === "review" && (
+                    <ActionButton action={acceptProject.bind(null, p.id)} className="btn-quiet !px-3 !py-1 text-xs">
+                      Accept
+                    </ActionButton>
+                  )}
                   <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} />
                 </li>
               ))}

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateProject, addGoal, renameGoal, setGoalStatus } from "@/app/actions";
+import { updateProject, addGoal, renameGoal, setGoalStatus, acceptProject } from "@/app/actions";
 import { Grow } from "./Grow";
+import { Select } from "./Select";
 
 // Three states: in progress, in the backlog, or done. (Older "let go" projects count as done.)
 const STATUSES = [
+  { value: "review", label: "In review" },
   { value: "active", label: "In progress" },
   { value: "paused", label: "Backlog" },
   { value: "done", label: "Done" },
@@ -37,27 +39,31 @@ export function ProjectHeader({ p }: { p: { id: string; title: string; descripti
         aria-label="Description"
         className="mt-2 w-full resize-none overflow-hidden bg-transparent text-muted placeholder:text-muted/70 focus:text-ink focus:outline-none"
       />
-      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Status">
-          {STATUSES.map((st) => {
-            const on = statusOf(status) === st.value;
-            return (
-              <button
-                key={st.value}
-                type="button"
-                aria-pressed={on}
-                onClick={() => {
-                  if (on) return;
-                  setStatus(st.value);
-                  start(() => updateProject(p.id, { status: st.value }));
-                }}
-                className={`rounded-full border px-3 py-1 ${on ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
-              >
-                {st.label}
-              </button>
-            );
-          })}
-        </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <Select
+          key={status}
+          name="status"
+          label="Status"
+          className="w-40"
+          defaultValue={statusOf(status)}
+          onChange={(v) => {
+            setStatus(v);
+            start(() => updateProject(p.id, { status: v }));
+          }}
+          options={STATUSES.map((st) => ({ value: st.value, label: st.label }))}
+        />
+        {status === "review" && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setStatus("active");
+              start(() => acceptProject(p.id));
+            }}
+          >
+            Accept project
+          </button>
+        )}
       </div>
     </div>
   );

@@ -91,7 +91,8 @@ export async function prepareDay(supabase: SupabaseClient, { force = false, user
   // Work you've already planned: Up next tasks, in a project or not. The partner offers these first.
   const practiceList = await loadPractices(supabase);
   const upNextRes = await supabase.from("tasks").select("*").eq("status", "todo").eq("day", "9999-12-31").order("created_at").limit(20);
-  const upNext = upNextRes.data ?? [];
+  const activeProjects = new Set(((await supabase.from("projects").select("id").eq("status", "active")).data ?? []).map((p) => p.id));
+  const upNext = (upNextRes.data ?? []).filter((t) => !t.project_id || activeProjects.has(t.project_id));
   try {
     const { data: projects } = await supabase.from("projects").select("id, title").eq("status", "active");
     const { data: todaysRhythm } = await supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm");

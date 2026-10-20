@@ -23,12 +23,15 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
       .gte("completed_at", addDays(day, -14))
       .order("completed_at", { ascending: false })
       .limit(40),
-    supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
+    supabase.from("projects").select("id, title, status").order("created_at"),
   ]);
   const practices = await loadPractices(supabase);
-  const projects = projectRows.data ?? [];
+  // Only projects you've accepted (In progress) show their actions here; the rest stay inside the project.
+  const allProjects = projectRows.data ?? [];
+  const projects = allProjects.filter((p) => p.status === "active");
+  const hidden = new Set(allProjects.filter((p) => p.status !== "active").map((p) => p.id));
   const filter = projects.some((p) => p.id === project) ? project! : null;
-  const tasks = [...(open.data ?? []), ...(done.data ?? [])] as ListTask[];
+  const tasks = ([...(open.data ?? []), ...(done.data ?? [])] as ListTask[]).filter((t) => !t.project_id || !hidden.has(t.project_id));
 
   return (
     <div className="space-y-8">

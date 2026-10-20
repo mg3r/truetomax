@@ -86,7 +86,7 @@ export default async function SchedulePage() {
       .in("status", ["todo", "done"])
       .neq("source", "rhythm")
       .order("created_at"),
-    supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
+    supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
   ]);
   // Practices from your Rhythm: to schedule a session, and to show the days you practiced.
   const practices = await loadPractices(supabase);
@@ -95,7 +95,9 @@ export default async function SchedulePage() {
   const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));
   const projects = projectRows.data ?? [];
   const projName = new Map(projects.map((p) => [p.id, p.title]));
-  const tasks = taskRows.data ?? [];
+  // Only actions from projects you've accepted (In progress) appear on your Schedule.
+  const activeIds = new Set(projects.map((p) => p.id));
+  const tasks = (taskRows.data ?? []).filter((t) => !t.project_id || activeIds.has(t.project_id));
   const routines = (routineRows.data ?? []) as Routine[];
   const dailyItems = routines.filter((r) => r.cadence === "daily");
   const nightlyItems = routines.filter((r) => r.cadence === "nightly");

@@ -59,10 +59,10 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Projects",
     body: [
-      "What you're building. Each project has a status (In progress, Backlog or Done), goals (plain text with a checkbox) and actions. Everything edits in place; × deletes.",
+      "What you're building. Each project has a status: In review (suggested, not yet accepted), In progress, Backlog or Done. Only In progress projects show their actions in Actions, Schedule and Today, and only they feed the partner's daily suggestions; the rest keep their actions inside the project. goals (plain text with a checkbox) and actions. Everything edits in place; × deletes.",
       "A project's actions sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned and waiting. It shows in your Actions list, and your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d); adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
       "Your partner suggests next steps for each project: tap \u201cSuggest next steps\u201d and it proposes 3\u20135, drawing on the project's goals and actions, your vision, your docs and uploads, your journal, your socials and what it has learned about how you work. Keep the ones you want (they go to Up next); let the rest go.",
-      "Ideas for work and income live in the Backlog: tap \u201cSuggest ideas\u201d and your partner adds 3 feasible ways to earn from what you already do, each as a Backlog project with its money path and first step. Start one when it's alive (In progress), or delete it: that's the process of elimination, and it won't be suggested again.",
+      "Ideas for work and income land In review: tap \u201cSuggest ideas\u201d and your partner adds 3 feasible ways to earn from what you already do, each with its money path and first step (you can add one In review yourself too). Tap Accept to start it (In progress), or \u00d7 to delete it: that's the process of elimination, and it won't be suggested again. Change any project's status from the dropdown under its name.",
       "Deleting a project removes its actions and goals, and your partner forgets them too.",
     ],
   },

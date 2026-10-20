@@ -47,9 +47,11 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Moves noticed automatically from finished actions, journal and chat (plus Instagram); one line on Today, correctable — run `0019_auto_moves.sql`
 - [x] Rhythm dots are this week (Mon–Sun) and tappable to fill in a day you missed marking
 
+- [x] Projects: In review status for suggested ideas (Accept or delete); status dropdown; only In progress projects show their actions in Actions, Schedule, Today and suggestions — run `0020_in_review.sql`
+
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0019` in order if any haven't been run; check the 7am notification arrives.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0020` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.

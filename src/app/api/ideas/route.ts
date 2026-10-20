@@ -30,16 +30,9 @@ export async function POST(req: Request) {
     if (k === "venture") {
       // Work-and-income ideas become Backlog projects: start one when it's alive, or delete it (that's the elimination).
       for (const i of picks) {
-        const { data: project } = await supabase
-          .from("projects")
-          .insert({
-            title: i.title,
-            description: [i.body, i.money_path && `Money path: ${i.money_path}`].filter(Boolean).join("\n\n"),
-            status: "paused",
-            makes_money: !!i.money_path,
-          })
-          .select("id")
-          .single();
+        const row = { title: i.title, description: [i.body, i.money_path && `Money path: ${i.money_path}`].filter(Boolean).join("\n\n"), makes_money: !!i.money_path };
+        let { data: project, error } = await supabase.from("projects").insert({ ...row, status: "review" }).select("id").single();
+        if (error) ({ data: project, error } = await supabase.from("projects").insert({ ...row, status: "paused" }).select("id").single());
         if (project && i.first_step) await supabase.from("tasks").insert({ title: i.first_step, project_id: project.id, day: "9999-12-31" });
         await supabase.from("ideas").insert({ kind: k, title: i.title, body: i.body, first_step: i.first_step, money_path: i.money_path ?? null, status: "planned", project_id: project?.id ?? null });
       }

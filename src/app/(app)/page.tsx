@@ -33,7 +33,7 @@ export default async function TodayPage() {
       // Unfinished one-time tasks carry over; things that repeat come back on their own day instead.
       .or(`and(day.lt.${day},status.eq.todo,source.neq.rhythm),and(day.eq.${day},status.in.(todo,done,suggested))`)
       .order("created_at"),
-    supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
+    supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
     supabase.from("journal_entries").select("id, body").eq("day", day).eq("prompt", d.question ?? "").maybeSingle(),
     supabase.from("moves").select("*").gte("day", weekStart).order("created_at", { ascending: false }),
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("seen", false),
@@ -78,7 +78,9 @@ export default async function TodayPage() {
   const projName = new Map((projects.data ?? []).map((p) => [p.id, p.title]));
   const practiceList = await loadPractices(supabase);
   const practiceNames = new Map(practiceList.map((p) => [p.id, p.name]));
-  const all: Task[] = (tasks.data ?? []).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.routine_id ? practiceNames.get(t.routine_id) : null }));
+  // Actions from projects that aren't In progress (in review, backlog, done) stay inside their project.
+  const activeIds = new Set((projects.data ?? []).map((p) => p.id));
+  const all: Task[] = (tasks.data ?? []).filter((t) => !t.project_id || activeIds.has(t.project_id)).map((t) => ({ ...t, project: t.project_id ? projName.get(t.project_id) : null, practice: t.routine_id ? practiceNames.get(t.routine_id) : null }));
   const suggestions = all.filter((t) => t.status === "suggested");
   // Rhythm first, then everything else; finished tasks sink to the bottom.
   const list = all

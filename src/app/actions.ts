@@ -553,7 +553,7 @@ export async function updateProject(id: string, fields: { title?: string; descri
   if (typeof fields.title === "string" && fields.title.trim()) row.title = fields.title.trim();
   if (typeof fields.description === "string") row.description = fields.description;
   if (fields.vision_id !== undefined) row.vision_id = fields.vision_id || null;
-  if (fields.status && ["active", "paused", "done", "eliminated"].includes(fields.status)) row.status = fields.status;
+  if (fields.status && ["review", "active", "paused", "done", "eliminated"].includes(fields.status)) row.status = fields.status;
   await supabase.from("projects").update(row).eq("id", id);
   if (row.status && row.status !== "active") {
     const { data: p } = await supabase.from("projects").select("title").eq("id", id).single();
@@ -887,5 +887,12 @@ export async function letGoOfIdea(id: string) {
   const supabase = await db();
   const { data: idea } = await supabase.from("ideas").update({ status: "eliminated" }).eq("id", id).select("title").single();
   if (idea) after(() => remember(supabase, "idea", id, `Passed on idea "${idea.title}"`));
+  refresh();
+}
+
+/** Accept a project in review: it becomes In progress, and its actions start showing in Actions, Schedule and Today. */
+export async function acceptProject(id: string) {
+  const supabase = await db();
+  await supabase.from("projects").update({ status: "active" }).eq("id", id);
   refresh();
 }
