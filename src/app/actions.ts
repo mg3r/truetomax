@@ -426,7 +426,7 @@ export async function saveBookPages(book: string, pages: { page: number; text: s
 }
 
 /* Project board: move a task between Later, Up next, Today and Done */
-export type Lane = "later" | "next" | "today" | "done";
+export type Lane = "later" | "next" | "tomorrow" | "today" | "done";
 
 export async function moveTask(id: string, lane: Lane) {
   const supabase = await db();
@@ -438,8 +438,8 @@ export async function moveTask(id: string, lane: Lane) {
   }
   if (t.status === "done") await setTaskStatus(id, "todo");
   const now = today();
-  // Up next has no day: it waits in your list, and your partner offers it when it fits.
-  const day = lane === "later" ? null : lane === "today" ? now : UNDATED;
+  // Up next has no day: it waits in your list (this week), and your partner offers it when it fits. Tomorrow is tomorrow's date.
+  const day = lane === "later" ? null : lane === "today" ? now : lane === "tomorrow" ? addDays(now, 1) : UNDATED;
   await supabase.from("tasks").update({ day, status: "todo" }).eq("id", id);
   refresh();
 }
@@ -550,7 +550,7 @@ export async function addProjectTask(projectId: string | null, title: string, la
     .insert({
       title: title.trim(),
       project_id: projectId,
-      day: lane === "later" ? null : lane === "next" ? UNDATED : now,
+      day: lane === "later" ? null : lane === "next" ? UNDATED : lane === "tomorrow" ? addDays(now, 1) : now,
       status: lane === "done" ? "done" : "todo",
       completed_at: lane === "done" ? new Date().toISOString() : null,
     })
