@@ -107,7 +107,7 @@ export function SuggestionRow({
       <button type="button" onClick={() => setOpen((o) => !o)} className="text-left font-medium hover:underline hover:decoration-line hover:underline-offset-4">
         {task.title}
       </button>
-      {task.reason && <p className="mt-0.5 text-sm text-muted">{task.reason}</p>}
+      {task.reason && <p className="mt-0.5 text-sm whitespace-pre-line text-muted">{task.reason}</p>}
       {open && (
         <ActionEditor action={a} today={today} projects={projects} practices={practices} showWhere={false} showNotes={false} onChange={(patch) => setA((x) => ({ ...x, ...patch }))} onClose={() => setOpen(false)} />
       )}

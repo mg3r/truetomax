@@ -55,7 +55,7 @@ function StepDetails({ s, today, practices }: { s: Step; today: string; practice
       <button type="button" onClick={() => setOpen((o) => !o)} className="text-left font-medium hover:underline hover:decoration-line hover:underline-offset-4">
         {s.title}
       </button>
-      {s.reason && <p className="mt-0.5 text-sm text-muted">{s.reason}</p>}
+      {s.reason && <p className="mt-0.5 text-sm whitespace-pre-line text-muted">{s.reason}</p>}
       {open && <ActionEditor action={a} today={today} projects={[]} practices={practices} showWhere={false} showNotes={false} onChange={(patch) => setA((x) => ({ ...x, ...patch }))} onClose={() => setOpen(false)} />}
     </>
   );

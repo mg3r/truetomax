@@ -19,7 +19,7 @@ type DayPlan = {
   affirmation: string;
   question: string;
   focus: string | null;
-  tasks: { title: string; project?: string; practice?: string; reason: string; category?: string; size?: string; from?: number }[];
+  tasks: { title: string; done?: string; project?: string; practice?: string; reason: string; category?: string; size?: string; from?: number }[];
 };
 
 /** Prepare today once: weekly rhythm tasks, a saved passage, and the partner's affirmation, question and suggestions. */
@@ -114,7 +114,7 @@ Return:
   "affirmation": one sentence in first person, under 20 words, drawn from the idea in today's reading and made specific to where he is right now — in your own words, not a quote,
   "question": one reflective journal question rooted in today's reading and connected to what's actually happening in his life and work right now,
   "focus": one sentence naming the single thing that would make today count, taken ONLY from what Max has set or written himself: his tasks for today or Up next, his projects and their goals, his schedule and calendar, his rituals and practices, his Vision doc, his journal, or the docs he uploaded. Never from your own suggestions, ideas, past chats or anything you inferred; don't name a plan, event or offer unless it appears in his own words. If he hasn't set anything yet, return null,
-  "tasks": up to ${maxSuggestions} suggested tasks that fit today's rhythm and move a vision forward. Offer his own Up next tasks first when one fits today (set "from" to its number and keep its title); only invent a new task when none of them fit — favor finishing, sharing, and getting paid, and follow your current guidance policy. Each: {"title": short imperative with a clear definition of done, "project": the exact title of the project it serves, from this list — set it whenever the task moves one of them forward, omit only if it truly serves none [${(projects ?? []).map((p) => p.title).join(", ")}], "practice": the exact name of the practice it is a session of, from this list, or omit [${practiceList.map((p) => p.name).join(", ")}], "reason": one sentence on why today, grounded only in what's live in the app (today's calendar, his schedule and rhythm, his actions, projects, journal, moves) and what you've learned; never cite a time, class, call or plan that appears only in his docs. When the idea comes from his docs and isn't in the app, make it an open invitation instead (a short question as the title, like "<the thing> today?") and say it's from his notes, "category": one of make/practice/share/ask/learn/admin/body/rest ("share" = putting his work in front of people, "ask" = asking someone to book, buy, or pay), "size": small (under 30 min) / medium (1–2 hours) / large}
+  "tasks": up to ${maxSuggestions} suggested tasks that fit today's rhythm and move a vision forward. Offer his own Up next tasks first when one fits today (set "from" to its number and keep its title); only invent a new task when none of them fit — favor finishing, sharing, and getting paid, and follow your current guidance policy. Each: {"title": a short imperative, under 10 words, that names the action (e.g. "DM Seylou: thanks, offer a sample set"), "done": what finished looks like, one short line, "project": the exact title of the project it serves, from this list — set it whenever the task moves one of them forward, omit only if it truly serves none [${(projects ?? []).map((p) => p.title).join(", ")}], "practice": the exact name of the practice it is a session of, from this list, or omit [${practiceList.map((p) => p.name).join(", ")}], "reason": one sentence on why today, grounded only in what's live in the app (today's calendar, his schedule and rhythm, his actions, projects, journal, moves) and what you've learned; never cite a time, class, call or plan that appears only in his docs. When the idea comes from his docs and isn't in the app, make it an open invitation instead (a short question as the title, like "<the thing> today?") and say it's from his notes, "category": one of make/practice/share/ask/learn/admin/body/rest ("share" = putting his work in front of people, "ask" = asking someone to book, buy, or pay), "size": small (under 30 min) / medium (1–2 hours) / large}
 }
 ${upNext.length ? `\n## His Up next tasks (planned in his projects, no day yet)\n${upNext.map((t, i) => `${i + 1}. ${t.title}${t.project_id ? ` (${(projects ?? []).find((p) => p.id === t.project_id)?.title ?? "a project"})` : ""}`).join("\n")}\n` : ""}
 Don't repeat anything already open or skipped recently. If he has made no moves this week, at least one task should be a small share or ask.`,
@@ -134,7 +134,7 @@ Don't repeat anything already open or skipped recently. If he has made no moves 
         title: from?.title ?? t.title,
         category: CATEGORIES.includes(t.category ?? "") ? t.category : null,
         size: ["small", "medium", "large"].includes(t.size ?? "") ? t.size : null,
-        reason: t.reason,
+        reason: [t.reason, t.done && `Done when: ${t.done}`].filter(Boolean).join("\n\n"),
         day,
         status: "suggested",
         source: "partner",
