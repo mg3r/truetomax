@@ -102,7 +102,7 @@ export function SuggestionRow({
   const practice = practices.length ? namesOf(practicesOf(a), new Map(practices.map((p) => [p.id, p.name]))) : task.practice;
   const when = a.at_time ? clock(a.at_time) : a.part_of_day;
   return (
-    <li className={`py-3 ${pending ? "opacity-50" : ""}`}>
+    <li id={`s-${task.id}`} className={`scroll-mt-24 py-3 ${pending ? "opacity-50" : ""}`}>
       {(project || practice || when) && <p className="text-xs text-muted">{[project && `From ${project}`, practice, when].filter(Boolean).join(" · ")}</p>}
       <button type="button" onClick={() => setOpen((o) => !o)} className="text-left font-medium hover:underline hover:decoration-line hover:underline-offset-4">
         {task.title}

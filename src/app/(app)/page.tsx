@@ -126,6 +126,10 @@ export default async function TodayPage() {
       (PART[x.part_of_day ?? ""] ?? 3) - (PART[y.part_of_day ?? ""] ?? 3)
   );
 
+  // Where the focus line leads: the suggestion on this page, or the action on Actions.
+  const focusTask = d.focus_task_id ? all.find((t) => t.id === d.focus_task_id) : null;
+  const focusHref = !focusTask ? null : focusTask.status === "suggested" ? `#s-${focusTask.id}` : focusTask.source === "rhythm" ? null : `/actions?open=${focusTask.id}`;
+
   return (
     <div className="space-y-16">
       {/* The morning's words, with one slow-moving form behind them. */}
@@ -137,7 +141,15 @@ export default async function TodayPage() {
           <PrepareDay auto={false} />
         </p>
         <h1 className="mt-2 max-w-[20ch] font-serif text-[2.15rem] leading-[1.12] font-normal tracking-[-0.02em] sm:text-[3rem]">{d.affirmation}</h1>
-        {d.focus && <p className="mt-6 max-w-[52ch] text-muted">{d.focus}</p>}
+        {d.focus &&
+          (focusHref ? (
+            // A way in, not a test: tap it to go to the action it's about. Nothing changes whether or not you do it.
+            <Link href={focusHref} className="mt-6 block max-w-[52ch] text-muted hover:text-ink hover:underline hover:decoration-line hover:underline-offset-4">
+              {d.focus}
+            </Link>
+          ) : (
+            <p className="mt-6 max-w-[52ch] text-muted">{d.focus}</p>
+          ))}
       </section>
 
       {learnedNotes.length > 0 && (

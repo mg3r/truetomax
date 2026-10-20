@@ -53,6 +53,7 @@ export async function setTaskStatus(id: string, status: "todo" | "done" | "skipp
   if (before.status === "suggested" && status === "todo" && before.origin_task_id) {
     // The partner offered one of your Up next tasks: that task moves to today, and the suggestion goes.
     await supabase.from("tasks").update({ day: before.day, status: "todo", reason: before.reason, accepted_at: new Date().toISOString(), source: "partner" }).eq("id", before.origin_task_id);
+    await supabase.from("days").update({ focus_task_id: before.origin_task_id }).eq("focus_task_id", id).then(() => null, () => null);
     await supabase.from("tasks").delete().eq("id", id);
     refresh();
     return;
