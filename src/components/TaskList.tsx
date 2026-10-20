@@ -37,10 +37,6 @@ const dayLabel = (day: string, today: string) => {
   return diff < 7 ? d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }) : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 };
 
-const clock = (t: string) => {
-  const [h, m] = t.split(":").map(Number);
-  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
-};
 
 /** Every action in one running checklist: type and press Enter to keep adding, like a Notes list. Drag by the dots to move one. */
 export function TaskList({
@@ -102,9 +98,8 @@ export function TaskList({
           <Lane key={g.id} id={g.drop} title={g.title} empty={g.id === "done" && !list.length ? "Drag an action here to finish it." : null}>
               {list.map((t) => {
                 const done = t.status === "done";
-                // Every open action says when in the day it is, Anytime included.
-                const when = t.at_time ? clock(t.at_time) : t.part_of_day ?? "anytime";
-                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, done ? null : when].filter(Boolean).join(", ");
+                // No time of day under actions; just the day for ones coming up, and a mark when there are notes.
+                const meta = t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : "";
                 return (
                   <Row key={t.id} id={t.id} open={open === t.id}>
                     <div className="flex items-start gap-3">
