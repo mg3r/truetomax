@@ -286,6 +286,12 @@ export function RoutineEditor({
 
 function RoutineRow({ r, week, doneOn, links }: { r: Routine; week: string[]; doneOn: Set<string>; links: Link[] | null }) {
   const [open, setOpen] = useState(false);
+  const [days, setDays] = useOptimistic(new Set(week.filter((d) => doneOn.has(`${r.id}:${d}`))), (cur: Set<string>, { d, on }: { d: string; on: boolean }) => {
+    const n = new Set(cur);
+    if (on) n.add(d);
+    else n.delete(d);
+    return n;
+  });
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: r.id });
   const [title, setTitle] = useState(r.title);
   const [, start] = useTransition();
@@ -320,11 +326,29 @@ function RoutineRow({ r, week, doneOn, links }: { r: Routine; week: string[]; do
           aria-label="What"
           className="min-w-0 flex-1 bg-transparent focus:outline-none"
         />
-        {/* The last seven days: filled where you did it. */}
-        <span className="flex shrink-0 gap-1" aria-label={`Done ${week.filter((d) => doneOn.has(`${r.id}:${d}`)).length} of the last 7 days`}>
-          {week.map((d) => (
-            <span key={d} aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${doneOn.has(`${r.id}:${d}`) ? "bg-ink" : "bg-line"}`} />
-          ))}
+        {/* The last seven days, filled where you did it. Tap a day to fill it in (or clear it) if you did it but didn't mark it. */}
+        <span className="flex shrink-0 gap-0.5" role="group" aria-label="The last seven days">
+          {week.map((d) => {
+            const on = days.has(d);
+            return (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={on}
+                aria-label={`${new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" })}: ${on ? "done" : "not marked"}`}
+                title={new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}
+                onClick={() =>
+                  start(async () => {
+                    setDays({ d, on: !on });
+                    await checkRoutine(r.id, d, !on);
+                  })
+                }
+                className="grid h-5 w-3 place-items-center"
+              >
+                <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${on ? "bg-ink" : "bg-line hover:bg-muted"}`} />
+              </button>
+            );
+          })}
         </span>
         <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your rhythm?`} action={() => deleteRoutine(r.id)} />
       </div>
