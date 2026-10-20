@@ -151,13 +151,11 @@ export async function eventsForRange(supabase: SupabaseClient, start: string, da
 }
 
 /** Read a Google Doc you've linked, as plain text. */
-export async function readGoogleDoc(supabase: SupabaseClient, docId: string): Promise<{ title: string; text: string } | { error: string }> {
-  if (!googleConfigured()) return { error: "Connect Google first (Profile → Settings)." };
-  const token = await accessToken(supabase);
-  if (!token) return { error: "Connect Google first (Profile → Settings)." };
-  const res = await fetch(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) });
-  if (res.status === 403) return { error: "truetomax can't read Google Docs yet. Disconnect and reconnect Google in Settings to grant it." };
-  if (!res.ok) return { error: "Couldn't open that doc. Check the link, and that it's in your Google account." };
+/** A Google Doc's title and text, every tab included (each tab under its own heading). */
+async function docText(token: string, docId: string): Promise<{ title: string; text: string } | { status: number }> {
+  // Ask for every tab, not just the first: each tab's link opens one tab, but they're all one document.
+  const res = await fetch(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}?includeTabsContent=true`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
+  if (!res.ok) return { status: res.status };
   const doc = await res.json();
   type El = { paragraph?: { elements?: { textRun?: { content?: string } }[] }; table?: { tableRows?: { tableCells?: { content?: El[] }[] }[] } };
   const walk = (els: El[] = []): string =>
@@ -170,7 +168,31 @@ export async function readGoogleDoc(supabase: SupabaseClient, docId: string): Pr
             : ""
       )
       .join("");
-  return { title: doc.title ?? "Google Doc", text: walk(doc.body?.content ?? []).replace(/\n{3,}/g, "\n\n").trim() };
+  type Tab = { tabProperties?: { title?: string }; documentTab?: { body?: { content?: El[] } }; childTabs?: Tab[] };
+  const tabs: { title: string; text: string }[] = [];
+  const collect = (list: Tab[] = [], depth = 0) => {
+    for (const t of list) {
+      const text = walk(t.documentTab?.body?.content ?? []).trim();
+      if (text) tabs.push({ title: t.tabProperties?.title ?? "", text });
+      collect(t.childTabs, depth + 1);
+    }
+  };
+  collect(doc.tabs as Tab[]);
+  // Older docs without tabs come back with a plain body.
+  const text = tabs.length > 1 ? tabs.map((t) => `## ${t.title || "Tab"}\n\n${t.text}`).join("\n\n") : tabs[0]?.text ?? walk(doc.body?.content ?? []);
+  return { title: doc.title ?? "Google Doc", text: text.replace(/\n{3,}/g, "\n\n").trim() };
+}
+
+export async function readGoogleDoc(supabase: SupabaseClient, docId: string): Promise<{ title: string; text: string } | { error: string }> {
+  if (!googleConfigured()) return { error: "Connect Google first (Profile → Settings)." };
+  const token = await accessToken(supabase);
+  if (!token) return { error: "Connect Google first (Profile → Settings)." };
+  const r = await docText(token, docId);
+  if ("status" in r) {
+    if (r.status === 403) return { error: "truetomax can't read Google Docs yet. Disconnect and reconnect Google in Settings to grant it." };
+    return { error: "Couldn't open that doc. Check the link, and that it's in your Google account." };
+  }
+  return r;
 }
 
 /** "9:30 AM" in your time zone. */
@@ -217,6 +239,9 @@ export async function driveFolderName(token: string, folderId: string) {
 export async function readDriveFile(token: string, f: DriveFile): Promise<string> {
   const headers = { Authorization: `Bearer ${token}` };
   if (f.mimeType === "application/vnd.google-apps.document") {
+    // Read it through Docs so every tab comes along; fall back to a plain export.
+    const d = await docText(token, f.id).catch(() => null);
+    if (d && "text" in d) return d.text;
     const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}/export?mimeType=text/plain`, { headers, signal: AbortSignal.timeout(15000) });
     return r.ok ? r.text() : "";
   }

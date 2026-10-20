@@ -103,7 +103,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Profile",
     body: [
-      "Context is what your partner knows about your life: About you, your docs (upload PDF, Word or text files, link a Google Doc, or link a whole Drive folder that stays in sync daily), and your book.",
+      "Context is what your partner knows about your life: About you, your docs (upload PDF, Word or text files, link a Google Doc (every tab in it is read, whichever tab's link you paste), or link a whole Drive folder that stays in sync daily), and your book.",
       "Settings connects Google (calendar, docs and Drive) and Instagram, turns on the 7am morning notification for this device, and signs you out. Every connection is read-only: truetomax never posts, edits or sends anything for you.",
     ],
   },
