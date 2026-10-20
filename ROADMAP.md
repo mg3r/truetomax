@@ -29,12 +29,13 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Profile → Docs: how everything works, with a section list to jump around
 
 ## Next, in priority order
-1. **Tasks page** (under Your day): one running checklist of every task, from every project and with no project. Shows the day and project when there is one. Adding is as quick as a Notes checklist: type, Enter, keep going.
-   - **Decide with it:** whether Tasks becomes the one place to add tasks, removing the add fields on Today and Schedule (Schedule might keep adding things that repeat).
-2. **Import a task list from a photo or doc:** read a handwritten or typed list, add the items, and recognize which ones are crossed off (marked done).
-3. **Partner suggests next steps for a project:** 3–5 from your vision, docs and history; you accept them into Up next.
-4. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-5. **Your setup steps still to confirm:** run migrations `0009` to `0013` in order if any haven't been run; check the 7am notification arrives.
+1. **Tasks page** (under Your day): one running checklist of every task, from every project and with no project. Shows the day and project when there is one. Adding is as quick as a Notes checklist: type, Enter, keep going. Tick, edit, delete in place.
+2. **Today becomes the overview, for doing only.** Remove its add field; it pulls from Tasks, Routine, Schedule and Projects. Adding happens on the other tabs (Tasks for one-time tasks, Routine, Schedule for things that repeat, Projects).
+3. **Up next is just Up next.** Remove the day picker. Up next tasks show in the Tasks list and are offered in the partner's daily suggestions (already built).
+4. **Partner suggests tasks inside each project,** from everything it knows: the project's goals and tasks, your vision, docs and uploads, journal, and what it has learned. You accept the ones you want into the project.
+5. **Import a task list from a photo or doc:** read a handwritten or typed list, add the items, and recognize which ones are crossed off (marked done).
+6. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
+7. **Your setup steps still to confirm:** run migrations `0009` to `0013` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.
