@@ -17,7 +17,7 @@ type DayPlan = {
   affirmation: string;
   question: string;
   focus: string;
-  tasks: { title: string; project?: string; reason: string; category?: string; size?: string }[];
+  tasks: { title: string; project?: string; reason: string; category?: string; size?: string; from?: number }[];
 };
 
 /** Prepare today once: weekly rhythm tasks, a saved passage, and the partner's affirmation, question and suggestions. */
@@ -75,6 +75,9 @@ export async function prepareDay(supabase: SupabaseClient, { force = false, user
   // 3. The partner's read on today.
   let plan: DayPlan | null = null;
   let maxSuggestions = 3;
+  // Work you've already planned: Up next tasks in your projects with no day yet. The partner offers these first.
+  const upNextRes = await supabase.from("tasks").select("id, title, project_id").eq("status", "todo").eq("day", "9999-12-31").not("project_id", "is", null).order("created_at").limit(20);
+  const upNext = upNextRes.data ?? [];
   try {
     const { data: projects } = await supabase.from("projects").select("id, title").eq("status", "active");
     const { data: todaysRhythm } = await supabase.from("tasks").select("title").eq("day", day).eq("source", "rhythm");
@@ -96,8 +99,9 @@ Return:
   "affirmation": one sentence in first person, under 20 words, drawn from the idea in today's reading and made specific to where he is right now — in your own words, not a quote,
   "question": one reflective journal question rooted in today's reading and connected to what's actually happening in his life and work right now,
   "focus": one sentence naming the single thing that would make today count,
-  "tasks": up to ${maxSuggestions} suggested tasks that fit today's rhythm and move a vision forward — favor finishing, sharing, and getting paid, and follow your current guidance policy. Each: {"title": short imperative with a clear definition of done, "project": exact project title from this list or omit [${(projects ?? []).map((p) => p.title).join(", ")}], "reason": one sentence on why today, grounded in what you've learned, "category": one of make/practice/share/ask/learn/admin/body/rest ("share" = putting his work in front of people, "ask" = asking someone to book, buy, or pay), "size": small (under 30 min) / medium (1–2 hours) / large}
+  "tasks": up to ${maxSuggestions} suggested tasks that fit today's rhythm and move a vision forward. Offer his own Up next tasks first when one fits today (set "from" to its number and keep its title); only invent a new task when none of them fit — favor finishing, sharing, and getting paid, and follow your current guidance policy. Each: {"title": short imperative with a clear definition of done, "project": exact project title from this list or omit [${(projects ?? []).map((p) => p.title).join(", ")}], "reason": one sentence on why today, grounded in what you've learned, "category": one of make/practice/share/ask/learn/admin/body/rest ("share" = putting his work in front of people, "ask" = asking someone to book, buy, or pay), "size": small (under 30 min) / medium (1–2 hours) / large}
 }
+${upNext.length ? `\n## His Up next tasks (planned in his projects, no day yet)\n${upNext.map((t, i) => `${i + 1}. ${t.title}${t.project_id ? ` (${(projects ?? []).find((p) => p.id === t.project_id)?.title ?? "a project"})` : ""}`).join("\n")}\n` : ""}
 Don't repeat anything already open or skipped recently. If he has made no moves this week, at least one task should be a small share or ask.`,
       context
     );
@@ -107,19 +111,24 @@ Don't repeat anything already open or skipped recently. If he has made no moves 
 
   const { data: projects } = await supabase.from("projects").select("id, title");
   if (plan?.tasks?.length) {
-    await supabase.from("tasks").insert(
-      plan.tasks.slice(0, maxSuggestions).map((t) => ({
-        title: t.title,
+    const rows = plan.tasks.slice(0, maxSuggestions).map((t) => {
+      const from = typeof t.from === "number" ? upNext[t.from - 1] : undefined;
+      return {
+        title: from?.title ?? t.title,
         category: CATEGORIES.includes(t.category ?? "") ? t.category : null,
         size: ["small", "medium", "large"].includes(t.size ?? "") ? t.size : null,
         reason: t.reason,
         day,
         status: "suggested",
         source: "partner",
-        project_id: projects?.find((p) => p.title === t.project)?.id ?? null,
+        project_id: from?.project_id ?? projects?.find((p) => p.title === t.project)?.id ?? null,
+        ...(from ? { origin_task_id: from.id } : {}),
         ...owner,
-      }))
-    );
+      };
+    });
+    const { error } = await supabase.from("tasks").insert(rows);
+    // Before the Up next migration runs, offer only new tasks (never a copy of one already planned).
+    if (error && /origin_task_id/.test(error.message)) await supabase.from("tasks").insert(rows.filter((r) => !("origin_task_id" in r)));
   }
 
   await supabase

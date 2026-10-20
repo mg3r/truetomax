@@ -20,7 +20,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     body: [
       "Each morning the day is prepared for you: an affirmation, one line naming what would make today count, a random page from your copy of The Creative Act, and a question drawn from that page. The affirmation and question are written in the partner's own words; the page is from your book.",
       "Below that: your routine to tick off, then what to do today. That list joins your Google Calendar events, today's Schedule items, and project tasks set for today, in time order. To add one, just type it; a part of day, an exact time and a project are there if you want them. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
-      "Your partner suggests up to three tasks a day. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
+      "Your partner suggests up to three tasks a day, starting with Up next tasks from your projects. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
     ],
   },
@@ -49,7 +49,8 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Projects",
     body: [
-      "What you're building. Each project has goals (plain text with a checkbox) and tasks you set for Today, Up next, Later or Done, shown as a list or a board. Everything edits in place; × deletes.",
+      "What you're building. Each project has goals (plain text with a checkbox) and tasks, shown as a list or a board. Everything edits in place; × deletes.",
+      "Tasks sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned, waiting in the project. Give it a day (Mon, Tue\u2026) and it shows on Schedule that day and on Today when the day comes; with no day, your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d), and adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
       "Deleting a project removes its tasks and goals, and your partner forgets them too.",
     ],
   },

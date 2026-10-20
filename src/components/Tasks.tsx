@@ -80,6 +80,7 @@ export function SuggestionRow({ task }: { task: Task }) {
   const [pending, start] = useTransition();
   return (
     <li className={`py-3 ${pending ? "opacity-50" : ""}`}>
+      {task.project && <p className="text-xs text-muted">From {task.project}</p>}
       <p className="font-medium">{task.title}</p>
       {task.reason && <p className="mt-0.5 text-sm text-muted">{task.reason}</p>}
       <div className="mt-2 flex gap-2">

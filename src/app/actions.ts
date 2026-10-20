@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { today, addDays } from "@/lib/dates";
+import { today } from "@/lib/dates";
 import { remember, forget, journalText } from "@/lib/memory";
 import { readGoogleDoc } from "@/lib/google";
 import { syncDriveFolder } from "@/lib/drive";
@@ -18,6 +18,8 @@ const num = (fd: FormData, k: string) => {
   return v === null || isNaN(Number(v)) ? null : Number(v);
 };
 const refresh = () => revalidatePath("/", "layout");
+/** Up next with no day yet: far in the future, so it never lands on Today or Schedule by itself. */
+const UNDATED = "9999-12-31";
 const partOfDay = (v: string | null) => (v && ["morning", "afternoon", "evening"].includes(v) ? v : null);
 
 async function db() {
@@ -43,8 +45,15 @@ export async function addTask(fd: FormData) {
 
 export async function setTaskStatus(id: string, status: "todo" | "done" | "skipped" | "suggested") {
   const supabase = await db();
-  const { data: before } = await supabase.from("tasks").select("title, status, category, project_id, day, reason, source").eq("id", id).single();
+  const { data: before } = await supabase.from("tasks").select("*").eq("id", id).single();
   if (!before) return;
+  if (before.status === "suggested" && status === "todo" && before.origin_task_id) {
+    // The partner offered one of your Up next tasks: that task moves to today, and the suggestion goes.
+    await supabase.from("tasks").update({ day: before.day, status: "todo", reason: before.reason, accepted_at: new Date().toISOString(), source: "partner" }).eq("id", before.origin_task_id);
+    await supabase.from("tasks").delete().eq("id", id);
+    refresh();
+    return;
+  }
   const now = new Date().toISOString();
   await supabase
     .from("tasks")
@@ -391,7 +400,8 @@ export async function moveTask(id: string, lane: Lane) {
   }
   if (t.status === "done") await setTaskStatus(id, "todo");
   const now = today();
-  const day = lane === "later" ? null : lane === "today" ? now : t.day && t.day > now ? t.day : addDays(now, 1);
+  // Up next keeps a day it already has; otherwise it waits in the project, undated, until you give it one.
+  const day = lane === "later" ? null : lane === "today" ? now : t.day && t.day > now ? t.day : UNDATED;
   await supabase.from("tasks").update({ day, status: "todo" }).eq("id", id);
   refresh();
 }
@@ -403,7 +413,7 @@ export async function addBoardTask(projectId: string, lane: Exclude<Lane, "done"
   await supabase.from("tasks").insert({
     title: title.trim(),
     project_id: projectId,
-    day: lane === "later" ? null : lane === "today" ? now : addDays(now, 1),
+    day: lane === "later" ? null : lane === "today" ? now : UNDATED,
   });
   refresh();
 }
@@ -525,7 +535,7 @@ export async function deleteVision(id: string) {
 }
 
 /** Add a task to a project and say where it goes: today, up next, later, or already done. */
-export async function addProjectTask(projectId: string, title: string, lane: Lane) {
+export async function addProjectTask(projectId: string, title: string, lane: Lane, nextDay?: string | null) {
   if (!title.trim()) return;
   const supabase = await db();
   const now = today();
@@ -534,7 +544,7 @@ export async function addProjectTask(projectId: string, title: string, lane: Lan
     .insert({
       title: title.trim(),
       project_id: projectId,
-      day: lane === "later" ? null : lane === "next" ? addDays(now, 1) : now,
+      day: lane === "later" ? null : lane === "next" ? (nextDay && nextDay > now ? nextDay : UNDATED) : now,
       status: lane === "done" ? "done" : "todo",
       completed_at: lane === "done" ? new Date().toISOString() : null,
     })
@@ -799,5 +809,14 @@ export async function addToSchedule(input: {
     if (!input.date || !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return;
     await supabase.from("tasks").insert({ title, day: input.date, at_time, part_of_day, project_id });
   }
+  refresh();
+}
+
+
+/** Give an Up next task a day (it then shows on Schedule that day, and on Today when it comes), or take its day away. */
+export async function setUpNextDay(id: string, day: string | null) {
+  if (day && !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+  const supabase = await db();
+  await supabase.from("tasks").update({ day: day ?? UNDATED, status: "todo" }).eq("id", id);
   refresh();
 }
