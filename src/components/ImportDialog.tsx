@@ -12,8 +12,34 @@ const COPY: Record<Kind, { button: string; title: string; hint: string; busy: st
 };
 
 /** Shrink a photo before sending it, so big phone pictures upload quickly. */
+const isHeic = (f: File) => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+
+/** Open any photo as a bitmap: iPhone HEIC photos are converted first, since most browsers can't read them. */
+async function bitmapOf(file: File): Promise<ImageBitmap> {
+  let blob: Blob = file;
+  if (isHeic(file)) {
+    const heic2any = (await import("heic2any")).default;
+    const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+    blob = Array.isArray(out) ? out[0] : out;
+  }
+  try {
+    return await createImageBitmap(blob);
+  } catch {
+    // Some browsers can only open it through an <img>.
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return await createImageBitmap(img);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}
+
 async function shrink(file: File): Promise<Blob> {
-  const img = await createImageBitmap(file);
+  const img = await bitmapOf(file);
   const scale = Math.min(1, 2000 / Math.max(img.width, img.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(img.width * scale);
@@ -58,8 +84,9 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
         setText("");
         router.refresh();
       }
-    } catch {
-      setNote("Couldn't read that.");
+    } catch (e) {
+      console.error("import", e);
+      setNote("Couldn't open that file. If it's a photo, try a screenshot of it, or paste the text instead.");
     }
     setBusy(false);
   }
@@ -79,7 +106,7 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
         const { value } = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         form.set("text", value);
       } else if (file.type === "text/plain" || /\.(txt|md)$/i.test(file.name)) form.set("text", await file.text());
-      else if (file.type.startsWith("image/")) form.set("file", new File([await shrink(file)], "page.jpg", { type: "image/jpeg" }));
+      else if (file.type.startsWith("image/") || isHeic(file)) form.set("file", new File([await shrink(file)], "page.jpg", { type: "image/jpeg" }));
       else form.set("file", file);
     });
 
@@ -129,7 +156,7 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
                 Photo
               </button>
             </div>
-            <input ref={fileInput} type="file" accept="application/pdf,.docx,.txt,.md,image/*" className="hidden" onChange={pick} />
+            <input ref={fileInput} type="file" accept="application/pdf,.docx,.txt,.md,image/*,.heic,.heif" className="hidden" onChange={pick} />
             {/* On a phone this offers the photo library or the camera. */}
             <input ref={photoInput} type="file" accept="image/*" className="hidden" onChange={pick} />
 
