@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 
 const TABS = [
   { id: "context", label: "Context" },
-  { id: "docs", label: "Docs" },
   { id: "settings", label: "Settings" },
+  { id: "docs", label: "Docs" },
 ] as const;
 
 const GOOGLE_STATUS: Record<string, string> = {
