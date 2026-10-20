@@ -19,7 +19,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Today",
     body: [
       "Each morning the day is prepared for you: an affirmation, one line naming what would make today count, a random page from your copy of The Creative Act, and a question drawn from that page. The affirmation and question are written in the partner's own words; the page is from your book.",
-      "Below that: your routine to tick off, then what to do today. That list joins your Google Calendar events, today's Schedule items, and project tasks set for today, in time order. Unfinished tasks carry over to the next day.",
+      "Below that: your routine to tick off, then what to do today. That list joins your Google Calendar events, today's Schedule items, and project tasks set for today, in time order. To add one, just type it; a part of day, an exact time and a project are there if you want them. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
       "Your partner suggests up to three tasks a day. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
     ],

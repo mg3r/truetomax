@@ -6,7 +6,8 @@ import { SaveLine } from "@/components/SaveLine";
 import { AskPartner } from "@/components/AskPartner";
 import { Mark } from "@/components/Mark";
 import { PrepareDay } from "@/components/PrepareDay";
-import { TaskRow, SuggestionRow, AddTask, EventRow, type Task } from "@/components/Tasks";
+import { TaskRow, SuggestionRow, EventRow, type Task } from "@/components/Tasks";
+import { TodayAdd } from "@/components/TodayAdd";
 import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
 import { RoutineToday } from "@/components/Routine";
@@ -29,7 +30,8 @@ export default async function TodayPage() {
     supabase
       .from("tasks")
       .select("*")
-      .or(`and(day.lte.${day},status.eq.todo),and(day.eq.${day},status.in.(done,suggested))`)
+      // Unfinished one-time tasks carry over; things that repeat come back on their own day instead.
+      .or(`and(day.lt.${day},status.eq.todo,source.neq.rhythm),and(day.eq.${day},status.in.(todo,done,suggested))`)
       .order("created_at"),
     supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
     supabase.from("journal_entries").select("id, body").eq("day", day).eq("prompt", d.question ?? "").maybeSingle(),
@@ -208,7 +210,7 @@ export default async function TodayPage() {
             <Link href="/profile?tab=settings" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
           </p>
         )}
-        <AddTask projects={projects.data ?? []} day={day} />
+        <TodayAdd day={day} projects={projects.data ?? []} />
 
         {suggestions.length > 0 && (
           <div className="mt-8 pebble bg-surface p-4 sm:p-5">
