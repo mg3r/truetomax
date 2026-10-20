@@ -30,7 +30,24 @@ const PARTS = [
   { value: "evening", label: "Evening" },
 ] as const;
 
-const pill = (on: boolean) => `rounded-full border px-2.5 py-1 text-xs ${on ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`;
+const chip = (on: boolean) => `rounded-full border px-2.5 py-1 ${on ? "border-ink text-ink" : "border-line text-muted hover:text-ink"}`;
+const clock = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+
+/** A label and its value on one quiet line; tap to show the choices underneath. */
+function Property({ label, value, open, onToggle, children }: { label: string; value: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  return (
+    <div className="text-xs">
+      <button type="button" aria-expanded={open} onClick={onToggle} className="group grid w-full grid-cols-[4.5rem_1fr] items-baseline gap-2 text-left">
+        <span className="text-muted">{label}</span>
+        <span className="text-ink group-hover:underline group-hover:decoration-line group-hover:underline-offset-4">{value}</span>
+      </button>
+      {open && <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-[5rem]">{children}</div>}
+    </div>
+  );
+}
 const partForTime = (t: string) => {
   const h = Number(t.slice(0, 2));
   return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
@@ -78,6 +95,8 @@ export function ActionEditor({
   useClickAway(row, true, onClose);
   const [time, setTime] = useState(action.at_time?.slice(0, 5) ?? "");
   const [notes, setNotes] = useState(action.reason ?? "");
+  const [editing, setEditing] = useState<"when" | "where" | null>(null);
+  const whenLabel = action.at_time ? clock(action.at_time) : PARTS.find((p) => p.value === (action.part_of_day ?? null))?.label ?? "Anytime";
   const lane = laneOfAction(action, today);
   const dated = action.day && action.day !== UNDATED && action.day > today;
 
@@ -88,11 +107,12 @@ export function ActionEditor({
 
   return (
     <div ref={box} className="mt-3 mb-2 space-y-3">
-      <div className="flex flex-wrap items-center gap-1" role="group" aria-label="When in the day">
+      {/* When and Where read as quiet property lines, like Project and Practice; tap one to change it. */}
+      <Property label="When" value={whenLabel} open={editing === "when"} onToggle={() => setEditing((e) => (e === "when" ? null : "when"))}>
         {PARTS.map((p) => {
           const on = (action.part_of_day ?? null) === p.value && !action.at_time;
           return (
-            <button key={p.label} type="button" onClick={() => { setTime(""); setWhen(p.value, null); }} className={pill(on)}>
+            <button key={p.label} type="button" onClick={() => { setTime(""); setWhen(p.value, null); setEditing(null); }} className={chip(on)}>
               {p.label}
             </button>
           );
@@ -106,27 +126,28 @@ export function ActionEditor({
             setWhen(time ? partForTime(time) : action.part_of_day ?? null, time || null);
           }}
           aria-label="Exact time (optional)"
-          className={`rounded-full border bg-transparent px-2.5 py-0.5 text-xs ${time ? "border-ink text-ink" : "border-line text-muted"}`}
+          className={`rounded-full border bg-transparent px-2.5 py-0.5 ${time ? "border-ink text-ink" : "border-line text-muted"}`}
         />
-      </div>
+      </Property>
 
       {showWhere && (
-        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Where it sits">
+        <Property label="Where" value={lane === "today" ? "Today" : lane === "later" ? "Later" : dated ? "Coming up" : "Up next"} open={editing === "where"} onToggle={() => setEditing((e) => (e === "where" ? null : "where"))}>
           {(["today", "next", "later"] as const).map((l) => (
             <button
               key={l}
               type="button"
               onClick={() => {
+                setEditing(null);
                 if (l === lane && !dated) return;
                 onChange({ status: "todo", day: l === "later" ? null : l === "today" ? today : UNDATED });
                 start(() => moveTask(action.id, l));
               }}
-              className={pill(lane === l && !(l === "next" && dated))}
+              className={chip(lane === l && !(l === "next" && dated))}
             >
               {l === "today" ? "Today" : l === "next" ? "Up next" : "Later"}
             </button>
           ))}
-        </div>
+        </Property>
       )}
 
       <PickMany
