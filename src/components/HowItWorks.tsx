@@ -11,7 +11,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "Projects and Socials use a wider page, since they hold a board, posts and long lists; the other pages keep a reading width. On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "Projects and Socials use a wider page, since they hold a board, posts and long lists; the other pages keep a reading width. On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Socials, Journal, Partner). Profile sits at the bottom.",
       "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },

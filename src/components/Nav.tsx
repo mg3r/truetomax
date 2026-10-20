@@ -27,8 +27,8 @@ const GROUPS = [
   {
     label: "Reflecting and sharing",
     links: [
-      { href: "/journal", label: "Journal" },
       { href: "/socials", label: "Socials" },
+      { href: "/journal", label: "Journal" },
       { href: "/partner", label: "Partner" },
     ],
   },
