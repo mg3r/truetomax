@@ -4,7 +4,7 @@ import { saveAboutMe, addHighlight, deleteHighlight, resetPlan, signOut, deleteC
 import { DeleteButton, ActionButton } from "@/components/DeleteButton";
 import { BookUpload } from "@/components/BookUpload";
 import { DocUpload, GoogleDocLink } from "@/components/Docs";
-import { Chat } from "@/components/Chat";
+import { Chat, type Conversation } from "@/components/Chat";
 import { googleConfigured } from "@/lib/google";
 import { instagramConfigured } from "@/lib/instagram";
 import { MorningToggle } from "@/components/MorningToggle";
@@ -38,8 +38,8 @@ const INSTAGRAM_STATUS: Record<string, string> = {
   failed: "Instagram sign-in didn't finish. Check the account is a professional account and is added as a tester in the Meta app.",
 };
 
-export default async function ContextPage({ searchParams }: { searchParams: Promise<{ tab?: string; google?: string; instagram?: string }> }) {
-  const { tab: tabParam, google: googleStatus, instagram: igStatus } = await searchParams;
+export default async function ContextPage({ searchParams }: { searchParams: Promise<{ tab?: string; google?: string; instagram?: string; c?: string }> }) {
+  const { tab: tabParam, google: googleStatus, instagram: igStatus, c: convParam } = await searchParams;
   const tab = TABS.some((t) => t.id === tabParam) ? tabParam! : googleStatus || igStatus ? "settings" : "partner";
   const supabase = await createClient();
 
@@ -68,12 +68,21 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
   );
 
   async function PartnerTab() {
-    const { data } = await supabase.from("messages").select("id, role, content, kind").order("created_at", { ascending: false }).limit(40);
+    // Conversations, newest first. Opens the one asked for, or the latest; "new" starts a fresh one.
+    const convs = await supabase.from("conversations").select("id, title, updated_at").order("updated_at", { ascending: false }).limit(100);
+    const conversations = (convs.error ? [] : convs.data ?? []) as Conversation[];
+    const current = convParam === "new" ? null : conversations.find((c) => c.id === convParam)?.id ?? conversations[0]?.id ?? null;
+    const query = supabase.from("messages").select("id, role, content, kind, created_at");
+    const { data } = convs.error
+      ? await query.order("created_at", { ascending: false }).limit(40)
+      : current
+        ? await query.eq("conversation_id", current).order("created_at", { ascending: false }).limit(200)
+        : { data: [] };
     return (
       <div>
         <Link href="/learned" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">What it&rsquo;s learned about you</Link>
         <div className="mt-6">
-          <Chat initial={(data ?? []).reverse() as never} />
+          <Chat key={current ?? "new"} initial={(data ?? []).reverse() as never} conversations={conversations} current={current} threads={!convs.error} />
         </div>
       </div>
     );

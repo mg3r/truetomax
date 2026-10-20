@@ -16,7 +16,6 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
   const { data } = await supabase.from("ideas").select("*").eq("kind", kind).order("created_at", { ascending: false });
   const ideas = (data ?? []) as Idea[];
   const live = ideas.filter((i) => i.status === "new" || i.status === "exploring");
-  const planned = ideas.filter((i) => i.status === "planned");
   const eliminated = ideas.filter((i) => i.status === "eliminated");
 
   // On the Sharing tab, show how recent posts did (refreshing from Instagram at most every few hours).
@@ -37,6 +36,11 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
     <div className="space-y-10">
       <div>
         <h1 className="font-serif text-3xl">Ideas</h1>
+        <p className="mt-1 text-muted">
+          {kind === "venture"
+            ? "Feasible ways to earn from what you already do. Test one, or eliminate it and say why."
+            : "Posts and series for truetomax, drawn from what you're actually making this week."}
+        </p>
         <div className="mt-4 flex gap-1" role="tablist">
           <Link role="tab" aria-selected={kind === "venture"} href="/ideas" className={`rounded-full px-3 py-1 text-sm ${kind === "venture" ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>Work & income</Link>
           <Link role="tab" aria-selected={kind === "content"} href="/ideas?tab=content" className={`rounded-full px-3 py-1 text-sm ${kind === "content" ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>Sharing</Link>
@@ -102,19 +106,6 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
           <button className="btn">Add idea</button>
         </form>
       </details>
-
-      {planned.length > 0 && (
-        <section>
-          <h2 className="section-title">In motion</h2>
-          <ul className="mt-2 space-y-1">
-            {planned.map((i) => (
-              <li key={i.id}>
-                {i.project_id ? <Link href={`/projects/${i.project_id}`} className="underline decoration-line underline-offset-4">{i.title}</Link> : i.title}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {eliminated.length > 0 && (
         <section>

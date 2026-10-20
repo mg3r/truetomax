@@ -725,3 +725,10 @@ export async function reorderRoutines(ids: string[]) {
   await Promise.all(ids.map((id, i) => supabase.from("routines").update({ sort: i }).eq("id", id)));
   refresh();
 }
+
+/* Partner conversations */
+export async function deleteConversation(id: string) {
+  const supabase = await db();
+  await supabase.from("conversations").delete().eq("id", id);
+  revalidatePath("/context");
+}
