@@ -44,6 +44,17 @@ function EventLine({ label, title, link }: { label: string; title: string; link?
   );
 }
 
+/** Daily or nightly routine for one day: done so far on past days and today, just the count ahead. */
+function RoutineSummary({ label, done, total, ahead }: { label: string; done: number; total: number; ahead: boolean }) {
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <span className="w-24 shrink-0 text-sm text-muted">routine</span>
+      <Link href="/routine" className="min-w-0 flex-1 hover:underline">{label}</Link>
+      <span className="shrink-0 text-xs text-muted tabular-nums">{ahead ? total : `${done} of ${total}`}</span>
+    </li>
+  );
+}
+
 function RoutineLine({ title }: { title: string }) {
   return (
     <li className="flex items-center gap-3 py-2">
@@ -76,10 +87,14 @@ export default async function SchedulePage() {
       .order("created_at"),
     supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
   ]);
+  const { data: checkRows } = await supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]).lte("day", week[6]);
+  const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));
   const projects = projectRows.data ?? [];
   const projName = new Map(projects.map((p) => [p.id, p.title]));
   const tasks = taskRows.data ?? [];
   const routines = (routineRows.data ?? []) as Routine[];
+  const dailyItems = routines.filter((r) => r.cadence === "daily");
+  const nightlyItems = routines.filter((r) => r.cadence === "nightly");
   const items = (rhythm.data ?? []) as Item[];
 
   return (
@@ -106,6 +121,12 @@ export default async function SchedulePage() {
               const at = e.allDay ? null : hhmm(e.start!);
               return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
             }),
+            ...(dailyItems.length
+              ? [{ key: "rd", bucket: 0, at: null, sort: -1, node: <RoutineSummary key="rd" label="Daily routine" total={dailyItems.length} done={dailyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
+              : []),
+            ...(nightlyItems.length
+              ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly routine" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
+              : []),
             ...weekly.map((r) => ({ key: `w-${r.id}`, bucket: 0, at: null, sort: r.sort, node: <RoutineLine key={`w-${r.id}`} title={r.title} /> })),
             ...list.map((r) => {
               const part = partOf(r);

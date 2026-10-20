@@ -20,7 +20,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Routine",
     body: [
-      "The things you do daily, nightly, or on certain days of the week. They show up on Today as a checklist that starts fresh each morning; weekly ones also show on their days in Schedule.",
+      "The things you do daily, nightly, or on certain days of the week. They show up on Today as a checklist that starts fresh each morning. On Schedule, each day shows one Daily routine line at the top and one Nightly routine line in the evening, with how many you did (\u201c2 of 4\u201d); weekly items show on their days.",
       "Drag the dots to reorder. The seven small dots on each item show the last week, filled where you did it. Your partner sees what's holding and what's slipping.",
     ],
   },
