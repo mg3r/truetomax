@@ -53,7 +53,7 @@ export function TodayAdd({ day, projects }: { day: string; projects: { id: strin
         </div>
       )}
       {open && (
-        <div className="mt-1 flex flex-wrap items-center gap-1 text-sm" role="group" aria-label="Project (optional)">
+        <div className="mt-2 flex flex-wrap items-center gap-1 text-sm" role="group" aria-label="Project (optional)">
           <button type="button" aria-pressed={project === null} onClick={() => setProject(null)} className={pill(project === null)}>
             No project
           </button>
