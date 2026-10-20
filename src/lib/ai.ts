@@ -91,6 +91,19 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     supabase.from("ideas").select("title, kind, status").in("status", ["new", "exploring", "planned"]).limit(20),
     supabase.from("projects").select("title, status_note").eq("status", "eliminated").limit(20),
   ]);
+  const [routineRows, routineChecks] = await Promise.all([
+    supabase.from("routines").select("id, title, cadence, weekdays").order("sort"),
+    supabase.from("routine_checks").select("routine_id").gte("day", since),
+  ]);
+  const routineCount = new Map<string, number>();
+  for (const c of routineChecks.data ?? []) routineCount.set(c.routine_id as string, (routineCount.get(c.routine_id as string) ?? 0) + 1);
+  const routineText = (routineRows.data ?? [])
+    .map((r: Row) => {
+      const days = r.cadence === "weekly" ? ` on ${(r.weekdays as number[]).map((w) => WEEKDAYS[w].slice(0, 3)).join(", ")}` : "";
+      const possible = r.cadence === "weekly" ? Math.round(((r.weekdays as number[]).length * 14) / 7) : 14;
+      return `- ${r.title} (${r.cadence}${days}) — done ${routineCount.get(r.id as string) ?? 0} of ${possible} times in the last 2 weeks`;
+    })
+    .join("\n");
   const elimIdeas = await supabase.from("ideas").select("title, status_note").eq("status", "eliminated").limit(20);
   // His own docs (vision, routine, plans, coaching notes). Most recently updated first, capped so they don't crowd out the rest.
   const docs = await supabase.from("context_docs").select("title, text, updated_at").order("updated_at", { ascending: false }).limit(12);
@@ -116,6 +129,7 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `## Projects\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,
     `## Weekly rhythm — today\n${todayRhythm.map((t) => `- ${t}`).join("\n") || "(nothing fixed today)"}`,
+    `## Routine (daily, nightly and weekly habits he set himself; notice what's holding and what's slipping)\n${routineText || "(none set)"}`,
     `## Done in the last 2 weeks\n${(done.data ?? []).map((t: Row) => `- ${t.title}`).join("\n") || "(nothing logged)"}`,
     `## Skipped in the last 2 weeks\n${(skipped.data ?? []).map((t: Row) => `- ${t.title} (${t.source})`).join("\n") || "(none)"}`,
     `## Still open\n${(open.data ?? []).map((t: Row) => `- ${t.title}${t.day ? ` (${t.day})` : ""}`).join("\n") || "(none)"}`,

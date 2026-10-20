@@ -660,3 +660,53 @@ export async function removeDriveFolder(folderId: string) {
   await supabase.from("drive_folders").delete().eq("folder_id", folderId);
   refresh();
 }
+
+/* Routine */
+const cadenceOf = (v: unknown) => (v === "daily" || v === "nightly" || v === "weekly" ? v : null);
+const cleanDays = (days: number[]) => [...new Set(days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
+
+export async function addRoutine(title: string, cadence: string, weekdays: number[]) {
+  const c = cadenceOf(cadence);
+  const days = cleanDays(weekdays);
+  if (!title.trim() || !c || (c === "weekly" && !days.length)) return;
+  const supabase = await db();
+  const { data: last } = await supabase.from("routines").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();
+  await supabase.from("routines").insert({ title: title.trim(), cadence: c, weekdays: c === "weekly" ? days : [], sort: (last?.sort ?? 0) + 1 });
+  refresh();
+}
+
+export async function updateRoutine(id: string, fields: { title?: string; cadence?: string; weekdays?: number[] }) {
+  const patch: Record<string, unknown> = {};
+  if (fields.title !== undefined) {
+    if (!fields.title.trim()) return;
+    patch.title = fields.title.trim();
+  }
+  if (fields.cadence !== undefined) {
+    const c = cadenceOf(fields.cadence);
+    if (!c) return;
+    patch.cadence = c;
+    if (c !== "weekly") patch.weekdays = [];
+  }
+  if (fields.weekdays !== undefined) {
+    const days = cleanDays(fields.weekdays);
+    if (!days.length) return;
+    patch.weekdays = days;
+  }
+  const supabase = await db();
+  await supabase.from("routines").update(patch).eq("id", id);
+  refresh();
+}
+
+export async function deleteRoutine(id: string) {
+  const supabase = await db();
+  await supabase.from("routines").delete().eq("id", id);
+  refresh();
+}
+
+export async function checkRoutine(id: string, day: string, done: boolean) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+  const supabase = await db();
+  if (done) await supabase.from("routine_checks").upsert({ routine_id: id, day }, { onConflict: "routine_id,day" });
+  else await supabase.from("routine_checks").delete().eq("routine_id", id).eq("day", day);
+  refresh();
+}

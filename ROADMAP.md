@@ -8,11 +8,12 @@ Keep it simple: as few buttons and features as possible. Everything serves the p
 ## Purpose
 An evolving guiding light: give each day direction, help execute visions, share gifts through aligned action, and find aligned work that makes money sustainably, with no return to a job. The core problems to solve are discipline, direction, and sharing work with the people who connect with it.
 
-**Structure:** Vision is a living doc in your own words. Projects hold goals and tasks. Schedule holds your weekly rhythm and calendar. Context holds your docs and the partner. Everything connects through the partner, not through links you maintain.
+**Structure:** Vision is a living doc in your own words. Projects hold goals and tasks. Routine holds what you do daily, nightly and weekly. Schedule holds your weekly rhythm and calendar. Context holds your docs and the partner. Everything connects through the partner, not through links you maintain.
 
 ## Built
 - [x] Daily affirmation, a random page from your copy of *The Creative Act*, a question from that page (swappable), journal
 - [x] Today combines routine, Google Calendar events and project tasks
+- [x] Routine: daily, nightly and weekly habits; tick them off on Today, weekly ones show on their day in Schedule, last-7-days dots, and the partner sees what holds and what slips (run `0009_routine.sql`)
 - [x] Schedule: weekly rhythm by morning / afternoon / evening (time optional), plus the week's calendar
 - [x] Vision: one running doc, new sections on top, drag to reorder, edit in place
 - [x] Context: partner chat, your docs (upload PDF/Word/text or link Google Docs), book, settings

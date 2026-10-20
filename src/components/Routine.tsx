@@ -1,0 +1,210 @@
+"use client";
+
+import { useOptimistic, useState, useTransition } from "react";
+import { addRoutine, updateRoutine, deleteRoutine, checkRoutine } from "@/app/actions";
+import { CADENCES, DAY_LETTERS, type Routine } from "@/lib/routine";
+
+// Monday first, like the Schedule.
+const WEEK = [1, 2, 3, 4, 5, 6, 0];
+
+function Chip({ on, onClick, children, label }: { on: boolean; onClick: () => void; children: React.ReactNode; label?: string }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={label}
+      onClick={onClick}
+      className={`btn-quiet ${on ? "!border-ink !bg-ink !text-bg" : ""}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Check({ done, title, onClick }: { done: boolean; title: string; onClick: () => void }) {
+  return (
+    <button
+      aria-label={done ? `Mark "${title}" not done` : `Mark "${title}" done`}
+      onClick={onClick}
+      className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ring-check border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
+    >
+      {done && (
+        <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M2 6.5 5 9l5-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+/** Today's routine: tick things off as you go. Nightly sits last, for the evening. */
+export function RoutineToday({ items, checked, day }: { items: Routine[]; checked: string[]; day: string }) {
+  const [done, setDone] = useOptimistic(new Set(checked), (s: Set<string>, { id, on }: { id: string; on: boolean }) => {
+    const n = new Set(s);
+    if (on) n.add(id);
+    else n.delete(id);
+    return n;
+  });
+  const [, start] = useTransition();
+  const toggle = (id: string) => {
+    const on = !done.has(id);
+    start(async () => {
+      setDone({ id, on });
+      await checkRoutine(id, day, on);
+    });
+  };
+
+  const groups = [
+    { label: "today", list: items.filter((r) => r.cadence !== "nightly") },
+    { label: "tonight", list: items.filter((r) => r.cadence === "nightly") },
+  ].filter((g) => g.list.length);
+
+  return (
+    <div className="space-y-4">
+      {groups.map((g) => (
+        <div key={g.label}>
+          {groups.length > 1 && <p className="text-xs text-muted">{g.label}</p>}
+          <ul className="mt-1 divide-y divide-line">
+            {g.list.map((r) => {
+              const on = done.has(r.id);
+              return (
+                <li key={r.id} className="flex items-start gap-3 py-2.5">
+                  <Check done={on} title={r.title} onClick={() => toggle(r.id)} />
+                  <span className={on ? "text-muted line-through decoration-line" : ""}>{r.title}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The routine itself: add at the top, edit in place, and see the last week at a glance. */
+export function RoutineEditor({ items, checks, week }: { items: Routine[]; checks: { routine_id: string; day: string }[]; week: string[] }) {
+  const [title, setTitle] = useState("");
+  const [cadence, setCadence] = useState<Routine["cadence"]>("daily");
+  const [days, setDays] = useState<number[]>([]);
+  const [pending, start] = useTransition();
+  const doneOn = new Set(checks.map((c) => `${c.routine_id}:${c.day}`));
+
+  const add = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || (cadence === "weekly" && !days.length)) return;
+    const t = title;
+    start(async () => {
+      await addRoutine(t, cadence, days);
+      setTitle("");
+    });
+  };
+
+  return (
+    <div className="space-y-12">
+      <form onSubmit={add} className="pebble bg-surface p-5">
+        <h2 className="section-title">add to your routine</h2>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Meditate 10 minutes" aria-label="What" className="field mt-4" />
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="How often">
+          {CADENCES.map((c) => (
+            <Chip key={c.value} on={cadence === c.value} onClick={() => setCadence(c.value)}>
+              {c.label}
+            </Chip>
+          ))}
+        </div>
+        {cadence === "weekly" && (
+          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Which days">
+            {WEEK.map((d) => (
+              <Chip key={d} on={days.includes(d)} onClick={() => setDays((s) => (s.includes(d) ? s.filter((x) => x !== d) : [...s, d]))}>
+                {DAY_LETTERS[d]}
+              </Chip>
+            ))}
+          </div>
+        )}
+        <button className="btn mt-4" disabled={pending || !title.trim() || (cadence === "weekly" && !days.length)}>
+          Add
+        </button>
+      </form>
+
+      {CADENCES.map((c) => {
+        const list = items.filter((r) => r.cadence === c.value);
+        if (!list.length) return null;
+        return (
+          <section key={c.value} aria-label={c.label}>
+            <h2 className="font-serif text-xl">{c.label}</h2>
+            <ul className="mt-2 divide-y divide-line">
+              {list.map((r) => (
+                <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+
+      {!items.length && <p className="text-muted">Nothing here yet. Start with the one thing you want to do every day.</p>}
+    </div>
+  );
+}
+
+function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: Set<string> }) {
+  const [title, setTitle] = useState(r.title);
+  const [, start] = useTransition();
+  const toggleDay = (d: number) => {
+    const next = r.weekdays.includes(d) ? r.weekdays.filter((x) => x !== d) : [...r.weekdays, d];
+    if (next.length) start(() => updateRoutine(r.id, { weekdays: next }));
+  };
+
+  return (
+    <li className="group py-3">
+      <div className="flex items-center gap-3">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={() => title.trim() && title !== r.title && start(() => updateRoutine(r.id, { title }))}
+          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+          aria-label="What"
+          className="min-w-0 flex-1 bg-transparent focus:outline-none"
+        />
+        {/* The last seven days: filled where you did it. */}
+        <span className="flex shrink-0 gap-1" aria-label={`Done ${week.filter((d) => doneOn.has(`${r.id}:${d}`)).length} of the last 7 days`}>
+          {week.map((d) => (
+            <span key={d} aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${doneOn.has(`${r.id}:${d}`) ? "bg-ink" : "bg-line"}`} />
+          ))}
+        </span>
+        <button
+          aria-label={`Remove "${r.title}"`}
+          onClick={() => confirm(`Remove "${r.title}" from your routine?`) && start(() => deleteRoutine(r.id))}
+          className="text-sm text-muted opacity-100 hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+        >
+          ×
+        </button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+        {CADENCES.map((c) => (
+          <button
+            key={c.value}
+            onClick={() =>
+              c.value !== r.cadence && start(() => updateRoutine(r.id, { cadence: c.value, ...(c.value === "weekly" ? { weekdays: [new Date().getDay()] } : {}) }))
+            }
+            className={`rounded-full px-2 py-0.5 ${c.value === r.cadence ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+          >
+            {c.label.toLowerCase()}
+          </button>
+        ))}
+        {r.cadence === "weekly" && (
+          <span className="ml-2 flex flex-wrap gap-1">
+            {WEEK.map((d) => (
+              <button
+                key={d}
+                aria-pressed={r.weekdays.includes(d)}
+                onClick={() => toggleDay(d)}
+                className={`rounded-full px-2 py-0.5 ${r.weekdays.includes(d) ? "border border-ink text-ink" : "border border-transparent text-muted hover:text-ink"}`}
+              >
+                {DAY_LETTERS[d]}
+              </button>
+            ))}
+          </span>
+        )}
+      </div>
+    </li>
+  );
+}

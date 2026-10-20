@@ -4,6 +4,8 @@ import { addRhythm, updateRhythm, deleteRhythm, applyRoutineToday } from "@/app/
 import { eventsForRange, timeLabel } from "@/lib/google";
 import { Select } from "@/components/Select";
 import { ActionButton, DeleteButton } from "@/components/DeleteButton";
+import Link from "next/link";
+import { isDue, type Routine } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +40,13 @@ export default async function SchedulePage() {
   // This week, Monday first, as real dates so calendar events land on the right day.
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 
-  const [rhythm, events] = await Promise.all([
+  const [rhythm, events, routineRows] = await Promise.all([
     supabase.from("rhythm").select("*").order("sort").order("created_at"),
     eventsForRange(supabase, monday, 7),
+    supabase.from("routines").select("*").order("sort"),
   ]);
+  const routines = (routineRows.data ?? []) as Routine[];
+  const everyDay = routines.filter((r) => r.cadence !== "weekly").length;
   const items = (rhythm.data ?? []) as Item[];
   const ordered = (wd: number) =>
     items
@@ -53,6 +58,12 @@ export default async function SchedulePage() {
       <div>
         <h1 className="font-serif text-3xl">Schedule</h1>
         <p className="mt-1 max-w-[56ch] text-muted">Your week: the rhythm you repeat, plus your calendar. Today pulls from here.</p>
+        {routines.length > 0 && (
+          <p className="mt-2 text-sm text-muted">
+            Plus your <Link href="/routine" className="text-ink underline decoration-line underline-offset-4">routine</Link>
+            {everyDay ? `: ${everyDay} thing${everyDay === 1 ? "" : "s"} every day and night` : ""}, with weekly ones shown on their days.
+          </p>
+        )}
       </div>
 
       <section aria-labelledby="add" className="pebble bg-surface p-5">
@@ -94,6 +105,7 @@ export default async function SchedulePage() {
           const wd = weekdayOf(d);
           const list = ordered(wd);
           const cal = events?.[d] ?? [];
+          const weekly = routines.filter((r) => r.cadence === "weekly" && isDue(r, d));
           const isToday = d === day;
           return (
             <div key={d} className={isToday ? "border-l border-ink pl-4" : ""}>
@@ -115,6 +127,17 @@ export default async function SchedulePage() {
                     <li key={e.id} className="flex items-baseline gap-3 text-sm text-muted">
                       <span className="w-24 shrink-0 tabular-nums">{e.allDay ? "all day" : timeLabel(e.start!)}</span>
                       <span className="min-w-0 flex-1">{e.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {weekly.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {weekly.map((r) => (
+                    <li key={r.id} className="flex items-baseline gap-3 text-sm">
+                      <span className="w-24 shrink-0 text-muted">routine</span>
+                      <Link href="/routine" className="min-w-0 flex-1 hover:underline">{r.title}</Link>
                     </li>
                   ))}
                 </ul>
@@ -147,7 +170,7 @@ export default async function SchedulePage() {
                   })}
                 </ul>
               ) : (
-                !cal.length && <p className="mt-2 text-sm text-muted">Open day.</p>
+                !cal.length && !weekly.length && <p className="mt-2 text-sm text-muted">Open day.</p>
               )}
             </div>
           );

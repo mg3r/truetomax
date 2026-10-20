@@ -9,6 +9,8 @@ import { PrepareDay } from "@/components/PrepareDay";
 import { TaskRow, SuggestionRow, AddTask, EventRow, type Task } from "@/components/Tasks";
 import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
+import { RoutineToday } from "@/components/Routine";
+import { isDue, type Routine } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,15 @@ export default async function TodayPage() {
     supabase.from("rhythm_proposals").select("id", { count: "exact", head: true }).eq("status", "proposed"),
     supabase.from("insights").select("id", { count: "exact", head: true }).eq("status", "proposed"),
   ]);
+  // Routine: what's due today and what's already ticked. Quietly absent until its migration runs.
+  const [routineRows, routineChecks] = await Promise.all([
+    supabase.from("routines").select("*").order("sort").order("created_at"),
+    supabase.from("routine_checks").select("routine_id").eq("day", day),
+  ]);
+  const routine = ((routineRows.data ?? []) as Routine[]).filter((r) => isDue(r, day));
+  const checked = (routineChecks.data ?? []).map((c) => c.routine_id as string);
+  const routineDone = routine.filter((r) => checked.includes(r.id)).length;
+
   const mv = moves.data ?? [];
   const shares = mv.filter((m) => m.kind === "shared").length;
   const asks = mv.filter((m) => m.kind === "asked").length;
@@ -126,6 +137,20 @@ export default async function TodayPage() {
           </>
         )}
       </section>
+
+      {routine.length > 0 && (
+        <section aria-labelledby="routine">
+          <div className="flex items-baseline justify-between">
+            <h2 id="routine" className="section-title">
+              <Link href="/routine" className="hover:text-ink">Routine</Link>
+            </h2>
+            <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
+          </div>
+          <div className="mt-2">
+            <RoutineToday items={routine} checked={checked} day={day} />
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="tasks">
         <div className="flex items-baseline justify-between">

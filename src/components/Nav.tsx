@@ -7,6 +7,7 @@ import { APP_NAME } from "@/lib/brand";
 
 const LINKS = [
   { href: "/", label: "Today" },
+  { href: "/routine", label: "Routine" },
   { href: "/schedule", label: "Schedule" },
   { href: "/vision", label: "Vision" },
   { href: "/projects", label: "Projects" },
@@ -43,10 +44,10 @@ export function Nav() {
       {/* Phone: thumb-reach tab bar */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-7 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-8 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
         {LINKS.map((l) => (
-          <Link key={l.href} href={l.href} className={`py-3 text-center text-[0.7rem] ${active(l.href) ? "font-semibold text-ink" : "text-muted"}`}>
+          <Link key={l.href} href={l.href} className={`py-3 text-center text-[0.65rem] tracking-tight ${active(l.href) ? "font-semibold text-ink" : "text-muted"}`}>
             {l.label}
           </Link>
         ))}
