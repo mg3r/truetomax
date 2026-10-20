@@ -7,6 +7,7 @@ import { addProjectTask, deleteTask, moveTask, renameTask, setTaskStatus, type L
 import { RemoveX } from "./RemoveX";
 import { ActionEditor } from "./ActionEditor";
 import { LineEdit } from "./LineEdit";
+import { useClickAway } from "@/lib/useClickAway";
 
 const UNDATED = "9999-12-31";
 
@@ -98,7 +99,7 @@ export function TaskList({
                 const when = t.at_time ? clock(t.at_time) : t.part_of_day ?? "anytime";
                 const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, done ? null : when].filter(Boolean).join(", ");
                 return (
-                  <Row key={t.id} id={t.id} open={open === t.id}>
+                  <Row key={t.id} id={t.id} open={open === t.id && (!done || !!t.reason)}>
                     <div className="flex items-start gap-3">
                       <button
                         aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
@@ -145,6 +146,8 @@ export function TaskList({
                         }}
                       />
                     </div>
+                    {/* A finished action still opens to show its notes. */}
+                    {open === t.id && done && t.reason && <DoneNotes text={t.reason} onClose={() => setOpen(null)} />}
                     {open === t.id && !done && (
                       <div className="pl-8">
                         <ActionEditor
@@ -178,6 +181,16 @@ export function TaskList({
         {lifted ? <div className="rounded-xl border border-line bg-surface px-3 py-2 shadow-lg">{lifted.title}</div> : null}
       </DragOverlay>
     </DndContext>
+  );
+}
+
+function DoneNotes({ text, onClose }: { text: string; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useClickAway(ref, true, onClose);
+  return (
+    <div ref={ref} className="mt-3 mb-2 pl-8">
+      <p className="rounded-2xl bg-surface px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-ink/90">{text}</p>
+    </div>
   );
 }
 
