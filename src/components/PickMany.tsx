@@ -12,15 +12,18 @@ export function PickMany({
   value,
   onChange,
   size = "sm",
+  empty,
 }: {
   label: string;
   options: { id: string; name: string }[];
   value: string[];
   onChange: (ids: string[]) => void;
   size?: "sm" | "md";
+  /** Shown when there's nothing to pick yet, so the option doesn't silently vanish. */
+  empty?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  if (!options.length) return null;
+  if (!options.length) return empty ? <p className={`${size === "md" ? "text-sm" : "text-xs"} text-muted`}>{empty}</p> : null;
   const chosen = options.filter((o) => value.includes(o.id));
   const base = size === "md" ? "px-3.5 py-1.5 text-sm" : "px-2.5 py-1 text-xs";
   const pill = (on: boolean) => `rounded-full border ${base} ${on ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useClickAway } from "@/lib/useClickAway";
 import { editTask, moveTask, setTaskProjects, setTaskPractices, type Lane } from "@/app/actions";
 import { PickMany } from "./PickMany";
@@ -124,6 +125,12 @@ export function ActionEditor({
 
       <PickMany
         label="Project"
+        empty={
+          <>
+            Project: none in progress yet.{" "}
+            <Link href="/projects" className="underline decoration-line underline-offset-4 hover:text-ink">Drag one to In progress</Link> to add actions to it.
+          </>
+        }
         options={projects.map((p) => ({ id: p.id, name: p.title }))}
         value={projectsOf(action)}
         onChange={(next) => {
