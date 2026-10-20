@@ -30,6 +30,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 ## Next, in priority order
 1. **Tasks page** (under Your day): one running checklist of every task, from every project and with no project. Shows the day and project when there is one. Adding is as quick as a Notes checklist: type, Enter, keep going.
+   - **Decide with it:** whether Tasks becomes the one place to add tasks, removing the add fields on Today and Schedule (Schedule might keep adding things that repeat).
 2. **Import a task list from a photo or doc:** read a handwritten or typed list, add the items, and recognize which ones are crossed off (marked done).
 3. **Partner suggests next steps for a project:** 3–5 from your vision, docs and history; you accept them into Up next.
 4. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
