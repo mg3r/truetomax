@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { PickOne } from "./PickOne";
 import { addToSchedule } from "@/app/actions";
 
 const PARTS = [
@@ -83,37 +84,25 @@ export function ScheduleAdd({
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Exact time (optional)" className="field ml-1 w-32" />
       </div>
 
-      {practices.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Practice (optional)">
-          {practices.map((p) => (
-            <Chip
-              key={p.id}
-              on={practice === p.id}
-              onClick={() => {
-                const on = practice === p.id;
-                setPractice(on ? null : p.id);
-                // Picking a practice names the item for you, unless you've typed something.
-                if (!on && !title.trim()) setTitle(p.name);
-              }}
-            >
-              {p.name}
-            </Chip>
-          ))}
-        </div>
+      <PickOne
+        label="Practice"
+        size="md"
+        options={practices}
+        value={practice}
+        onChange={(id) => {
+          setPractice(id);
+          // Picking a practice names the item for you, unless you've typed something.
+          const name = practices.find((p) => p.id === id)?.name;
+          if (id && name && !title.trim()) setTitle(name);
+        }}
+      />
+      {projects.length > 0 ? (
+        <PickOne label="Project" size="md" options={projects.map((p) => ({ id: p.id, name: p.title }))} value={project} onChange={setProject} />
+      ) : (
+        <Link href="/projects" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
+          Start a project to add actions to it
+        </Link>
       )}
-
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Project (optional)">
-        {projects.map((p) => (
-          <Chip key={p.id} on={project === p.id} onClick={() => setProject(project === p.id ? null : p.id)}>
-            {p.title}
-          </Chip>
-        ))}
-        {!projects.length && (
-          <Link href="/projects" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
-            Start a project to add actions to it
-          </Link>
-        )}
-      </div>
 
       <button className="btn" disabled={pending || !ready}>Add</button>
         </>

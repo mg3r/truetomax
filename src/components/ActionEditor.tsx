@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { editTask, moveTask, setTaskProject, setTaskPractice, type Lane } from "@/app/actions";
+import { PickOne } from "./PickOne";
 
 const UNDATED = "9999-12-31";
 
@@ -110,43 +111,24 @@ export function ActionEditor({
         </div>
       )}
 
-      {projects.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Project (optional)">
-          {projects.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => {
-                const next = action.project_id === p.id ? null : p.id;
-                onChange({ project_id: next });
-                start(() => setTaskProject(action.id, next));
-              }}
-              className={pill(action.project_id === p.id)}
-            >
-              {p.title}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {practices.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Practice (optional)">
-          {practices.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => {
-                const next = action.routine_id === p.id ? null : p.id;
-                onChange({ routine_id: next });
-                start(() => setTaskPractice(action.id, next));
-              }}
-              className={pill(action.routine_id === p.id)}
-            >
-              {p.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <PickOne
+        label="Project"
+        options={projects.map((p) => ({ id: p.id, name: p.title }))}
+        value={action.project_id}
+        onChange={(next) => {
+          onChange({ project_id: next });
+          start(() => setTaskProject(action.id, next));
+        }}
+      />
+      <PickOne
+        label="Practice"
+        options={practices}
+        value={action.routine_id}
+        onChange={(next) => {
+          onChange({ routine_id: next });
+          start(() => setTaskPractice(action.id, next));
+        }}
+      />
 
       <button type="button" onClick={onClose} className="text-xs text-muted hover:text-ink">
         Done
