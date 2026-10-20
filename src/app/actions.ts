@@ -283,7 +283,7 @@ export async function setIdeaStatus(fd: FormData) {
 }
 
 /** Turn a project idea into a project: start it now (In progress) or keep it for later (Backlog). Its first step waits in Up next. */
-export async function ideaToProject(id: string, status: "active" | "paused" = "active") {
+export async function ideaToProject(id: string, status: "review" | "active" | "paused" = "review") {
   const supabase = await db();
   const { data: idea } = await supabase.from("ideas").select("*").eq("id", id).single();
   if (!idea) return;

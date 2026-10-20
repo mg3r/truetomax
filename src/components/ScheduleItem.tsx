@@ -34,7 +34,6 @@ export type RhythmItem = { id: string; title: string; at_time: string | null; pa
 export function ScheduleItem({
   item,
   kind = "rhythm",
-  project,
   done = false,
   calendar,
   action,
@@ -50,7 +49,6 @@ export function ScheduleItem({
   practices?: { id: string; name: string }[];
   /** "rhythm": a weekly Schedule item; "task": a one-time action; "routine": a Rhythm item (ritual or practice) shown on its day. */
   kind?: "rhythm" | "task" | "routine";
-  project?: string | null;
   done?: boolean;
   /** The matching Google Calendar event, if it's also there: its time is used when this has none of its own. */
   calendar?: { link?: string; label: string } | null;
@@ -76,7 +74,8 @@ export function ScheduleItem({
   const label = time ? clock(time) : calendar ? calendar.label : part ?? "anytime";
   const edit = kind === "task" ? editTask : kind === "routine" ? editRoutineWhen : editRhythm;
   const save = (fields: Parameters<typeof editRhythm>[1]) => start(() => edit(item.id, fields));
-  const meta = [kind === "rhythm" ? "weekly" : null, project].filter(Boolean).join(", ");
+  // No project, practice or ritual tag under items: the line stays clean.
+  const meta = "";
   const removable = kind !== "routine";
 
   return (

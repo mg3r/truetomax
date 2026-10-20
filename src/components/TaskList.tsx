@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { namesOf, projectsOf, practicesOf } from "@/lib/links";
+import { projectsOf } from "@/lib/links";
 import { addProjectTask, deleteTask, renameTask, setTaskStatus, type Lane } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { ActionEditor } from "./ActionEditor";
@@ -61,8 +61,6 @@ export function TaskList({
     setTasks(initial);
   }, [initial]);
 
-  const projName = new Map(projects.map((p) => [p.id, p.title]));
-  const practiceName = new Map(practices.map((p) => [p.id, p.name]));
   const shown = filter ? tasks.filter((t) => projectsOf(t).includes(filter)) : tasks;
 
 
@@ -78,7 +76,7 @@ export function TaskList({
             <ul className="mt-1">
               {list.map((t) => {
                 const done = t.status === "done";
-                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.at_time ? clock(t.at_time) : t.part_of_day, namesOf(projectsOf(t), projName), namesOf(practicesOf(t), practiceName)].filter(Boolean).join(", ");
+                const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.at_time ? clock(t.at_time) : t.part_of_day].filter(Boolean).join(", ");
                 return (
                   <li key={t.id} className="group border-b border-line py-1.5">
                     <div className="flex items-start gap-3">

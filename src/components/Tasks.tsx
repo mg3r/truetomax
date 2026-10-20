@@ -43,10 +43,10 @@ export function EventRow({ time, title, calendar, location, link }: { time: stri
   );
 }
 
-export function TaskRow({ task, today, showProject = true, aside, showTime = false }: { task: Task; today?: string; showProject?: boolean; aside?: React.ReactNode; showTime?: boolean }) {
+/** A plain action line on Today: tick, title, time if it has one. */
+export function TaskRow({ task, aside, showTime = false }: { task: Task; today?: string; aside?: React.ReactNode; showTime?: boolean }) {
   const [pending, start] = useTransition();
   const done = task.status === "done";
-  const carried = today && task.day && task.day < today && !done;
 
   return (
     <li className={`group flex items-start gap-3 py-2.5 ${pending ? "opacity-50" : ""}`}>
@@ -64,9 +64,6 @@ export function TaskRow({ task, today, showProject = true, aside, showTime = fal
       </button>
       <div className="min-w-0 flex-1">
         <p className={done ? "text-muted line-through decoration-line" : ""}>{task.title}</p>
-        <p className="text-xs text-muted">
-          {[!task.at_time && task.part_of_day, showProject && task.project, task.practice, task.source === "rhythm" && "your schedule", carried && "carried over"].filter(Boolean).join(", ")}
-        </p>
       </div>
       {aside && <div className="shrink-0 self-center">{aside}</div>}
       {!done && (

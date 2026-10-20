@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
-import { updateProject, deleteProject, acceptProject, createProject } from "@/app/actions";
+import { updateProject, deleteProject, createProject } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 
 export type BoardProject = { id: string; title: string; status: string; next: string | null; open: number };
@@ -67,10 +67,6 @@ export function ProjectBoard({ projects: initial, selected }: { projects: BoardP
                   key={p.id}
                   p={p}
                   selected={p.id === selected}
-                  onAccept={() => {
-                    setProjects((ps) => ps.map((x) => (x.id === p.id ? { ...x, status: "active" } : x)));
-                    start(() => acceptProject(p.id));
-                  }}
                   onDelete={() => {
                     setProjects((ps) => ps.filter((x) => x.id !== p.id));
                     return deleteProject(p.id, false);
@@ -116,16 +112,16 @@ function Column({ id, title, empty, count, children, onAdd }: { id: string; titl
   );
 }
 
-function Card({ p, selected, onAccept, onDelete }: { p: BoardProject; selected?: boolean; onAccept: () => void; onDelete: () => Promise<void> }) {
+function Card({ p, selected, onDelete }: { p: BoardProject; selected?: boolean; onDelete: () => Promise<void> }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: p.id });
   return (
     <li ref={setNodeRef} {...listeners} {...attributes} className={`touch-manipulation ${isDragging ? "opacity-30" : ""}`}>
-      <CardBody p={p} selected={selected} onAccept={onAccept} onDelete={onDelete} />
+      <CardBody p={p} selected={selected} onDelete={onDelete} />
     </li>
   );
 }
 
-function CardBody({ p, lifted = false, selected = false, onAccept, onDelete }: { p: BoardProject; lifted?: boolean; selected?: boolean; onAccept?: () => void; onDelete?: () => Promise<void> }) {
+function CardBody({ p, lifted = false, selected = false, onDelete }: { p: BoardProject; lifted?: boolean; selected?: boolean; onDelete?: () => Promise<void> }) {
   const status = columnOf(p.status);
   return (
     <div className={`relative rounded-2xl border bg-bg p-3 ${selected ? "border-ink" : "border-line"} ${lifted ? "shadow-lg" : ""}`}>
@@ -137,16 +133,6 @@ function CardBody({ p, lifted = false, selected = false, onAccept, onDelete }: {
         <p className="mt-1.5 text-xs text-muted">
           {p.next ? <>Next: <span className="text-ink">{p.next}</span></> : "No next step yet"}
         </p>
-      )}
-      {status === "review" && onAccept && (
-        <button
-          type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={onAccept}
-          className="mt-2 rounded-full border border-ink px-3 py-1 text-xs text-ink hover:bg-ink hover:text-bg"
-        >
-          Accept
-        </button>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateProject, addGoal, renameGoal, setGoalStatus, acceptProject } from "@/app/actions";
+import { updateProject, addGoal, renameGoal, setGoalStatus } from "@/app/actions";
 import { Grow } from "./Grow";
 import { Select } from "./Select";
 import { LineEdit } from "./LineEdit";
@@ -48,18 +48,6 @@ export function ProjectHeader({ p }: { p: { id: string; title: string; descripti
           }}
           options={STATUSES.map((st) => ({ value: st.value, label: st.label }))}
         />
-        {status === "review" && (
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              setStatus("active");
-              start(() => acceptProject(p.id));
-            }}
-          >
-            Accept project
-          </button>
-        )}
         </dd>
         <dt className="pt-0.5 text-muted">Description</dt>
         <dd>

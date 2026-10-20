@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { inActiveWork, namesOf, projectsOf, practicesOf } from "@/lib/links";
+import { inActiveWork } from "@/lib/links";
 import { today, weekdayOf, WEEKDAYS, addDays } from "@/lib/dates";
 import { ScheduleAdd } from "@/components/ScheduleAdd";
 import { ScheduleItem } from "@/components/ScheduleItem";
@@ -95,7 +95,6 @@ export default async function SchedulePage() {
   const { data: checkRows } = await supabase.from("routine_checks").select("routine_id, day").gte("day", week[0]).lte("day", week[6]);
   const checked = new Set((checkRows ?? []).map((c) => `${c.routine_id}:${c.day}`));
   const projects = projectRows.data ?? [];
-  const projName = new Map(projects.map((p) => [p.id, p.title]));
   // Only actions from projects you've accepted (In progress) appear on your Schedule.
   const activeIds = new Set(projects.map((p) => p.id));
   const tasks = (taskRows.data ?? []).filter((t) => inActiveWork(t, activeIds));
@@ -215,7 +214,6 @@ export default async function SchedulePage() {
                     key={`w-${r.id}`}
                     kind="routine"
                     item={{ id: r.id, title: r.title, at_time: w.at_time ?? null, part_of_day: w.part_of_day ?? null }}
-                    project={isPractice(r) ? "practice" : "ritual"}
                     calendar={cal}
                   />
                 ),
@@ -230,7 +228,7 @@ export default async function SchedulePage() {
                 bucket: part ? BUCKET[part] : 0,
                 at,
                 sort: r.sort,
-                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={[r.routine_id ? practiceName.get(r.routine_id) : null, r.project_id ? projName.get(r.project_id) : null].filter(Boolean).join(", ") || null} calendar={cal} />,
+                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} calendar={cal} />,
               };
             }),
             ...tasksMatched.map(({ t, cal }) => {
@@ -247,7 +245,6 @@ export default async function SchedulePage() {
                     key={`t-${t.id}`}
                     kind="task"
                     item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
-                    project={[namesOf(practicesOf(t), practiceName), namesOf(projectsOf(t), projName)].filter(Boolean).join(", ") || null}
                     done={t.status === "done"}
                     calendar={cal}
                     action={{ id: t.id, day: t.day, status: t.status, part_of_day: t.part_of_day ?? null, at_time: t.at_time ?? null, project_id: t.project_id ?? null, routine_id: t.routine_id ?? null, project_ids: t.project_ids ?? null, routine_ids: t.routine_ids ?? null }}

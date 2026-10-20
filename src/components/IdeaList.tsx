@@ -1,4 +1,4 @@
-import { ActionButton } from "./DeleteButton";
+import { PlusButton, TrashButton } from "./IconActions";
 import { AskPartner } from "./AskPartner";
 import { Collapsible } from "./Collapsible";
 import { contentIdeaToTask, ideaToProject, letGoOfIdea } from "@/app/actions";
@@ -31,16 +31,13 @@ export function IdeaList({ kind, ideas }: { kind: "content" | "venture"; ideas: 
               {i.body && <p className="mt-0.5 text-sm text-muted">{i.body}</p>}
               {i.money_path && <p className="mt-1 text-sm"><span className="text-muted">Money path: </span>{i.money_path}</p>}
               {i.first_step && <p className="mt-1 text-sm"><span className="text-muted">{projects ? "First step: " : "Next time: "}</span>{i.first_step}</p>}
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex gap-2">
                 {projects ? (
-                  <>
-                    <ActionButton action={ideaToProject.bind(null, i.id, "active")} className="btn-quiet !border-ink !text-ink">Start it</ActionButton>
-                    <ActionButton action={ideaToProject.bind(null, i.id, "paused")}>Backlog</ActionButton>
-                  </>
+                  <PlusButton action={ideaToProject.bind(null, i.id, "review")} label="Add to projects (In review)" />
                 ) : (
-                  <ActionButton action={contentIdeaToTask.bind(null, i.id)} className="btn-quiet !border-ink !text-ink">Add to Up next</ActionButton>
+                  <PlusButton action={contentIdeaToTask.bind(null, i.id)} label="Add to Up next" />
                 )}
-                <ActionButton action={letGoOfIdea.bind(null, i.id)}>Not this</ActionButton>
+                <TrashButton action={letGoOfIdea.bind(null, i.id)} label="Delete idea" confirm={`Delete "${i.title}"? It's gone for good and won't be suggested again.`} />
               </div>
             </li>
           ))}
