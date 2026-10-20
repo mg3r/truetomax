@@ -70,6 +70,20 @@ const byWhen = (list: Routine[]) =>
     return px - py || (x.at_time ?? "").localeCompare(y.at_time ?? "") || a.sort - b.sort;
   });
 
+/** One quiet line describing a Rhythm item: "practice · weekly · 2× · any day · feeds Dinner series". */
+function summaryOf(r: Routine, kinds: boolean, feeds: string[]) {
+  const when = whenOf(r);
+  return [
+    kinds ? (isPractice(r) ? "practice" : "ritual") : null,
+    r.cadence,
+    r.cadence === "weekly" ? (isPinned(r) ? r.weekdays.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DAY_LETTERS[d]).join(", ") : `${timesOf(r)}× · any day`) : null,
+    when,
+    feeds.length ? `feeds ${feeds.join(", ")}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 /** How many times a week: − 2× +. */
 function Times({ value, onChange, small = false }: { value: number; onChange: (n: number) => void; small?: boolean }) {
   const btn = small ? "h-5 w-5" : "h-8 w-8";
@@ -304,8 +318,13 @@ function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: st
             <span key={d} aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${doneOn.has(`${r.id}:${d}`) ? "bg-ink" : "bg-line"}`} />
           ))}
         </span>
-        <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your rituals?`} action={() => deleteRoutine(r.id)} />
+        <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your rhythm?`} action={() => deleteRoutine(r.id)} />
       </div>
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)} className="mt-0.5 block pl-7 text-left text-xs text-muted hover:text-ink">
+          {summaryOf(r, links !== null, projects.filter((p) => feeds.includes(p.id)).map((p) => p.title))}
+        </button>
+      ) : (
       <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
         {links !== null && (
           <>
@@ -360,8 +379,11 @@ function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: st
           </>
         )}
       </div>
-      {open && isPractice(r) && links !== null && (
+      )}
+      {open && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
+          {isPractice(r) && links !== null && (
+            <>
           <span className="mr-1 text-muted">Feeds</span>
           {projects.length ? (
             projects.map((p) => {
@@ -386,7 +408,9 @@ function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: st
           ) : (
             <span className="text-muted">no projects yet</span>
           )}
-          <button type="button" onClick={() => setOpen(false)} className="ml-1 text-muted hover:text-ink">Done</button>
+            </>
+          )}
+          <button type="button" onClick={() => setOpen(false)} className="ml-auto text-muted hover:text-ink">Done</button>
         </div>
       )}
     </li>
