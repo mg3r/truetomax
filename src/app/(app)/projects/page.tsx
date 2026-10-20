@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
-import { AskPartner } from "@/components/AskPartner";
+import { IdeaList } from "@/components/IdeaList";
 import { ProjectBoard, type BoardProject } from "@/components/ProjectBoard";
 import { NewProject } from "@/components/NewProject";
 
@@ -12,9 +12,10 @@ export default async function ProjectsPage() {
   const supabase = await createClient();
   const day = today();
 
-  const [projects, tasks] = await Promise.all([
+  const [projects, tasks, ideaRows] = await Promise.all([
     supabase.from("projects").select("id, title, status").order("created_at"),
     supabase.from("tasks").select("project_id, title, day").not("project_id", "is", null).eq("status", "todo").order("day", { ascending: true, nullsFirst: false }),
+    supabase.from("ideas").select("id, title, body, first_step, money_path").eq("kind", "venture").in("status", ["new", "exploring"]).order("created_at", { ascending: false }),
   ]);
 
   const all = (tasks.data ?? []) as Task[];
@@ -28,16 +29,9 @@ export default async function ProjectsPage() {
     <div className="space-y-8">
       <h1 className="font-serif text-3xl">Projects</h1>
 
-      <div className="space-y-3">
-        <NewProject />
-        <AskPartner
-          endpoint="/api/ideas"
-          body={{ kind: "venture" }}
-          label="Suggest ideas"
-          busyLabel="Thinking it through…"
-          className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink"
-        />
-      </div>
+      <NewProject />
+
+      <IdeaList kind="venture" ideas={ideaRows.data ?? []} />
 
       {/* The board is wider than the page's reading column on a computer, so four columns have room. */}
       <div className="lg:relative lg:left-1/2 lg:w-[min(68rem,calc(100vw-18rem))] lg:-translate-x-1/2">

@@ -9,7 +9,7 @@ import { RemoveX } from "./RemoveX";
 export type BoardProject = { id: string; title: string; status: string; next: string | null; open: number };
 
 const COLUMNS = [
-  { id: "review", title: "In review", empty: "Ideas land here. Accept one to start it." },
+  { id: "review", title: "In review", empty: "Projects you're still deciding on." },
   { id: "active", title: "In progress", empty: "Drag a project here to start it." },
   { id: "paused", title: "Backlog", empty: "Not now, maybe later." },
   { id: "done", title: "Done", empty: "Finished projects." },

@@ -280,20 +280,19 @@ export async function setIdeaStatus(fd: FormData) {
   refresh();
 }
 
-/** Commit to an idea: it becomes a project, and its first step becomes today's task. */
-export async function ideaToProject(id: string) {
+/** Turn a project idea into a project: start it now (In progress) or keep it for later (Backlog). Its first step waits in Up next. */
+export async function ideaToProject(id: string, status: "active" | "paused" = "active") {
   const supabase = await db();
   const { data: idea } = await supabase.from("ideas").select("*").eq("id", id).single();
   if (!idea) return;
   const { data: project } = await supabase
     .from("projects")
-    .insert({ title: idea.title, description: [idea.body, idea.money_path && `Money path: ${idea.money_path}`].filter(Boolean).join("\n\n"), makes_money: !!idea.money_path })
+    .insert({ title: idea.title, description: [idea.body, idea.money_path && `Money path: ${idea.money_path}`].filter(Boolean).join("\n\n"), makes_money: !!idea.money_path, status })
     .select("id")
     .single();
-  if (project && idea.first_step) await supabase.from("tasks").insert({ title: idea.first_step, project_id: project.id, day: today() });
+  if (project && idea.first_step) await supabase.from("tasks").insert({ title: idea.first_step, project_id: project.id, day: UNDATED });
   await supabase.from("ideas").update({ status: "planned", project_id: project?.id }).eq("id", id);
   refresh();
-  if (project) redirect(`/projects/${project.id}`);
 }
 
 export async function contentIdeaToTask(id: string) {

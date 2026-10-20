@@ -5,8 +5,7 @@ import { syncInstagram, lookAtPosts } from "@/lib/instagram";
 import { loadPosts, scoreOf, formatOf, type Post, type SocialRead } from "@/lib/socials";
 import { AskPartner } from "@/components/AskPartner";
 import { Thumb } from "@/components/Thumb";
-import { ActionButton } from "@/components/DeleteButton";
-import { contentIdeaToTask, letGoOfIdea } from "@/app/actions";
+import { IdeaList } from "@/components/IdeaList";
 
 export const dynamic = "force-dynamic";
 
@@ -122,29 +121,7 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
         </div>
       </section>
 
-      <section aria-labelledby="post-ideas">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 id="post-ideas" className="section-title">post ideas</h2>
-          <AskPartner endpoint="/api/ideas" body={{ kind: "content" }} label="Suggest 3 posts" busyLabel="Thinking it through…" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink" />
-        </div>
-        {(ideaRows.data ?? []).length ? (
-          <ul className="mt-2 divide-y divide-line">
-            {(ideaRows.data ?? []).map((i) => (
-              <li key={i.id} className="py-3">
-                <p className="font-medium">{i.title}</p>
-                {i.body && <p className="mt-0.5 text-sm text-muted">{i.body}</p>}
-                {i.first_step && <p className="mt-1 text-sm"><span className="text-muted">Next time: </span>{i.first_step}</p>}
-                <div className="mt-2 flex gap-2">
-                  <ActionButton action={contentIdeaToTask.bind(null, i.id)} className="btn-quiet !border-ink !text-ink">Add to Up next</ActionButton>
-                  <ActionButton action={letGoOfIdea.bind(null, i.id)}>Not this</ActionButton>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-1 text-sm text-muted">Ask for ideas built from what you&rsquo;re making this week and what&rsquo;s landing.</p>
-        )}
-      </section>
+      <IdeaList kind="content" ideas={ideaRows.data ?? []} />
 
       <section aria-labelledby="posts">
         <div className="flex items-baseline justify-between gap-3">
