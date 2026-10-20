@@ -53,7 +53,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Vision",
     body: [
-      "One page for your vision, written freely in your own words: stream of consciousness, as long or short as you like. Use Title and Heading for sections, \u2022 and 1. for lists, and B for bold (or type # , - or 1. at the start of a line). It saves as you go. Your partner reads it before everything it does and asks you about it, but never writes it for you."
+      "Your vision in your own words, as separate sections: one for each idea or concept that's alive for you. New vision adds one at the top; drag the dots to reorder. Write each one freely, stream of consciousness; while you're writing, a small bar gives you Heading, Subheading, \u2022 bullets, 1. numbers and B for bold (or type # , - or 1. at the start of a line). It saves as you go. Your partner reads it before everything it does and asks you about it, but never writes it for you."
     ],
   },
   {

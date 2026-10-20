@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Grow } from "./Grow";
+import { RichText } from "./RichText";
 import { updateVision, createVision, deleteVision, reorderVisions } from "@/app/actions";
 
 type Vision = { id: string; title: string; body: string };
@@ -65,7 +65,6 @@ export function VisionDoc({ visions: initial }: { visions: Vision[] }) {
 function Section({ v, first, autoFocus, onDelete }: { v: Vision; first: boolean; autoFocus: boolean; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: v.id });
   const [title, setTitle] = useState(v.title);
-  const [body, setBody] = useState(v.body);
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [, start] = useTransition();
@@ -111,13 +110,9 @@ function Section({ v, first, autoFocus, onDelete }: { v: Vision; first: boolean;
         aria-label="Vision name"
         className="w-full bg-transparent font-serif text-[1.7rem] leading-tight tracking-[-0.01em] focus:outline-none"
       />
-      <Grow
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        onBlur={() => body !== v.body && save({ body })}
-        aria-label={`${title} text`}
-        className="mt-2 w-full resize-none overflow-hidden bg-transparent font-serif text-[1.08rem] leading-relaxed placeholder:text-muted focus:outline-none"
-      />
+      <div className="mt-2">
+        <RichText value={v.body} label={`${title} text`} onSave={(html) => save({ body: html })} className="min-h-[1.75em]" />
+      </div>
       <div className="flex h-5 items-center gap-4 text-xs text-muted">
         <span aria-live="polite">{saved ? "Saved" : ""}</span>
         <span className="flex-1" />

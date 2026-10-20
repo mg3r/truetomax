@@ -74,7 +74,7 @@ export async function backfillMemory(supabase: SupabaseClient, limit = 60) {
   ]);
   const todo: [string, string, string, string | null][] = [
     ...(journal.data ?? []).map((j) => ["journal", j.id, journalText(j), j.day] as [string, string, string, string]),
-    ...(visions.data ?? []).map((v) => ["vision", v.id, `Vision (${v.horizon}): ${v.title}. ${v.body}`, null] as [string, string, string, null]),
+    ...(visions.data ?? []).map((v) => ["vision", v.id, `Vision: ${v.title}. ${(v.body ?? "").replace(/<[^>]+>/g, " ")}`, null] as [string, string, string, null]),
     ...(tasks.data ?? []).map((t) => ["task", t.id, `${t.status === "done" ? "Did" : "Skipped"}: ${t.title}`, t.day] as [string, string, string, string]),
   ].filter(([type, id]) => !seen.has(`${type}:${id}`));
   for (const [type, id, text, day] of todo.slice(0, limit)) await remember(supabase, type, id, text, day);

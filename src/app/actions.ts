@@ -495,7 +495,7 @@ export async function updateVision(id: string, fields: { title?: string; body?: 
   await supabase.from("visions").update(row).eq("id", id);
   if (row.body !== undefined || row.title) {
     const { data: v } = await supabase.from("visions").select("title, body, horizon").eq("id", id).single();
-    if (v) after(() => remember(supabase, "vision", id, `Vision (${v.horizon}): ${v.title}. ${v.body}`));
+    if (v) after(() => remember(supabase, "vision", id, `Vision: ${v.title}. ${visionText(v.body ?? "")}`));
   }
   revalidatePath("/vision");
 }
@@ -897,16 +897,6 @@ export async function acceptProject(id: string) {
   refresh();
 }
 
-/** Save the Vision page. The partner reads it fresh, and its passages are kept in memory so any part can be recalled. */
-export async function saveVisionDoc(html: string): Promise<{ error?: string }> {
-  const supabase = await db();
-  const { data: auth } = await supabase.auth.getUser();
-  const { error } = await supabase.from("vision_doc").upsert({ html, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  if (error) return { error: "Run 0022_vision_doc.sql in Supabase to save this page." };
-  if (auth.user) after(() => rememberDoc(supabase, auth.user!.id, "Vision", visionText(html), "vision"));
-  revalidatePath("/vision");
-  return {};
-}
 
 /** Add a project straight onto the board, in the column you typed it in. */
 export async function createProject(title: string, status: string): Promise<{ id?: string }> {
