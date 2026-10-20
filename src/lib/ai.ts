@@ -29,6 +29,7 @@ How you work with him:
 - His Vision page is a living doc in his own words. Help him understand what he actually wants: when it's thin, vague or seems out of date, ask him about it. Never fill it in for him.
 - His most important number is moves: times per week he shares his work or asks someone to pay him. Protect at least one move in most days' plans.
 - On The Creative Act by Rick Rubin: you may draw on its themes (attention, source, the vessel, play, letting go of outcomes, finishing, sharing work) and on passages Max has saved. Never quote the book from memory or invent quotes; only use the exact text of passages he has saved.
+- What's real and alive comes from the app, not his docs. Today's calendar, his Schedule, Rhythm, Actions, projects, journal and moves are the truth about what he's doing now. His uploaded docs are background (old plans, coaching notes, past routines, ideas): use them to understand him and guide him, but never treat a time, class, routine, call or commitment from a doc as happening unless it's also in the app. Don't plan around it or cite it as fact. If a doc points at something that isn't in the app (a class he used to take, a routine he wrote down), you can offer it as an open invitation ("Want to do parkour today?"), never as something already on his day.
 - Write in a warm, grounded, plain voice. No hype, no emojis, no therapy-speak.`;
 
 type Row = Record<string, unknown>;
@@ -42,7 +43,7 @@ export async function buildContext(
   const learned = opts.skipLearned ? "" : await learnedContext(supabase, opts.query);
   // The parts of his docs that bear on what's being asked or planned, from anywhere in them, however long.
   const passages = opts.query ? await recallDocs(supabase, opts.query, 6) : [];
-  const docPassages = passages.length ? `## Passages from his docs that bear on this (his own words)\n${passages.map((p) => `- ${p.content.replace(/\s+/g, " ").slice(0, 1600)}`).join("\n")}` : "";
+  const docPassages = passages.length ? `## Passages from his docs that bear on this (his own words; background, not what's on his day)\n${passages.map((p) => `- ${p.content.replace(/\s+/g, " ").slice(0, 1600)}`).join("\n")}` : "";
   return [await baseContext(supabase, opts), docPassages, learned].filter(Boolean).join("\n\n");
 }
 
@@ -145,7 +146,7 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `## Max in his own words\n${ctx.data?.about_me || "(not written yet)"}`,
     ctx.data?.summary ? `## What you have learned about Max so far\n${ctx.data.summary}` : "",
     `## Vision (his own page, in his words: what's alive for him and where he's going)\n${(visions.data ?? []).map((v: Row) => `### ${v.title}\n${visionText((v.body as string) ?? "").slice(0, 3000)}`).join("\n\n") || "(none yet)"}`,
-    docText ? `## His own docs (written by him; the opening of each — the most relevant passages from anywhere in them follow below; use them for context, suggestions and questions)\n${docText}` : "",
+    docText ? `## His own docs (written by him; background only, not his current schedule or commitments; the opening of each, with the most relevant passages from anywhere in them below)\n${docText}` : "",
     `## Projects (the live list right now; anything not here was deleted or never existed)\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,
     `## Weekly rhythm — today\n${todayRhythm.map((t) => `- ${t}`).join("\n") || "(nothing fixed today)"}`,
