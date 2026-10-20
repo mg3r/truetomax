@@ -184,6 +184,7 @@ export function RoutineEditor({
   const [kind, setKind] = useState<"ritual" | "practice">("ritual");
   const [days, setDays] = useState<number[]>([]);
   const [times, setTimes] = useState(1);
+  const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const doneOn = new Set(checks.map((c) => `${c.routine_id}:${c.day}`));
 
@@ -195,13 +196,23 @@ export function RoutineEditor({
       await addRoutine(t, cadence, days, times, kind);
       setTitle("");
       setDays([]);
+          setOpen(false);
     });
   };
 
   return (
     <div className="space-y-12">
-      <form onSubmit={add} className="pebble bg-surface p-5">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your rhythm" aria-label="Add to your rhythm" className="field" />
+      <form
+        onSubmit={add}
+        onBlur={(e) => {
+        // Leaving an empty form folds it back up.
+        if (!e.currentTarget.contains(e.relatedTarget as Node) && !title.trim()) setOpen(false);
+      }}
+        className="pebble bg-surface p-5"
+      >
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your rhythm" aria-label="Add to your rhythm" onFocus={() => setOpen(true)} className="field" />
+      {open && (
+        <>
         {links !== null && (
           <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Ritual or practice">
             {KINDS.map((k) => (
@@ -245,6 +256,8 @@ export function RoutineEditor({
         <button className="btn mt-4" disabled={pending || !title.trim()}>
           Add
         </button>
+        </>
+      )}
       </form>
 
       {CADENCES.map((c) => {

@@ -40,6 +40,7 @@ export function ScheduleAdd({
   const [time, setTime] = useState("");
   const [project, setProject] = useState<string | null>(null);
   const [practice, setPractice] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
 
   const ready = title.trim() && (repeat ? days.length > 0 : !!date);
@@ -55,11 +56,18 @@ export function ScheduleAdd({
           setTitle("");
           setTime("");
           setPractice(null);
+          setOpen(false);
         });
+      }}
+      onBlur={(e) => {
+        // Leaving an empty form folds it back up.
+        if (!e.currentTarget.contains(e.relatedTarget as Node) && !title.trim()) setOpen(false);
       }}
       className="pebble space-y-4 bg-surface p-5"
     >
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your week" aria-label="Add to your week" className="field" />
+      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your week" aria-label="Add to your week" onFocus={() => setOpen(true)} className="field" />
+      {open && (
+        <>
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="How often">
         <Chip on={!repeat} onClick={() => setRepeat(false)}>Just once</Chip>
@@ -122,6 +130,8 @@ export function ScheduleAdd({
       </div>
 
       <button className="btn" disabled={pending || !ready}>Add</button>
+        </>
+      )}
     </form>
   );
 }
