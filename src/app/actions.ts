@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { today } from "@/lib/dates";
+import { today, addDays } from "@/lib/dates";
 import { remember, forget, journalText, rememberDoc } from "@/lib/memory";
 import { movesFromAction, movesFromJournal } from "@/lib/moves";
 import { visionText } from "@/lib/vision";
