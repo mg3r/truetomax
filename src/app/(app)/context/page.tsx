@@ -7,6 +7,7 @@ import { DocUpload, GoogleDocLink } from "@/components/Docs";
 import { Chat } from "@/components/Chat";
 import { googleConfigured } from "@/lib/google";
 import { instagramConfigured } from "@/lib/instagram";
+import { MorningToggle } from "@/components/MorningToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -204,6 +205,12 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
           ) : (
             <a href="/api/google/connect" className="btn mt-3">Connect Google</a>
           )}
+        </section>
+
+        <section aria-labelledby="morning-h">
+          <h2 id="morning-h" className="section-title">morning notification</h2>
+          <p className="mt-1 text-sm text-muted">Around 7:30 each morning your day is prepared and its affirmation arrives on this device. Tap it to open Today.</p>
+          <MorningToggle />
         </section>
 
         <section aria-labelledby="ig-h">

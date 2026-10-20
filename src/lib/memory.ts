@@ -1,20 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { today } from "./dates";
 
-// If the embed function isn't deployed, stop trying for this server instance and use word search.
-let embedUnavailable = false;
+// If the embed function isn't deployed, stop trying for a while and use word search; check again later.
+let embedUnavailableUntil = 0;
 
 async function embed(supabase: SupabaseClient, text: string): Promise<number[] | null> {
-  if (embedUnavailable || !text.trim()) return null;
+  if (Date.now() < embedUnavailableUntil || !text.trim()) return null;
   try {
     const { data, error } = await supabase.functions.invoke("embed", { body: { input: text } });
     if (error || !Array.isArray(data?.embedding)) {
-      embedUnavailable = true;
+      embedUnavailableUntil = Date.now() + 10 * 60_000;
       return null;
     }
     return data.embedding as number[];
   } catch {
-    embedUnavailable = true;
+    embedUnavailableUntil = Date.now() + 10 * 60_000;
     return null;
   }
 }
@@ -82,4 +82,18 @@ export async function backfillMemory(supabase: SupabaseClient, limit = 60) {
 
 export function journalText(j: { prompt?: string | null; body: string }) {
   return `${j.prompt ? `Prompt: ${j.prompt}\n` : ""}Journal: ${j.body}`;
+}
+
+/** Give older memories (saved before the embed function existed) their meaning fingerprint, a batch at a time. */
+export async function embedMissing(supabase: SupabaseClient, limit = 40) {
+  const { data: rows, error } = await supabase.from("memory").select("id, content").is("embedding", null).limit(limit);
+  if (error || !rows?.length) return 0;
+  let done = 0;
+  for (const r of rows) {
+    const embedding = await embed(supabase, r.content);
+    if (!embedding) break; // function not deployed yet
+    await supabase.from("memory").update({ embedding: JSON.stringify(embedding) }).eq("id", r.id);
+    done++;
+  }
+  return done;
 }

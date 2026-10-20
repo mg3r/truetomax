@@ -21,7 +21,9 @@ type DayPlan = {
 };
 
 /** Prepare today once: weekly rhythm tasks, a saved passage, and the partner's affirmation, question and suggestions. */
-export async function prepareDay(supabase: SupabaseClient, { force = false } = {}) {
+export async function prepareDay(supabase: SupabaseClient, { force = false, userId }: { force?: boolean; userId?: string } = {}) {
+  // When the morning job runs there's no signed-in session, so rows need their owner set explicitly.
+  const owner = userId ? { user_id: userId } : {};
   await seedIfNeeded(supabase);
   const day = today();
 
@@ -31,14 +33,14 @@ export async function prepareDay(supabase: SupabaseClient, { force = false } = {
   }
 
   // Claim the day first so two open tabs don't both prepare it.
-  const { error: claimErr } = await supabase.from("days").insert({ day });
+  const { error: claimErr } = await supabase.from("days").insert({ day, ...owner });
   if (claimErr) {
     // Already prepared, or being prepared. If an earlier attempt died halfway, start over.
     const { data: existing } = await supabase.from("days").select("affirmation, created_at").eq("day", day).maybeSingle();
     const stale = existing && !existing.affirmation && Date.now() - new Date(existing.created_at).getTime() > 90_000;
     if (!stale) return;
     await supabase.from("days").delete().eq("day", day);
-    return prepareDay(supabase);
+    return prepareDay(supabase, { userId });
   }
 
   // 1. Weekly rhythm becomes today's fixed tasks.
@@ -46,11 +48,11 @@ export async function prepareDay(supabase: SupabaseClient, { force = false } = {
   if (!count) {
     const full = await supabase.from("rhythm").select("title, project_id, at_time, part_of_day").eq("weekday", weekdayOf(day)).order("sort");
     if (!full.error && full.data?.length) {
-      await supabase.from("tasks").insert(full.data.map((r) => ({ ...r, day, source: "rhythm" })));
+      await supabase.from("tasks").insert(full.data.map((r) => ({ ...r, day, source: "rhythm", ...owner })));
     } else if (full.error) {
       // Before the setup files run, rhythm may not have time or part-of-day columns yet.
       const { data: rhythm } = await supabase.from("rhythm").select("title, project_id").eq("weekday", weekdayOf(day)).order("sort");
-      if (rhythm?.length) await supabase.from("tasks").insert(rhythm.map((r) => ({ title: r.title, project_id: r.project_id, day, source: "rhythm" })));
+      if (rhythm?.length) await supabase.from("tasks").insert(rhythm.map((r) => ({ title: r.title, project_id: r.project_id, day, source: "rhythm", ...owner })));
     }
   }
 
@@ -115,6 +117,7 @@ Don't repeat anything already open or skipped recently. If he has made no moves 
         status: "suggested",
         source: "partner",
         project_id: projects?.find((p) => p.title === t.project)?.id ?? null,
+        ...owner,
       }))
     );
   }

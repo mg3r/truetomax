@@ -1,15 +1,15 @@
-// Turns text into an embedding with Supabase's built-in gte-small model (no API key, no cost).
-// Deploy: supabase functions deploy embed
-// truetomax works without it (it falls back to word search); with it, memory search understands meaning.
+// truetomax: turns text into a meaning fingerprint (embedding) with Supabase's built-in gte-small model.
+// No API key, no cost. Deploy from the Supabase dashboard: Edge Functions → Deploy a new function → Via Editor,
+// name it "embed", paste this file, Deploy.
 
-// @ts-expect-error Supabase Edge Runtime global
-const session = new Supabase.ai.Session("gte-small");
+// deno-lint-ignore no-explicit-any
+const session = new (globalThis as any).Supabase.ai.Session("gte-small");
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
-  const { input } = await req.json();
+  const { input } = await req.json().catch(() => ({ input: null }));
   if (typeof input !== "string" || !input.trim()) {
-    return new Response(JSON.stringify({ error: "input must be non-empty text" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "input must be non-empty text" }), { status: 400, headers: { "Content-Type": "application/json" } });
   }
   const embedding = await session.run(input.slice(0, 4000), { mean_pool: true, normalize: true });
   return new Response(JSON.stringify({ embedding }), { headers: { "Content-Type": "application/json" } });

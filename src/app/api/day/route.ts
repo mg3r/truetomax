@@ -5,6 +5,7 @@ import { today } from "@/lib/dates";
 import { learnIfDue } from "@/lib/learn";
 import { syncInstagram } from "@/lib/instagram";
 import { syncDriveFoldersIfStale } from "@/lib/drive";
+import { embedMissing } from "@/lib/memory";
 
 export const maxDuration = 120;
 
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
     after(() => learnIfDue(supabase).catch((e) => console.error("learnIfDue", e)));
     after(() => syncInstagram(supabase).catch((e) => console.error("instagram sync", e)));
     after(() => syncDriveFoldersIfStale(supabase).catch((e) => console.error("drive sync", e)));
+    after(() => embedMissing(supabase).catch((e) => console.error("embed", e)));
   }
   return NextResponse.json({ ready: !!d?.affirmation });
 }

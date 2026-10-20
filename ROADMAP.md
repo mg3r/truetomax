@@ -32,8 +32,8 @@ An evolving guiding light: give each day direction, help execute visions, share 
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.
 6. **Stripe and bank:** read-only income from SourceDart and Intelligent Adjuster (Stripe restricted key; bank via an aggregator like Plaid). Income becomes a learned signal alongside moves.
 7. **Google Drive folders:** code done (run `0007_drive.sql`). Paste a folder link under Context → Your docs; Google Docs, Word and text files inside (two levels deep) sync daily.
-8. **Morning notification** with the day's affirmation.
-9. **Memory by meaning:** deploy the `embed` function (one command); search falls back to words until then.
+8. **Morning notification:** code done (run `0008_push.sql`; add `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in Vercel; turn on in Context → Settings on your phone). Prepares the day at 7:30 local and sends the affirmation.
+9. **Memory by meaning:** paste `supabase/functions/embed/index.ts` into Supabase → Edge Functions → Deploy a new function → Via Editor, named `embed`. Older memories catch up automatically.
 
 ## Later
 - Productize as truetoyou: per-person onboarding replaces the seeded About you, routine and goals; the app name is already one setting (`NEXT_PUBLIC_APP_NAME`).
