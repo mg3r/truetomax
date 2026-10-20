@@ -124,11 +124,12 @@ function Card({ p, selected, onDelete }: { p: BoardProject; selected?: boolean; 
 function CardBody({ p, lifted = false, selected = false, onDelete }: { p: BoardProject; lifted?: boolean; selected?: boolean; onDelete?: () => Promise<void> }) {
   const status = columnOf(p.status);
   return (
-    <div className={`relative rounded-2xl border bg-bg p-3 ${selected ? "border-ink" : "border-line"} ${lifted ? "shadow-lg" : ""}`}>
-      {onDelete && <RemoveX label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} action={onDelete} className="absolute top-1.5 right-1.5 !h-6 !w-6" />}
-      <Link href={`/projects?p=${p.id}`} scroll={false} className="block pr-6 font-serif text-[1.05rem] leading-snug hover:underline hover:decoration-line hover:underline-offset-4">
+    // The whole card opens the project: it lifts on hover; the title isn't underlined.
+    <div className={`group/card relative rounded-2xl border p-3 transition-colors ${selected ? "border-ink bg-surface" : "border-line bg-bg hover:border-muted hover:bg-surface"} ${lifted ? "shadow-lg" : ""}`}>
+      <Link href={`/projects?p=${p.id}`} scroll={false} className="block pr-6 font-serif text-[1.05rem] leading-snug after:absolute after:inset-0 after:rounded-2xl after:content-['']">
         {p.title}
       </Link>
+      {onDelete && <RemoveX label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} action={onDelete} className="absolute top-1.5 right-1.5 z-10 !h-6 !w-6" />}
       {status === "active" && (
         <p className="mt-1.5 text-xs text-muted">
           {p.next ? <>Next: <span className="text-ink">{p.next}</span></> : "No next step yet"}
