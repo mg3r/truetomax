@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { saveAboutMe, addHighlight, deleteHighlight, resetPlan, signOut, deleteContextDoc, refreshGoogleDoc } from "@/app/actions";
+import { saveAboutMe, addHighlight, deleteHighlight, resetPlan, signOut, deleteContextDoc, refreshGoogleDoc, resyncDriveFolder, removeDriveFolder } from "@/app/actions";
 import { DeleteButton, ActionButton } from "@/components/DeleteButton";
 import { BookUpload } from "@/components/BookUpload";
 import { DocUpload, GoogleDocLink } from "@/components/Docs";
@@ -80,20 +80,24 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
   }
 
   async function DocsTab() {
-    const [ctx, docs, highlights, bookPages, googleAcct] = await Promise.all([
+    const [ctx, docsRes, highlights, bookPages, googleAcct, foldersRes] = await Promise.all([
       supabase.from("profile_context").select("about_me").maybeSingle(),
-      supabase.from("context_docs").select("id, title, source, updated_at, text").order("updated_at", { ascending: false }),
+      supabase.from("context_docs").select("*").order("updated_at", { ascending: false }),
       supabase.from("highlights").select("id, text, source, location").order("created_at", { ascending: false }),
       supabase.from("book_pages").select("book", { count: "exact" }).limit(1),
       supabase.from("google_accounts").select("email").maybeSingle(),
+      supabase.from("drive_folders").select("folder_id, name, synced_at").order("created_at"),
     ]);
+    const docs = { error: docsRes.error, data: (docsRes.data ?? []).filter((d) => !d.folder_id) };
+    const folders = foldersRes.error ? [] : foldersRes.data ?? [];
+    const inFolder = (id: string) => (docsRes.data ?? []).filter((d) => d.folder_id === id).length;
     const book = !bookPages.error && bookPages.count ? { book: bookPages.data?.[0]?.book ?? "Your book", pages: bookPages.count } : null;
 
     return (
       <div className="space-y-14">
         <section aria-labelledby="docs-h">
           <h2 id="docs-h" className="section-title">your docs</h2>
-          <p className="mt-1 max-w-[60ch] text-sm text-muted">Your vision, routine, plans, notes from your coach. Your partner reads these when it suggests tasks, asks questions, and plans your day.</p>
+          <p className="mt-1 max-w-[60ch] text-sm text-muted">Your vision, routine, plans, notes from your coach. Upload files, or link a Google Doc or a whole Drive folder; folders stay in sync each day. Your partner reads all of it when it suggests tasks, asks questions, and plans your day.</p>
           {docs.error ? (
             <p className="mt-3 text-sm text-muted">Run the 0005 setup file in Supabase to turn this on.</p>
           ) : (
@@ -103,6 +107,20 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
                 <GoogleDocLink connected={!!googleAcct.data} />
               </div>
               <ul className="mt-6 divide-y divide-line">
+                {folders.map((f) => (
+                  <li key={f.folder_id} className="flex items-baseline justify-between gap-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate">{f.name ?? "Drive folder"}</p>
+                      <p className="text-xs text-muted">
+                        Drive folder, {inFolder(f.folder_id)} docs{f.synced_at ? `, synced ${new Date(f.synced_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-3 text-xs">
+                      <ActionButton action={resyncDriveFolder.bind(null, f.folder_id)} className="text-muted hover:text-ink">Refresh</ActionButton>
+                      <DeleteButton action={removeDriveFolder.bind(null, f.folder_id)} label="Remove" />
+                    </div>
+                  </li>
+                ))}
                 {(docs.data ?? []).map((d) => (
                   <li key={d.id} className="flex items-baseline justify-between gap-4 py-3">
                     <div className="min-w-0">
@@ -174,7 +192,7 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
       <div className="space-y-14">
         <section aria-labelledby="calendar-h" id="calendar" className="scroll-mt-6">
           <h2 id="calendar-h" className="section-title">google</h2>
-          <p className="mt-1 text-sm text-muted">Read-only: your calendar on Today and Schedule, and Google Docs you link under Your docs.</p>
+          <p className="mt-1 text-sm text-muted">Read-only: your calendar on Today and Schedule, and the Google Docs and Drive folders you link under Your docs.</p>
           {googleStatus && GOOGLE_STATUS[googleStatus] && <p role="status" className="mt-3 text-sm">{GOOGLE_STATUS[googleStatus]}</p>}
           {!googleConfigured() ? (
             <p className="mt-3 text-sm text-muted">Not set up yet: add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel.</p>

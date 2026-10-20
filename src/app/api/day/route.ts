@@ -4,6 +4,7 @@ import { prepareDay } from "@/lib/daily";
 import { today } from "@/lib/dates";
 import { learnIfDue } from "@/lib/learn";
 import { syncInstagram } from "@/lib/instagram";
+import { syncDriveFoldersIfStale } from "@/lib/drive";
 
 export const maxDuration = 120;
 
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
   if (d?.affirmation) {
     after(() => learnIfDue(supabase).catch((e) => console.error("learnIfDue", e)));
     after(() => syncInstagram(supabase).catch((e) => console.error("instagram sync", e)));
+    after(() => syncDriveFoldersIfStale(supabase).catch((e) => console.error("drive sync", e)));
   }
   return NextResponse.json({ ready: !!d?.affirmation });
 }

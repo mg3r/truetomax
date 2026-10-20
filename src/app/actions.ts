@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { today, addDays } from "@/lib/dates";
 import { remember, forget, journalText } from "@/lib/memory";
 import { readGoogleDoc } from "@/lib/google";
+import { syncDriveFolder } from "@/lib/drive";
 
 const str = (fd: FormData, k: string) => {
   const v = fd.get(k);
@@ -625,5 +626,37 @@ export async function deleteContextDoc(id: string) {
   const supabase = await db();
   await supabase.from("context_docs").delete().eq("id", id);
   await forget(supabase, "doc", id);
+  refresh();
+}
+
+/* Google Drive: one link box for a single Google Doc or a whole folder */
+export async function addDriveLink(link: string): Promise<{ error?: string; note?: string }> {
+  const folder = link.match(/\/folders\/([a-zA-Z0-9_-]+)/)?.[1];
+  if (!folder) return addGoogleDoc(link);
+  const supabase = await db();
+  const { error } = await supabase.from("drive_folders").upsert({ folder_id: folder }, { onConflict: "user_id,folder_id" });
+  if (error) return { error: error.message.includes("drive_folders") ? "Run the 0007 setup file in Supabase first." : error.message };
+  try {
+    const count = await syncDriveFolder(supabase, folder);
+    refresh();
+    return { note: count ? `Added ${count} doc${count === 1 ? "" : "s"} from that folder.` : "That folder has no Google Docs, Word or text files yet." };
+  } catch (e) {
+    await supabase.from("drive_folders").delete().eq("folder_id", folder);
+    return { error: e instanceof Error ? e.message : "Couldn't open that folder." };
+  }
+}
+
+export async function resyncDriveFolder(folderId: string) {
+  const supabase = await db();
+  await syncDriveFolder(supabase, folderId).catch((e) => console.error("drive resync", e));
+  refresh();
+}
+
+export async function removeDriveFolder(folderId: string) {
+  const supabase = await db();
+  const { data: docs } = await supabase.from("context_docs").select("id").eq("folder_id", folderId);
+  for (const d of docs ?? []) await forget(supabase, "doc", d.id);
+  await supabase.from("context_docs").delete().eq("folder_id", folderId);
+  await supabase.from("drive_folders").delete().eq("folder_id", folderId);
   refresh();
 }

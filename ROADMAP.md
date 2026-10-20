@@ -31,7 +31,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.
 6. **Stripe and bank:** read-only income from SourceDart and Intelligent Adjuster (Stripe restricted key; bank via an aggregator like Plaid). Income becomes a learned signal alongside moves.
-7. **Google Drive folders:** link a whole folder instead of single Google Docs.
+7. **Google Drive folders:** code done (run `0007_drive.sql`). Paste a folder link under Context → Your docs; Google Docs, Word and text files inside (two levels deep) sync daily.
 8. **Morning notification** with the day's affirmation.
 9. **Memory by meaning:** deploy the `embed` function (one command); search falls back to words until then.
 

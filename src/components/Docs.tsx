@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addContextDoc, addGoogleDoc } from "@/app/actions";
+import { addContextDoc, addDriveLink } from "@/app/actions";
 
 type TextItem = { str: string; hasEOL?: boolean };
 
@@ -78,27 +78,33 @@ export function DocUpload() {
 export function GoogleDocLink({ connected }: { connected: boolean }) {
   const [link, setLink] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   if (!connected) {
-    return <p className="text-sm text-muted">Connect Google in Settings to link Google Docs here. They stay in sync when you tap Refresh.</p>;
+    return <p className="text-sm text-muted">Connect Google in Settings to link Google Docs or whole Drive folders here.</p>;
   }
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
+        setNote(null);
         start(async () => {
-          const res = await addGoogleDoc(link);
+          const res = await addDriveLink(link);
           if (res.error) setError(res.error);
-          else setLink("");
+          else {
+            setLink("");
+            setNote(res.note ?? null);
+          }
         });
       }}
     >
       <div className="flex gap-2">
-        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Paste a Google Docs link" aria-label="Google Docs link" className="field min-w-0 flex-1" />
+        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Paste a Google Doc or Drive folder link" aria-label="Google Doc or Drive folder link" className="field min-w-0 flex-1" />
         <button className="btn" disabled={pending || !link.trim()}>{pending ? "Reading…" : "Add"}</button>
       </div>
+      {note && <p role="status" className="mt-2 text-sm text-muted">{note}</p>}
       {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
     </form>
   );

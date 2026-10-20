@@ -9,6 +9,7 @@ export const GOOGLE_SCOPES = [
   "email",
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/documents.readonly", // read Google Docs you link in Context
+  "https://www.googleapis.com/auth/drive.readonly", // read the docs inside Drive folders you link in Context
 ];
 const TZ = process.env.APP_TIMEZONE || "America/New_York";
 
@@ -55,7 +56,7 @@ export async function exchangeCode(code: string, origin: string) {
   return { refresh_token: json.refresh_token as string | undefined, access_token: json.access_token as string, expires_in: json.expires_in as number, email };
 }
 
-async function accessToken(supabase: SupabaseClient): Promise<string | null> {
+export async function accessToken(supabase: SupabaseClient): Promise<string | null> {
   const { data: acct } = await supabase.from("google_accounts").select("refresh_token, access_token, expires_at").maybeSingle();
   if (!acct) return null;
   if (acct.access_token && acct.expires_at && new Date(acct.expires_at).getTime() > Date.now() + 60_000) return acct.access_token;
@@ -175,4 +176,56 @@ export async function readGoogleDoc(supabase: SupabaseClient, docId: string): Pr
 /** "9:30 AM" in your time zone. */
 export function timeLabel(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ });
+}
+
+type DriveFile = { id: string; name: string; mimeType: string; modifiedTime: string };
+const READABLE = new Set([
+  "application/vnd.google-apps.document",
+  "text/plain",
+  "text/markdown",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+/** Docs inside a Drive folder (and its subfolders, two levels down), newest first, up to 60. */
+export async function listDriveFolder(token: string, folderId: string, depth = 0): Promise<DriveFile[]> {
+  const q = new URLSearchParams({
+    q: `'${folderId}' in parents and trashed = false`,
+    fields: "files(id,name,mimeType,modifiedTime)",
+    pageSize: "200",
+    orderBy: "modifiedTime desc",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+  });
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files?${q}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) });
+  if (!r.ok) throw new Error(r.status === 404 ? "Couldn't find that folder. Check the link and that it's in your Drive." : r.status === 403 ? "truetomax can't read Drive yet. Disconnect and reconnect Google in Settings." : "Couldn't open that folder.");
+  const files = ((await r.json()).files ?? []) as DriveFile[];
+  const docs = files.filter((f) => READABLE.has(f.mimeType));
+  if (depth < 2) {
+    for (const sub of files.filter((f) => f.mimeType === "application/vnd.google-apps.folder")) {
+      docs.push(...(await listDriveFolder(token, sub.id, depth + 1).catch(() => [])));
+    }
+  }
+  return docs.sort((a, b) => b.modifiedTime.localeCompare(a.modifiedTime)).slice(0, 60);
+}
+
+export async function driveFolderName(token: string, folderId: string) {
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name&supportsAllDrives=true`, { headers: { Authorization: `Bearer ${token}` } });
+  return r.ok ? ((await r.json()).name as string) : "Drive folder";
+}
+
+/** A Drive file's text: Google Docs are exported as plain text; Word files are read with mammoth. */
+export async function readDriveFile(token: string, f: DriveFile): Promise<string> {
+  const headers = { Authorization: `Bearer ${token}` };
+  if (f.mimeType === "application/vnd.google-apps.document") {
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}/export?mimeType=text/plain`, { headers, signal: AbortSignal.timeout(15000) });
+    return r.ok ? r.text() : "";
+  }
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media&supportsAllDrives=true`, { headers, signal: AbortSignal.timeout(15000) });
+  if (!r.ok) return "";
+  if (f.mimeType.includes("wordprocessingml")) {
+    const mammoth = await import("mammoth");
+    const { value } = await mammoth.extractRawText({ buffer: Buffer.from(await r.arrayBuffer()) });
+    return value;
+  }
+  return r.text();
 }
