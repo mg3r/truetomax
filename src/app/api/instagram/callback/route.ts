@@ -8,7 +8,7 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   const { origin, searchParams } = new URL(request.url);
   const back = (status: string) => {
-    const res = NextResponse.redirect(`${origin}/context?tab=settings&instagram=${status}`);
+    const res = NextResponse.redirect(`${origin}/profile?tab=settings&instagram=${status}`);
     res.cookies.delete("ig_state");
     return res;
   };

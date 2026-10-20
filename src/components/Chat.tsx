@@ -33,7 +33,7 @@ const shortLabel = (iso: string) => {
   return dayKey(iso) === dayKey(new Date().toISOString()) ? timeLabel(iso) : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-const href = (id: string | null) => `/context?tab=partner&c=${id ?? "new"}`;
+const href = (id: string | null) => `/partner?c=${id ?? "new"}`;
 
 export function Chat({ initial, conversations, current, threads }: { initial: Msg[]; conversations: Conversation[]; current: string | null; threads: boolean }) {
   const router = useRouter();
@@ -130,7 +130,6 @@ export function Chat({ initial, conversations, current, threads }: { initial: Ms
             </div>
           );
         })}
-        {!messages.length && !busy && <p className="text-muted">A fresh conversation. Ask, think out loud, or tell it what happened today.</p>}
         {busy && <p className="text-sm text-muted motion-safe:animate-pulse">{busy === "focus" ? "Reviewing everything you've logged…" : "Thinking…"}</p>}
         {error && <p role="alert" className="text-sm text-danger">{error}</p>}
         <div ref={end} />

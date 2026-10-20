@@ -10,5 +10,5 @@ export async function POST(request: Request) {
     await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(acct.refresh_token)}`, { method: "POST" }).catch(() => {});
   }
   await supabase.from("google_accounts").delete().not("user_id", "is", null);
-  return NextResponse.redirect(`${origin}/context?tab=settings&google=disconnected`, { status: 303 });
+  return NextResponse.redirect(`${origin}/profile?tab=settings&google=disconnected`, { status: 303 });
 }

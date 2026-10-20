@@ -131,7 +131,7 @@ export default async function TodayPage() {
             ) : (
               <p className="mt-2 text-muted">
                 Add your copy of The Creative Act and a page will open here each morning.{" "}
-                <Link href="/context?tab=docs#book" className="text-ink underline decoration-line underline-offset-4">Add the book</Link>
+                <Link href="/profile?tab=context#book" className="text-ink underline decoration-line underline-offset-4">Add the book</Link>
               </p>
             )}
           </>
@@ -179,7 +179,7 @@ export default async function TodayPage() {
         )}
         {googleConfigured() && !google.data && (
           <p className="mt-3 text-sm text-muted">
-            <Link href="/context?tab=settings" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
+            <Link href="/profile?tab=settings" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
           </p>
         )}
         <AddTask projects={projects.data ?? []} day={day} />

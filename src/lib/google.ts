@@ -152,9 +152,9 @@ export async function eventsForRange(supabase: SupabaseClient, start: string, da
 
 /** Read a Google Doc you've linked, as plain text. */
 export async function readGoogleDoc(supabase: SupabaseClient, docId: string): Promise<{ title: string; text: string } | { error: string }> {
-  if (!googleConfigured()) return { error: "Connect Google first (Context → Settings)." };
+  if (!googleConfigured()) return { error: "Connect Google first (Profile → Settings)." };
   const token = await accessToken(supabase);
-  if (!token) return { error: "Connect Google first (Context → Settings)." };
+  if (!token) return { error: "Connect Google first (Profile → Settings)." };
   const res = await fetch(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) });
   if (res.status === 403) return { error: "truetomax can't read Google Docs yet. Disconnect and reconnect Google in Settings to grant it." };
   if (!res.ok) return { error: "Couldn't open that doc. Check the link, and that it's in your Google account." };

@@ -13,13 +13,14 @@ const LINKS = [
   { href: "/projects", label: "Projects" },
   { href: "/journal", label: "Journal" },
   { href: "/ideas", label: "Ideas" },
-  { href: "/context", label: "Context" },
+  { href: "/partner", label: "Partner" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export function Nav() {
   const path = usePathname();
   const active = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href) || (href === "/projects" && path.startsWith("/plan")) || (href === "/context" && path.startsWith("/learned"));
+    href === "/" ? path === "/" : path.startsWith(href) || (href === "/projects" && path.startsWith("/plan")) || (href === "/partner" && path.startsWith("/learned"));
 
   return (
     <>
@@ -28,12 +29,15 @@ export function Nav() {
           <Mark size={18} className="text-ink" />
           {APP_NAME}
         </Link>
+        <Link href="/profile" className={`text-sm sm:hidden ${active("/profile") ? "text-ink" : "text-muted"}`}>
+          Profile
+        </Link>
         <nav className="hidden gap-0.5 sm:flex" aria-label="Main">
           {LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`rounded-full px-2.5 py-1 text-sm ${active(l.href) ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+              className={`rounded-full px-2 py-1 text-sm ${active(l.href) ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
             >
               {l.label}
             </Link>
@@ -46,7 +50,7 @@ export function Nav() {
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-8 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
-        {LINKS.map((l) => (
+        {LINKS.filter((l) => l.href !== "/profile").map((l) => (
           <Link key={l.href} href={l.href} className={`py-3 text-center text-[0.65rem] tracking-tight ${active(l.href) ? "font-semibold text-ink" : "text-muted"}`}>
             {l.label}
           </Link>

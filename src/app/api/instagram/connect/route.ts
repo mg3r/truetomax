@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) return NextResponse.redirect(`${origin}/login`);
-  if (!instagramConfigured()) return NextResponse.redirect(`${origin}/context?tab=settings&instagram=not-configured`);
+  if (!instagramConfigured()) return NextResponse.redirect(`${origin}/profile?tab=settings&instagram=not-configured`);
 
   const state = crypto.randomUUID();
   const res = NextResponse.redirect(instagramAuthUrl(origin, state));

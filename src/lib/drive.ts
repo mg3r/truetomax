@@ -8,7 +8,7 @@ import { remember, forget } from "./memory";
  */
 export async function syncDriveFolder(supabase: SupabaseClient, folderId: string) {
   const token = await accessToken(supabase);
-  if (!token) throw new Error("Connect Google first (Context → Settings).");
+  if (!token) throw new Error("Connect Google first (Profile → Settings).");
   const files = await listDriveFolder(token, folderId);
 
   const { data: existing } = await supabase.from("context_docs").select("id, gdoc_id, modified_at").eq("folder_id", folderId);

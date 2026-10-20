@@ -738,5 +738,5 @@ export async function reorderRoutines(ids: string[]) {
 export async function deleteConversation(id: string) {
   const supabase = await db();
   await supabase.from("conversations").delete().eq("id", id);
-  revalidatePath("/context");
+  revalidatePath("/partner");
 }

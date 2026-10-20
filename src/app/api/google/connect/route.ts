@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) return NextResponse.redirect(`${origin}/login`);
-  if (!googleConfigured()) return NextResponse.redirect(`${origin}/context?tab=settings&google=not-configured`);
+  if (!googleConfigured()) return NextResponse.redirect(`${origin}/profile?tab=settings&google=not-configured`);
 
   // A random value Google sends back, so the callback knows this request started here.
   const state = crypto.randomUUID();
