@@ -98,7 +98,7 @@ export function TaskList({
                 const when = t.at_time ? clock(t.at_time) : t.part_of_day ?? "anytime";
                 const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, done ? null : when].filter(Boolean).join(", ");
                 return (
-                  <Row key={t.id} id={t.id}>
+                  <Row key={t.id} id={t.id} open={open === t.id}>
                     <div className="flex items-start gap-3">
                       <button
                         aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
@@ -124,7 +124,7 @@ export function TaskList({
                             start(() => renameTask(t.id, title));
                           }}
                         />
-                        {(meta || t.reason) && (
+                        {open !== t.id && (meta || t.reason) && (
                           <p className="flex items-center gap-1.5 text-xs text-muted">
                             {meta}
                             {/* A small mark when it carries notes (the details from a post idea, or your own); open it to read them. */}
@@ -194,10 +194,10 @@ function Lane({ id, title, empty, children }: { id?: Lane; title: string; empty:
 }
 
 /** An action you can pick up by the dots on its left and drop in another group. */
-function Row({ id, children }: { id: string; children: React.ReactNode }) {
+function Row({ id, open, children }: { id: string; open: boolean; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({ id });
   return (
-    <li ref={setNodeRef} className={`group relative border-b border-line py-1.5 ${isDragging ? "opacity-30" : ""}`}>
+    <li ref={setNodeRef} className={`group relative border-b border-line ${open ? "py-3" : "py-1.5"} ${isDragging ? "opacity-30" : ""}`}>
       <button
         ref={setActivatorNodeRef}
         {...listeners}

@@ -87,7 +87,7 @@ export function ActionEditor({
   };
 
   return (
-    <div ref={box} className="mt-2 space-y-1.5">
+    <div ref={box} className="mt-3 mb-2 space-y-3">
       <div className="flex flex-wrap items-center gap-1" role="group" aria-label="When in the day">
         {PARTS.map((p) => {
           const on = (action.part_of_day ?? null) === p.value && !action.at_time;
@@ -163,9 +163,9 @@ export function ActionEditor({
             onChange({ reason: notes.trim() || null });
             start(() => editTask(action.id, { notes }));
           }}
-          placeholder="Notes"
+          placeholder="Add notes"
           aria-label="Notes"
-          className="mt-1 block w-full resize-none rounded-xl border border-line bg-transparent px-3 py-2 text-sm whitespace-pre-wrap placeholder:text-muted focus:border-ink focus:outline-none"
+          className="block w-full resize-none rounded-2xl bg-surface px-4 py-3 text-sm leading-relaxed text-ink/90 whitespace-pre-wrap placeholder:text-muted focus:outline-none"
         />
       )}
     </div>

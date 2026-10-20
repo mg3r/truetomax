@@ -78,6 +78,12 @@ body::after {
   border-radius: 6px;
 }
 
+/* Text you edit in place (titles, notes, quick-add lines) shows its caret, not a box around it. */
+textarea:not(.field):focus-visible,
+input:not(.field):not([type="time"]):not([type="checkbox"]):not([type="file"]):focus-visible {
+  outline: none;
+}
+
 /* Component classes live in the components layer, so utility classes (w-24, !px-2, peer-checked:…) can override them. */
 @layer components {
 /* Pebble: no two corners the same, like something shaped by hand. */
