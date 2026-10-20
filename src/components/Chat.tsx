@@ -45,7 +45,9 @@ export function Chat({ initial, conversations, current, threads }: { initial: Ms
   const [convId, setConvId] = useState(current);
   const end = useRef<HTMLDivElement>(null);
 
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [messages.length]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [messages.length]);
 
   // A new conversation gets its id from the first reply; put it in the address so the sidebar picks it up.
   function settle(id: string | null) {
@@ -161,7 +163,9 @@ export function Chat({ initial, conversations, current, threads }: { initial: Ms
 function Sidebar({ conversations, current, onClose }: { conversations: Conversation[]; current: string | null; onClose: () => void }) {
   const router = useRouter();
   const [list, setList] = useState(conversations);
-  useEffect(() => setList(conversations), [conversations]);
+  useEffect(() => {
+    setList(conversations);
+  }, [conversations]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);

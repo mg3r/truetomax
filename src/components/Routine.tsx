@@ -88,7 +88,9 @@ export function RoutineToday({ items, checked, day }: { items: Routine[]; checke
 /** The routine itself: add at the top, edit in place, and see the last week at a glance. */
 export function RoutineEditor({ items: initial, checks, week }: { items: Routine[]; checks: { routine_id: string; day: string }[]; week: string[] }) {
   const [items, setItems] = useState(initial);
-  useEffect(() => setItems(initial), [initial]);
+  useEffect(() => {
+    setItems(initial);
+  }, [initial]);
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 4 } }), useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }));
   const onDragEnd = (e: DragEndEvent) => {
     if (!e.over || e.active.id === e.over.id) return;

@@ -38,7 +38,9 @@ export function Board({ tasks: initial, today }: { tasks: BoardTask[]; today: st
   const [tasks, setTasks] = useState(initial);
   const [dragging, setDragging] = useState<BoardTask | null>(null);
   const [, start] = useTransition();
-  useEffect(() => setTasks(initial), [initial]);
+  useEffect(() => {
+    setTasks(initial);
+  }, [initial]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),

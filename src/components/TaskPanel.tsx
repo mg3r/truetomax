@@ -16,7 +16,9 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
   const [open, setOpen] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  useEffect(() => setTasks(initial), [initial]);
+  useEffect(() => {
+    setTasks(initial);
+  }, [initial]);
   useEffect(() => {
     try {
       const v = localStorage.getItem(VIEW_KEY);
@@ -155,7 +157,9 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
 /** The task's text, editable in place. Focusing it also shows where it can move. */
 function TitleInput({ task, done, onFocus, onRename }: { task: BoardTask; done: boolean; onFocus: () => void; onRename: (title: string) => void }) {
   const [value, setValue] = useState(task.title);
-  useEffect(() => setValue(task.title), [task.title]);
+  useEffect(() => {
+    setValue(task.title);
+  }, [task.title]);
   return (
     <input
       value={value}
