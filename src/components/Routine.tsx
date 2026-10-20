@@ -154,11 +154,13 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
 
 /** Your rhythm: rituals and practices. Add at the top, edit in place, and see the last week at a glance. */
 export function RoutineEditor({
+  today = "",
   items: initial,
   checks,
   week,
   links = null,
 }: {
+  today?: string;
   items: Routine[];
   checks: { routine_id: string; day: string }[];
   week: string[];
@@ -270,7 +272,7 @@ export function RoutineEditor({
               <SortableContext items={list.map((r) => r.id)} strategy={verticalListSortingStrategy}>
                 <ul className="mt-2 divide-y divide-line">
                   {list.map((r) => (
-                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} links={links} />
+                    <RoutineRow key={r.id} r={r} week={week} doneOn={doneOn} links={links} today={today} />
                   ))}
                 </ul>
               </SortableContext>
@@ -284,7 +286,7 @@ export function RoutineEditor({
   );
 }
 
-function RoutineRow({ r, week, doneOn, links }: { r: Routine; week: string[]; doneOn: Set<string>; links: Link[] | null }) {
+function RoutineRow({ r, week, doneOn, links, today }: { r: Routine; week: string[]; doneOn: Set<string>; links: Link[] | null; today: string }) {
   const [open, setOpen] = useState(false);
   const [days, setDays] = useOptimistic(new Set(week.filter((d) => doneOn.has(`${r.id}:${d}`))), (cur: Set<string>, { d, on }: { d: string; on: boolean }) => {
     const n = new Set(cur);
@@ -326,10 +328,11 @@ function RoutineRow({ r, week, doneOn, links }: { r: Routine; week: string[]; do
           aria-label="What"
           className="min-w-0 flex-1 bg-transparent focus:outline-none"
         />
-        {/* The last seven days, filled where you did it. Tap a day to fill it in (or clear it) if you did it but didn't mark it. */}
-        <span className="flex shrink-0 gap-0.5" role="group" aria-label="The last seven days">
+        {/* This week, Monday first, filled where you did it. Tap a past day to fill it in (or clear it) if you did it but didn't mark it. */}
+        <span className="flex shrink-0 gap-0.5" role="group" aria-label="This week, Monday to Sunday">
           {week.map((d) => {
             const on = days.has(d);
+            const ahead = !!today && d > today;
             return (
               <button
                 key={d}
@@ -337,15 +340,16 @@ function RoutineRow({ r, week, doneOn, links }: { r: Routine; week: string[]; do
                 aria-pressed={on}
                 aria-label={`${new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" })}: ${on ? "done" : "not marked"}`}
                 title={new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}
+                disabled={ahead}
                 onClick={() =>
                   start(async () => {
                     setDays({ d, on: !on });
                     await checkRoutine(r.id, d, !on);
                   })
                 }
-                className="grid h-5 w-3 place-items-center"
+                className="grid h-5 w-3 place-items-center disabled:cursor-default"
               >
-                <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${on ? "bg-ink" : "bg-line hover:bg-muted"}`} />
+                <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${on ? "bg-ink" : ahead ? "bg-line/40" : "bg-line hover:bg-muted"}`} />
               </button>
             );
           })}

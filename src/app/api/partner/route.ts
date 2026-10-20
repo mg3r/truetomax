@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { remember, pruneMemory, indexDocs, embedMissing } from "@/lib/memory";
+import { movesFromChat } from "@/lib/moves";
 import { createClient } from "@/lib/supabase/server";
 import { ask, buildContext, PARTNER } from "@/lib/ai";
 import { ensureConversation, touchConversation } from "@/lib/conversations";
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
   const { data: saved } = await supabase.from("messages").insert({ role: "user", content: message.trim(), ...conv }).select("id, created_at").single();
   // What you tell your partner becomes long-term memory too.
   if (saved && message.trim().length > 40) after(() => remember(supabase, "chat", saved.id, `Told the partner: ${message.trim()}`));
+  // "I sold two bowls at the market" counts as a move without logging it anywhere.
+  if (saved) after(() => movesFromChat(supabase, { id: saved.id, text: message.trim() }));
 
   await pruneMemory(supabase).catch(() => {});
   const [context, history] = await Promise.all([

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
 import { remember, forget, journalText, rememberDoc } from "@/lib/memory";
+import { movesFromAction, movesFromJournal } from "@/lib/moves";
 import { readGoogleDoc } from "@/lib/google";
 import { syncDriveFolder } from "@/lib/drive";
 
@@ -72,14 +73,11 @@ export async function setTaskStatus(id: string, status: "todo" | "done" | "skipp
     else await supabase.from("routine_checks").delete().eq("routine_id", before.routine_id).eq("day", day);
   }
 
-  // Finishing a share or ask task counts as a move.
-  if (before.category === "share" || before.category === "ask") {
-    if (status === "done") {
-      const { count } = await supabase.from("moves").select("id", { count: "exact", head: true }).eq("task_id", id);
-      if (!count) await supabase.from("moves").insert({ kind: before.category === "share" ? "shared" : "asked", note: before.title, project_id: before.project_id, task_id: id, day: today() });
-    } else {
-      await supabase.from("moves").delete().eq("task_id", id);
-    }
+  // Finishing an action that puts your work in front of people (or asks to be paid) counts as a move; undoing it takes it back.
+  if (status === "done") after(() => movesFromAction(supabase, { id, title: before.title, project_id: before.project_id, day: before.day }, true));
+  else if (before.status === "done") {
+    await supabase.from("moves").delete().eq("task_id", id);
+    after(() => movesFromAction(supabase, { id, title: before.title }, false));
   }
 
   if (status === "done" || status === "skipped") {
@@ -114,12 +112,14 @@ export async function saveJournal(fd: FormData) {
     ? await supabase.from("journal_entries").update({ body, updated_at: new Date().toISOString() }).eq("id", id).select("id, day, prompt, body").single()
     : await supabase.from("journal_entries").insert({ body, prompt: str(fd, "prompt"), day: str(fd, "day") ?? today() }).select("id, day, prompt, body").single();
   if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
+  if (entry) after(() => movesFromJournal(supabase, { id: entry.id, body: entry.body }));
   refresh();
 }
 
 export async function deleteJournal(id: string) {
   const supabase = await db();
   await supabase.from("journal_entries").delete().eq("id", id);
+  await supabase.from("moves").delete().eq("source", "journal").eq("source_id", id);
   await forget(supabase, "journal", id);
   refresh();
 }
@@ -332,8 +332,25 @@ export async function logMove(fd: FormData) {
 
 export async function deleteMove(id: string) {
   const supabase = await db();
+  const { data: m } = await supabase.from("moves").select("kind, note").eq("id", id).maybeSingle();
   await supabase.from("moves").delete().eq("id", id);
   await forget(supabase, "move", id);
+  // Removing one teaches the partner what doesn't count for you.
+  if (m?.note) after(() => remember(supabase, "move_fix", id, `Not a move (${m.kind}): "${m.note}"`));
+  refresh();
+}
+
+/** Add a move the app missed (something done outside it), or money in. Teaches the partner what counts. */
+export async function addMove(kind: string, note: string, amount: number | null) {
+  if (!["shared", "asked", "booked", "sold"].includes(kind) || !note.trim()) return;
+  const supabase = await db();
+  const row = { kind, note: note.trim(), amount: amount && amount > 0 ? amount : null, day: today() };
+  const first = await supabase.from("moves").insert({ ...row, source: "me" }).select("id").single();
+  const m = first.error ? (await supabase.from("moves").insert(row).select("id").single()).data : first.data;
+  if (m) {
+    after(() => remember(supabase, "move", m!.id, `Move — ${kind}: ${note.trim()}${row.amount ? ` ($${row.amount})` : ""}`));
+    after(() => remember(supabase, "move_fix", m!.id, `Counts as a move (${kind}): "${note.trim()}"`));
+  }
   refresh();
 }
 
@@ -847,6 +864,7 @@ export async function updateJournal(id: string, body: string) {
   const supabase = await db();
   const { data: entry } = await supabase.from("journal_entries").update({ body: body.trim(), updated_at: new Date().toISOString() }).eq("id", id).select("id, day, prompt, body").single();
   if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
+  if (entry) after(() => movesFromJournal(supabase, { id: entry.id, body: entry.body }));
   refresh();
 }
 

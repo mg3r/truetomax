@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { today, prettyDay, addDays, weekdayOf } from "@/lib/dates";
-import { MoveLogger } from "@/components/Moves";
+import { MovesLine, type Move } from "@/components/Moves";
 import { SaveLine } from "@/components/SaveLine";
 import { AskPartner } from "@/components/AskPartner";
 import { Mark } from "@/components/Mark";
@@ -35,7 +35,7 @@ export default async function TodayPage() {
       .order("created_at"),
     supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
     supabase.from("journal_entries").select("id, body").eq("day", day).eq("prompt", d.question ?? "").maybeSingle(),
-    supabase.from("moves").select("kind, amount").gte("day", weekStart),
+    supabase.from("moves").select("*").gte("day", weekStart).order("created_at", { ascending: false }),
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("seen", false),
     supabase.from("rhythm_proposals").select("id", { count: "exact", head: true }).eq("status", "proposed"),
     supabase.from("insights").select("id", { count: "exact", head: true }).eq("status", "proposed"),
@@ -69,10 +69,6 @@ export default async function TodayPage() {
   }
 
   const mv = moves.data ?? [];
-  const shares = mv.filter((m) => m.kind === "shared").length;
-  const asks = mv.filter((m) => m.kind === "asked").length;
-  const wins = mv.filter((m) => m.kind === "booked" || m.kind === "sold").length;
-  const earned = mv.reduce((sum, m) => sum + Number(m.amount ?? 0), 0);
   const learnedNotes = [
     unseen.count ? "a new weekly review" : null,
     hunches.count ? `${hunches.count} thing${hunches.count === 1 ? "" : "s"} it thinks it's learned` : null,
@@ -242,23 +238,8 @@ export default async function TodayPage() {
       )}
 
 
-      <section aria-labelledby="moves">
-        <h2 id="moves" className="section-title">Moves this week</h2>
-        <p className="mt-1 text-sm text-muted">Every time you share your work or ask someone to pay you. This is the number that changes everything else.</p>
-        <dl className="mt-5 grid grid-cols-4 gap-2">
-          {[
-            ["Shared", shares],
-            ["Asked", asks],
-            ["Booked or sold", wins],
-            ["Earned", `$${earned.toLocaleString()}`],
-          ].map(([label, value]) => (
-            <div key={label as string} className="flex flex-col-reverse">
-              <dt className="text-xs text-muted">{label}</dt>
-              <dd className={`font-serif text-4xl font-light tabular-nums ${value === 0 ? "text-muted" : ""}`}>{value}</dd>
-            </div>
-          ))}
-        </dl>
-        <MoveLogger />
+      <section aria-label="Moves this week">
+        <MovesLine key={mv.map((m) => m.id).join(",")} moves={mv as Move[]} />
       </section>
 
       <section aria-labelledby="question">
