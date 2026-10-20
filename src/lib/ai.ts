@@ -5,6 +5,7 @@ import { getStats } from "./learn";
 import { recall, recallDocs } from "./memory";
 import { instagramContext } from "./instagram";
 import { APP_NAME } from "@/lib/brand";
+import { visionText } from "./vision";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 
@@ -123,6 +124,9 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
           return `- ${p.title}: ${ds.length}× in the last 4 weeks${ds.length ? `, last ${ds[ds.length - 1]}` : ", not done yet"}`;
         })
         .join("\n");
+  // The Vision page (one page he writes freely). Falls back to the older per-vision sections until it exists.
+  const vd = await supabase.from("vision_doc").select("html").maybeSingle();
+  const visionDoc = vd.error || !vd.data?.html ? "" : visionText(vd.data.html).slice(0, 8000);
   const elimIdeas = await supabase.from("ideas").select("title, status_note").eq("status", "eliminated").limit(20);
   // His own docs (vision, routine, plans, coaching notes). Most recently updated first, capped so they don't crowd out the rest.
   const docs = await supabase.from("context_docs").select("title, text, updated_at").order("updated_at", { ascending: false }).limit(12);
@@ -143,7 +147,7 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `Today is ${WEEKDAYS[weekdayOf(day)]}, ${day}.`,
     `## Max in his own words\n${ctx.data?.about_me || "(not written yet)"}`,
     ctx.data?.summary ? `## What you have learned about Max so far\n${ctx.data.summary}` : "",
-    `## Vision (his running doc of what's alive for him)\n${(visions.data ?? []).map((v: Row) => `- ${v.title}: ${line(v.body as string)}`).join("\n") || "(none yet)"}`,
+    `## Vision (his own page, in his words: what's alive for him and where he's going)\n${visionDoc || (visions.data ?? []).map((v: Row) => `- ${v.title}: ${line(v.body as string)}`).join("\n") || "(none yet)"}`,
     docText ? `## His own docs (written by him; the opening of each — the most relevant passages from anywhere in them follow below; use them for context, suggestions and questions)\n${docText}` : "",
     `## Projects (the live list right now; anything not here was deleted or never existed)\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,

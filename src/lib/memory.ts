@@ -147,14 +147,14 @@ export function passagesOf(title: string, text: string, size = 1500) {
  * Keep a whole doc in long-term memory as passages, so any part of it can be found when it matters.
  * Meaning fingerprints are added in the background (a batch at a time), so even a long doc saves quickly.
  */
-export async function rememberDoc(supabase: SupabaseClient, docId: string, title: string, text: string) {
+export async function rememberDoc(supabase: SupabaseClient, docId: string, title: string, text: string, sourceType = "doc") {
   try {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return;
     const parts = passagesOf(title, text);
     if (!parts.length) return;
-    await supabase.from("memory").delete().eq("source_type", "doc").eq("source_id", docId);
-    const rows = parts.map((content, part) => ({ user_id: auth.user!.id, source_type: "doc", source_id: docId, part, content: content.slice(0, 6000), day: today() }));
+    await supabase.from("memory").delete().eq("source_type", sourceType).eq("source_id", docId);
+    const rows = parts.map((content, part) => ({ user_id: auth.user!.id, source_type: sourceType, source_id: docId, part, content: content.slice(0, 6000), day: today() }));
     let failed = false;
     for (let i = 0; i < rows.length; i += 200) {
       const { error } = await supabase.from("memory").insert(rows.slice(i, i + 200));
@@ -165,8 +165,8 @@ export async function rememberDoc(supabase: SupabaseClient, docId: string, title
     }
     // Before the doc-passages migration runs, keep the doc's opening as one memory, as before.
     if (failed) {
-      await supabase.from("memory").delete().eq("source_type", "doc").eq("source_id", docId);
-      await remember(supabase, "doc", docId, `Doc "${title}": ${text.slice(0, 5000)}`);
+      await supabase.from("memory").delete().eq("source_type", sourceType).eq("source_id", docId);
+      await remember(supabase, sourceType, docId, `Doc "${title}": ${text.slice(0, 5000)}`);
       return;
     }
     await embedMissing(supabase, 60);

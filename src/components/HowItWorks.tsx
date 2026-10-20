@@ -53,7 +53,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Vision",
     body: [
-      "One running doc, in your own words: what's alive for you and what you're building toward. New sections go on top; drag to reorder. Your partner reads it and asks you about it, but never writes it for you.",
+      "One page for your vision, written freely in your own words: stream of consciousness, as long or short as you like. Use Title and Heading for sections, \u2022 and 1. for lists, and B for bold (or type # , - or 1. at the start of a line). It saves as you go. Your partner reads it before everything it does and asks you about it, but never writes it for you."
     ],
   },
   {

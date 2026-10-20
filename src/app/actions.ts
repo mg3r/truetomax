@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
 import { remember, forget, journalText, rememberDoc } from "@/lib/memory";
 import { movesFromAction, movesFromJournal } from "@/lib/moves";
+import { visionText } from "@/lib/vision";
 import { readGoogleDoc } from "@/lib/google";
 import { syncDriveFolder } from "@/lib/drive";
 
@@ -895,4 +896,15 @@ export async function acceptProject(id: string) {
   const supabase = await db();
   await supabase.from("projects").update({ status: "active" }).eq("id", id);
   refresh();
+}
+
+/** Save the Vision page. The partner reads it fresh, and its passages are kept in memory so any part can be recalled. */
+export async function saveVisionDoc(html: string): Promise<{ error?: string }> {
+  const supabase = await db();
+  const { data: auth } = await supabase.auth.getUser();
+  const { error } = await supabase.from("vision_doc").upsert({ html, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) return { error: "Run 0022_vision_doc.sql in Supabase to save this page." };
+  if (auth.user) after(() => rememberDoc(supabase, auth.user!.id, "Vision", visionText(html), "vision"));
+  revalidatePath("/vision");
+  return {};
 }
