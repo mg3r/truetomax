@@ -1,37 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { addProjectTask, moveTask, deleteTask, renameTask, setUpNextDay, type Lane } from "@/app/actions";
+import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
 import { Board, LANES, laneOf, type BoardTask } from "./Board";
 import { RemoveX } from "./RemoveX";
 
 const VIEW_KEY = "ttm-project-view";
 const UNDATED = "9999-12-31";
-
-/** The next seven days, starting tomorrow, as Mon, Tue… */
-function comingDays(today: string) {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today + "T12:00:00Z");
-    d.setUTCDate(d.getUTCDate() + i + 1);
-    return { date: d.toISOString().slice(0, 10), label: d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }) };
-  });
-}
-const dayLabel = (day: string | null) =>
-  day && day !== UNDATED ? new Date(day + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short", ...(Date.parse(day) - Date.now() > 6 * 86400_000 ? { month: "short", day: "numeric" } : {}), timeZone: "UTC" }) : null;
-
-/** Optional day for an Up next task: none, or one of the coming week's days. */
-function DayPick({ value, today, onPick }: { value: string | null; today: string; onPick: (day: string | null) => void }) {
-  const pill = (on: boolean) => `rounded-full border px-2.5 py-1 text-xs ${on ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`;
-  return (
-    <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Day (optional)">
-      {comingDays(today).map((d) => (
-        <button key={d.date} type="button" aria-pressed={value === d.date} onClick={() => onPick(value === d.date ? null : d.date)} className={pill(value === d.date)}>
-          {d.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /** A project's tasks: one place to add (choosing where it goes), shown as a list or a board. */
 export function TaskPanel({ projectId, tasks: initial, today }: { projectId: string; tasks: BoardTask[]; today: string }) {
@@ -39,7 +14,6 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
   const [view, setView] = useState<"list" | "board">("list");
   const [title, setTitle] = useState("");
   const [lane, setLane] = useState<Lane>("today");
-  const [nextDay, setNextDay] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -63,7 +37,7 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
     setOpen(null);
     setTasks((ts) =>
       ts.map((t) =>
-        t.id !== id ? t : to === "done" ? { ...t, status: "done" } : { ...t, status: "todo", day: to === "later" ? null : to === "today" ? today : t.day && t.day > today ? t.day : UNDATED }
+        t.id !== id ? t : to === "done" ? { ...t, status: "done" } : { ...t, status: "todo", day: to === "later" ? null : to === "today" ? today : UNDATED }
       )
     );
     start(() => moveTask(id, to));
@@ -77,7 +51,7 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
           const t = title.trim();
           if (!t) return;
           setTitle("");
-          start(() => addProjectTask(projectId, t, lane, lane === "next" ? nextDay : null));
+          start(() => addProjectTask(projectId, t, lane));
         }}
         className="space-y-3"
       >
@@ -102,7 +76,6 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
             </label>
           ))}
         </fieldset>
-        {lane === "next" && <DayPick value={nextDay} today={today} onPick={setNextDay} />}
       </form>
 
       <div className="mt-8 flex items-baseline justify-end gap-3 text-sm" role="tablist" aria-label="View">
@@ -151,7 +124,6 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                               start(() => renameTask(t.id, title));
                             }}
                           />
-                          {l.id === "next" && dayLabel(t.day) && <span className="shrink-0 text-xs text-muted">{dayLabel(t.day)}</span>}
                           <RemoveX
                             label={`Delete ${t.title}`}
                             action={() => {
@@ -160,18 +132,6 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                             }}
                           />
                         </div>
-                        {open === t.id && l.id === "next" && (
-                          <div className="mt-2 pl-8">
-                            <DayPick
-                              value={t.day}
-                              today={today}
-                              onPick={(d) => {
-                                setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, day: d ?? UNDATED } : x)));
-                                start(() => setUpNextDay(t.id, d));
-                              }}
-                            />
-                          </div>
-                        )}
                         {open === t.id && (
                           <div className="mt-2 flex flex-wrap gap-1.5 pl-8">
                             {LANES.filter((x) => x.id !== l.id && x.id !== "done").map((x) => (

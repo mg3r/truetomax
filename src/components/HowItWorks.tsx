@@ -11,17 +11,25 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Routine, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
-      "On your phone, the bar at the bottom has Today, Schedule, Projects and Partner; Menu opens everything else.",
+      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Tasks, Routine, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "On your phone, the bar at the bottom has Today, Tasks, Projects and Partner; Menu opens everything else.",
     ],
   },
   {
     title: "Today",
     body: [
-      "Each morning the day is prepared for you: an affirmation, one line naming what would make today count, a random page from your copy of The Creative Act, and a question drawn from that page. The affirmation and question are written in the partner's own words; the page is from your book.",
-      "Below that: your routine to tick off, then what to do today. That list joins your Google Calendar events, today's Schedule items, and project tasks set for today, in time order. To add one, just type it; a part of day, an exact time and a project are there if you want them. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
+      "Each morning the day is prepared for you: an affirmation, one line naming what would make today count, a reading from your copy of The Creative Act, and a question drawn from it. The reading is a whole section: it starts where the section starts and runs until it ends, even across pages, so it never stops mid-thought. The affirmation and question are written in the partner's own words; the reading is your book.",
+      "Today is for doing, not planning: you add things on the other tabs (Tasks, Routine, Schedule, Projects) and they show up here. Below the reading: your routine to tick off, then what to do today, which joins your Google Calendar events, today's Schedule items, and tasks set for today, in time order. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
       "Your partner suggests up to three tasks a day, starting with Up next tasks from your projects. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
+    ],
+  },
+  {
+    title: "Tasks",
+    body: [
+      "Every task in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each task shows its day and project when it has one.",
+      "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap a task to rename it, move it between Today, Up next and Later, or put it in a project. Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
+      "Import a list: take a photo of a handwritten list, or upload a PDF, Word or text file. Each item is added to Up next, and anything crossed out or ticked is marked done, including tasks you already had.",
     ],
   },
   {
@@ -50,7 +58,8 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Projects",
     body: [
       "What you're building. Each project has goals (plain text with a checkbox) and tasks, shown as a list or a board. Everything edits in place; × deletes.",
-      "Tasks sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned, waiting in the project. Give it a day (Mon, Tue\u2026) and it shows on Schedule that day and on Today when the day comes; tap the day again to clear it. With no day, your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d), and adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
+      "Tasks sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned and waiting. It shows in your Tasks list, and your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d); adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
+      "Your partner suggests next steps for each project: tap \u201cSuggest next steps\u201d and it proposes 3\u20135, drawing on the project's goals and tasks, your vision, your docs and uploads, your journal, your socials and what it has learned about how you work. Keep the ones you want (they go to Up next); let the rest go.",
       "Deleting a project removes its tasks and goals, and your partner forgets them too.",
     ],
   },

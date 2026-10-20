@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sectionAround } from "./passage";
 import { askJSON, buildContext } from "./ai";
 import { today, weekdayOf } from "./dates";
 import { seedIfNeeded } from "./seed";
@@ -70,7 +71,7 @@ export async function prepareDay(supabase: SupabaseClient, { force = false, user
           .maybeSingle()
       ).data;
   if (hl) await supabase.from("highlights").update({ times_shown: hl.times_shown + 1, last_shown: day }).eq("id", hl.id);
-  const reading = readingPrompt(page, hl);
+  const reading = await readingPrompt(supabase, page, hl);
 
   // 3. The partner's read on today.
   let plan: DayPlan | null = null;
@@ -159,9 +160,16 @@ async function pickPage(supabase: SupabaseClient, day: string): Promise<Page | n
   return page;
 }
 
-function readingPrompt(page: Page | null, hl: { text: string; source: string } | null) {
+/** The whole section a page belongs to, so the partner reads what Max reads. */
+async function sectionFor(supabase: SupabaseClient, page: Page) {
+  const { data: around } = await supabase.from("book_pages").select("page, text").eq("book", page.book).gte("page", page.page - 9).lte("page", page.page + 9);
+  return sectionAround({ page: page.page, text: page.text }, around ?? []);
+}
+
+async function readingPrompt(supabase: SupabaseClient, page: Page | null, hl: { text: string; source: string } | null) {
   if (page) {
-    return `Today's reading is page ${page.page} of ${page.book}, from Max's own copy:\n"""\n${page.text.slice(0, 4000)}\n"""\nBase today's question and affirmation on this page's idea. Put it in your own words; don't quote more than a few words of it.`;
+    const s = await sectionFor(supabase, page);
+    return `Today's reading is ${s.title ? `the section "${s.title}" ` : ""}(pages ${s.from}\u2013${s.to}) of ${page.book}, from Max's own copy:\n"""\n${s.text.slice(0, 8000)}\n"""\nBase today's question and affirmation on this section's idea. Put it in your own words; don't quote more than a few words of it.`;
   }
   if (hl) return `Today's saved passage (from ${hl.source}, exact text he saved): "${hl.text}"`;
   return "He hasn't added the book or saved any passages yet; draw the question from the themes of The Creative Act without quoting it.";
@@ -179,7 +187,7 @@ export async function newQuestion(supabase: SupabaseClient) {
   const asked: string[] = [...(d.past_questions ?? []), d.question].filter(Boolean);
   const context = await buildContext(supabase, { skipLearned: true, journalCount: 5 });
   const { question } = await askJSON<{ question: string }>(
-    `${readingPrompt(page.data as Page | null, hl.data)}
+    `${await readingPrompt(supabase, page.data as Page | null, hl.data)}
 
 Ask Max a different reflective journal question from today's reading — a new angle, not a rewording. Already asked today:
 ${asked.map((q) => `- ${q}`).join("\n")}

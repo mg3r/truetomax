@@ -143,6 +143,20 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     .join("\n\n");
 }
 
+/** Read a picture or PDF and answer about it. The file arrives as base64. */
+export async function askAboutFile(opts: { prompt: string; mediaType: string; data: string; maxTokens?: number }) {
+  const file =
+    opts.mediaType === "application/pdf"
+      ? ({ type: "document", source: { type: "base64", media_type: "application/pdf", data: opts.data } } as const)
+      : ({ type: "image", source: { type: "base64", media_type: opts.mediaType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: opts.data } } as const);
+  const res = await anthropic().messages.create({
+    model: MODEL,
+    max_tokens: opts.maxTokens ?? 4000,
+    messages: [{ role: "user", content: [file, { type: "text", text: opts.prompt }] }],
+  });
+  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+}
+
 export async function ask(opts: { system?: string; messages: { role: "user" | "assistant"; content: string }[]; maxTokens?: number }) {
   const res = await anthropic().messages.create({
     model: MODEL,

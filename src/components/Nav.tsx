@@ -12,6 +12,7 @@ const GROUPS = [
     label: "Your day",
     links: [
       { href: "/", label: "Today" },
+      { href: "/tasks", label: "Tasks" },
       { href: "/routine", label: "Routine" },
       { href: "/schedule", label: "Schedule" },
     ],
@@ -35,7 +36,7 @@ const GROUPS = [
 ];
 const PROFILE = { href: "/profile", label: "Profile" };
 // The phone's bottom bar keeps the four you reach for most; the rest are one tap away under Menu.
-const BAR = ["/", "/schedule", "/projects", "/partner"];
+const BAR = ["/", "/tasks", "/projects", "/partner"];
 
 function useActive() {
   const path = usePathname();

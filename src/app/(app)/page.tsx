@@ -7,12 +7,12 @@ import { AskPartner } from "@/components/AskPartner";
 import { Mark } from "@/components/Mark";
 import { PrepareDay } from "@/components/PrepareDay";
 import { TaskRow, SuggestionRow, EventRow, type Task } from "@/components/Tasks";
-import { TodayAdd } from "@/components/TodayAdd";
 import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
 import { RoutineToday } from "@/components/Routine";
 import { isDue, isPinned, timesOf, mondayOf, type Routine } from "@/lib/routine";
 import { sameThing } from "@/lib/match";
+import { sectionAround, type Passage } from "@/lib/passage";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +55,18 @@ export default async function TodayPage() {
     (r) => isDue(r, day) && (r.cadence !== "weekly" || isPinned(r) || checked.includes(r.id) || (weekDone[r.id] ?? 0) < timesOf(r))
   );
   const routineDone = routine.filter((r) => checked.includes(r.id)).length;
+
+  // Today's reading: the whole section the chosen page belongs to, from its heading to where it ends.
+  let passage: Passage | null = null;
+  if (page.data) {
+    const { data: around } = await supabase
+      .from("book_pages")
+      .select("page, text")
+      .eq("book", page.data.book)
+      .gte("page", page.data.page - 9)
+      .lte("page", page.data.page + 9);
+    passage = sectionAround({ page: page.data.page, text: page.data.text }, around ?? []);
+  }
 
   const mv = moves.data ?? [];
   const shares = mv.filter((m) => m.kind === "shared").length;
@@ -132,16 +144,19 @@ export default async function TodayPage() {
       <section aria-labelledby="passage">
         {page.data ? (
           <>
-            <h2 id="passage" className="section-title">today&rsquo;s page</h2>
+            <h2 id="passage" className="section-title">today&rsquo;s reading</h2>
             <article className="mt-3 max-w-[62ch]">
               <div className="space-y-4 font-serif text-[1.15rem] leading-[1.75]">
-                {page.data.text
+                {passage?.title && <h3 className="font-serif text-2xl leading-snug">{passage.title}</h3>}
+                {(passage?.text ?? page.data.text)
                   .split(/\n{2,}/)
                   .map((para: string) => para.replace(/\s*\n\s*/g, " ").trim())
                   .filter(Boolean)
                   .map((para: string, i: number) => <p key={i}>{para}</p>)}
               </div>
-              <p className="mt-3 text-sm text-muted">{page.data.book}, page {page.data.page}</p>
+              <p className="mt-3 text-sm text-muted">
+                {page.data.book}, {passage && passage.to > passage.from ? `pages ${passage.from}\u2013${passage.to}` : `page ${page.data.page}`}
+              </p>
             </article>
             <SaveLine book={page.data.book} page={page.data.page} />
           </>
@@ -203,14 +218,15 @@ export default async function TodayPage() {
           </ul>
         )}
         {!list.length && !events?.length && (
-          <p className="mt-2 text-muted">Nothing set for today yet. Add the one thing that would make today count.</p>
+          <p className="mt-2 text-muted">
+            Nothing set for today yet. <Link href="/tasks" className="text-ink underline decoration-line underline-offset-4">Add tasks</Link>, or pick from your partner&rsquo;s suggestions.
+          </p>
         )}
         {googleConfigured() && !google.data && (
           <p className="mt-3 text-sm text-muted">
             <Link href="/profile?tab=settings" className="underline decoration-line underline-offset-4 hover:text-ink">Connect Google Calendar</Link> to see today&rsquo;s events here.
           </p>
         )}
-        <TodayAdd day={day} projects={projects.data ?? []} />
 
         {suggestions.length > 0 && (
           <div className="mt-8 pebble bg-surface p-4 sm:p-5">

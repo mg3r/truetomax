@@ -19,7 +19,7 @@ export type BoardTask = { id: string; title: string; status: string; day: string
 
 export const LANES: { id: Lane; title: string; hint: string; empty: string }[] = [
   { id: "later", title: "Later", hint: "Not scheduled", empty: "Ideas and someday tasks wait here." },
-  { id: "next", title: "Up next", hint: "The next few days", empty: "Drag something here to line it up." },
+  { id: "next", title: "Up next", hint: "Your partner offers these", empty: "Drag something here to line it up." },
   { id: "today", title: "Today", hint: "Shows on Today", empty: "Nothing for this project today." },
   { id: "done", title: "Done", hint: "Last two weeks", empty: "Finished work lands here." },
 ];
@@ -56,7 +56,7 @@ export function Board({ tasks: initial, today }: { tasks: BoardTask[]; today: st
           ? t
           : lane === "done"
             ? { ...t, status: "done" }
-            : { ...t, status: "todo", day: lane === "later" ? null : lane === "today" ? today : t.day && t.day > today ? t.day : "9999-12-31" }
+            : { ...t, status: "todo", day: lane === "later" ? null : lane === "today" ? today : "9999-12-31" }
       )
     );
     start(() => moveTask(id, lane));

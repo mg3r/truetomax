@@ -400,8 +400,8 @@ export async function moveTask(id: string, lane: Lane) {
   }
   if (t.status === "done") await setTaskStatus(id, "todo");
   const now = today();
-  // Up next keeps a day it already has; otherwise it waits in the project, undated, until you give it one.
-  const day = lane === "later" ? null : lane === "today" ? now : t.day && t.day > now ? t.day : UNDATED;
+  // Up next has no day: it waits in your list, and your partner offers it when it fits.
+  const day = lane === "later" ? null : lane === "today" ? now : UNDATED;
   await supabase.from("tasks").update({ day, status: "todo" }).eq("id", id);
   refresh();
 }
@@ -535,7 +535,7 @@ export async function deleteVision(id: string) {
 }
 
 /** Add a task to a project and say where it goes: today, up next, later, or already done. */
-export async function addProjectTask(projectId: string, title: string, lane: Lane, nextDay?: string | null) {
+export async function addProjectTask(projectId: string | null, title: string, lane: Lane) {
   if (!title.trim()) return;
   const supabase = await db();
   const now = today();
@@ -544,7 +544,7 @@ export async function addProjectTask(projectId: string, title: string, lane: Lan
     .insert({
       title: title.trim(),
       project_id: projectId,
-      day: lane === "later" ? null : lane === "next" ? (nextDay && nextDay > now ? nextDay : UNDATED) : now,
+      day: lane === "later" ? null : lane === "next" ? UNDATED : now,
       status: lane === "done" ? "done" : "todo",
       completed_at: lane === "done" ? new Date().toISOString() : null,
     })
@@ -813,10 +813,18 @@ export async function addToSchedule(input: {
 }
 
 
-/** Give an Up next task a day (it then shows on Schedule that day, and on Today when it comes), or take its day away. */
-export async function setUpNextDay(id: string, day: string | null) {
-  if (day && !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+
+/** Put a task in a project, or take it out of one. */
+export async function setTaskProject(id: string, projectId: string | null) {
   const supabase = await db();
-  await supabase.from("tasks").update({ day: day ?? UNDATED, status: "todo" }).eq("id", id);
+  await supabase.from("tasks").update({ project_id: projectId }).eq("id", id);
+  refresh();
+}
+
+/** Keep a step your partner suggested for a project: it goes to Up next. Or let it go. */
+export async function answerProjectSuggestion(id: string, keep: boolean) {
+  const supabase = await db();
+  if (keep) await supabase.from("tasks").update({ status: "todo", day: UNDATED, accepted_at: new Date().toISOString() }).eq("id", id);
+  else await supabase.from("tasks").update({ status: "skipped" }).eq("id", id);
   refresh();
 }
