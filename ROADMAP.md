@@ -29,9 +29,11 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Profile → Docs: how everything works, with a section list to jump around
 
 ## Next, in priority order
-1. **Fill in your Vision, Projects and Schedule yourself,** with what's alive today. Most important, because every suggestion the partner makes comes from this.
-2. **Partner suggests tasks for a project:** proposes 3–5 next steps from your vision, docs and history; you accept them into the project.
-3. **Your setup steps:** run `0005_docs_schedule.sql`; Context → Settings → Start fresh; Google Cloud setup (enable the Calendar and Docs APIs), then Connect Google.
+1. **Tasks page** (under Your day): one running checklist of every task, from every project and with no project. Shows the day and project when there is one. Adding is as quick as a Notes checklist: type, Enter, keep going.
+2. **Import a task list from a photo or doc:** read a handwritten or typed list, add the items, and recognize which ones are crossed off (marked done).
+3. **Partner suggests next steps for a project:** 3–5 from your vision, docs and history; you accept them into Up next.
+4. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
+5. **Your setup steps still to confirm:** run migrations `0009` to `0013` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.
