@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { editRhythm, deleteRhythm, editTask, deleteTask, setTaskStatus } from "@/app/actions";
+import { editRhythm, deleteRhythm, editTask, deleteTask, setTaskStatus, editRoutineWhen } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
 
@@ -37,7 +37,8 @@ export function ScheduleItem({
   calendar,
 }: {
   item: RhythmItem;
-  kind?: "rhythm" | "task";
+  /** "rhythm": a weekly Schedule item; "task": a one-time action; "routine": a Rhythm item (ritual or practice) shown on its day. */
+  kind?: "rhythm" | "task" | "routine";
   project?: string | null;
   done?: boolean;
   /** The matching Google Calendar event, if it's also there: its time is used when this has none of its own. */
@@ -60,9 +61,10 @@ export function ScheduleItem({
   }, [done]);
 
   const label = time ? clock(time) : calendar ? calendar.label : part ?? "anytime";
-  const edit = kind === "task" ? editTask : editRhythm;
+  const edit = kind === "task" ? editTask : kind === "routine" ? editRoutineWhen : editRhythm;
   const save = (fields: Parameters<typeof editRhythm>[1]) => start(() => edit(item.id, fields));
   const meta = [kind === "rhythm" ? "weekly" : null, project].filter(Boolean).join(", ");
+  const removable = kind !== "routine";
 
   return (
     <li className="group py-2">
@@ -120,11 +122,13 @@ export function ScheduleItem({
             </p>
           )}
         </div>
-        <RemoveX
+        {removable && (
+          <RemoveX
           label={`Remove ${item.title}`}
           action={() => (kind === "task" ? deleteTask(item.id) : deleteRhythm(item.id))}
           className="sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
         />
+        )}
       </div>
 
       {open && (

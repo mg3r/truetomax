@@ -66,15 +66,6 @@ function PracticedLine({ name }: { name: string }) {
   );
 }
 
-function RoutineLine({ title, cal, kind }: { title: string; cal?: { link?: string; label: string } | null; kind: string }) {
-  return (
-    <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : kind}</span>
-      <Link href="/rhythm" className="min-w-0 flex-1 hover:underline">{title}</Link>
-      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">{kind}, calendar</a> : <span className="shrink-0 text-xs text-muted">{kind}, calendar</span>)}
-    </li>
-  );
-}
 
 export default async function SchedulePage() {
   const supabase = await createClient();
@@ -208,13 +199,27 @@ export default async function SchedulePage() {
                   ),
                 }))
             ),
-            ...weeklyMatched.map(({ r, cal }) => ({
-              key: `w-${r.id}`,
-              bucket: cal?.at ? BUCKET[partForTime(cal.at)] : 0,
-              at: cal?.at ?? null,
-              sort: r.sort,
-              node: <RoutineLine key={`w-${r.id}`} title={r.title} cal={cal} kind={isPractice(r) ? "practice" : "ritual"} />,
-            })),
+            ...weeklyMatched.map(({ r, cal }) => {
+              const w = r as Routine & { at_time?: string | null; part_of_day?: string | null };
+              const own = w.at_time?.slice(0, 5) ?? null;
+              const at = own ?? cal?.at ?? null;
+              const part = own ? partForTime(own) : w.part_of_day ?? (cal?.at ? partForTime(cal.at) : null);
+              return {
+                key: `w-${r.id}`,
+                bucket: part ? BUCKET[part] : 0,
+                at,
+                sort: r.sort,
+                node: (
+                  <ScheduleItem
+                    key={`w-${r.id}`}
+                    kind="routine"
+                    item={{ id: r.id, title: r.title, at_time: w.at_time ?? null, part_of_day: w.part_of_day ?? null }}
+                    project={isPractice(r) ? "practice" : "ritual"}
+                    calendar={cal}
+                  />
+                ),
+              };
+            }),
             ...listMatched.map(({ r, cal }) => {
               const own = r.at_time?.slice(0, 5) ?? null;
               const at = own ?? cal?.at ?? null;

@@ -49,6 +49,27 @@ function Check({ done, title, onClick }: { done: boolean; title: string; onClick
   );
 }
 
+type Timed = Routine & { at_time?: string | null; part_of_day?: string | null };
+const PART_ORDER: Record<string, number> = { morning: 1, afternoon: 2, evening: 3 };
+const clockOf = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+/** A Rhythm item's time or part of day, if it has one. */
+const whenOf = (r: Routine) => {
+  const t = r as Timed;
+  return t.at_time ? clockOf(t.at_time.slice(0, 5)) : t.part_of_day ?? null;
+};
+/** Anytime first, then morning, afternoon, evening; by time within each; otherwise your own order. */
+const byWhen = (list: Routine[]) =>
+  [...list].sort((a, b) => {
+    const x = a as Timed;
+    const y = b as Timed;
+    const px = x.at_time ? PART_ORDER[Number(x.at_time.slice(0, 2)) < 12 ? "morning" : Number(x.at_time.slice(0, 2)) < 17 ? "afternoon" : "evening"] : PART_ORDER[x.part_of_day ?? ""] ?? 0;
+    const py = y.at_time ? PART_ORDER[Number(y.at_time.slice(0, 2)) < 12 ? "morning" : Number(y.at_time.slice(0, 2)) < 17 ? "afternoon" : "evening"] : PART_ORDER[y.part_of_day ?? ""] ?? 0;
+    return px - py || (x.at_time ?? "").localeCompare(y.at_time ?? "") || a.sort - b.sort;
+  });
+
 /** How many times a week: − 2× +. */
 function Times({ value, onChange, small = false }: { value: number; onChange: (n: number) => void; small?: boolean }) {
   const btn = small ? "h-5 w-5" : "h-8 w-8";
@@ -79,9 +100,9 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
   };
 
   const groups = [
-    { label: "today", list: items.filter((r) => r.cadence === "daily") },
-    { label: "tonight", list: items.filter((r) => r.cadence === "nightly") },
-    { label: "weekly", list: items.filter((r) => r.cadence === "weekly") },
+    { label: "today", list: byWhen(items.filter((r) => r.cadence === "daily")) },
+    { label: "tonight", list: byWhen(items.filter((r) => r.cadence === "nightly")) },
+    { label: "weekly", list: byWhen(items.filter((r) => r.cadence === "weekly")) },
   ].filter((g) => g.list.length);
 
   return (
@@ -99,7 +120,11 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
                     {r.title}
                     {isPractice(r) && <span className="ml-2 text-xs text-muted">practice</span>}
                   </span>
-                  {r.id in times && <span className="shrink-0 text-xs text-muted tabular-nums">{times[r.id] || "calendar"}</span>}
+                  {r.id in times ? (
+                    <span className="shrink-0 text-xs text-muted tabular-nums">{times[r.id] || "calendar"}</span>
+                  ) : (
+                    whenOf(r) && <span className="shrink-0 text-xs text-muted tabular-nums">{whenOf(r)}</span>
+                  )}
                   {r.cadence === "weekly" && (
                     <span className="shrink-0 text-xs text-muted tabular-nums">
                       {(weekDone[r.id] ?? 0) + (on ? 1 : 0)} of {timesOf(r)} this week

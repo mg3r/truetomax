@@ -845,3 +845,17 @@ export async function updateJournal(id: string, body: string) {
   if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
   refresh();
 }
+
+/** When a Rhythm item happens: part of day and an optional time. */
+export async function editRoutineWhen(id: string, fields: { part_of_day?: string | null; at_time?: string | null; title?: string }) {
+  const patch: Record<string, unknown> = {};
+  if (fields.part_of_day !== undefined) patch.part_of_day = partOfDay(fields.part_of_day);
+  if (fields.at_time !== undefined) patch.at_time = fields.at_time && /^\d{2}:\d{2}/.test(fields.at_time) ? fields.at_time : null;
+  if (fields.title !== undefined) {
+    if (!fields.title.trim()) return;
+    patch.title = fields.title.trim();
+  }
+  const supabase = await db();
+  await supabase.from("routines").update(patch).eq("id", id);
+  refresh();
+}
