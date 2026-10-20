@@ -76,8 +76,8 @@ export async function prepareDay(supabase: SupabaseClient, { force = false, user
   // 3. The partner's read on today.
   let plan: DayPlan | null = null;
   let maxSuggestions = 3;
-  // Work you've already planned: Up next tasks in your projects with no day yet. The partner offers these first.
-  const upNextRes = await supabase.from("tasks").select("id, title, project_id").eq("status", "todo").eq("day", "9999-12-31").not("project_id", "is", null).order("created_at").limit(20);
+  // Work you've already planned: Up next tasks, in a project or not. The partner offers these first.
+  const upNextRes = await supabase.from("tasks").select("id, title, project_id").eq("status", "todo").eq("day", "9999-12-31").order("created_at").limit(20);
   const upNext = upNextRes.data ?? [];
   try {
     const { data: projects } = await supabase.from("projects").select("id, title").eq("status", "active");
