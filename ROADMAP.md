@@ -70,4 +70,5 @@ An evolving guiding light: give each day direction, help execute visions, share 
 9. **Memory by meaning:** paste `supabase/functions/embed/index.ts` into Supabase → Edge Functions → Deploy a new function → Via Editor, named `embed`. Older memories catch up automatically.
 
 ## Later
+- **Subtasks:** an action can hold subtasks. Drag one action onto another to make it a subtask; drag subtasks to reorder them or move them between parents. Subtasks take on the parent's project automatically. Import turns sub-points into subtasks (instead of notes) once this exists, and the partner reads them like notes.
 - Productize as truetoyou: per-person onboarding replaces the seeded About you, routine and goals; the app name is already one setting (`NEXT_PUBLIC_APP_NAME`).
