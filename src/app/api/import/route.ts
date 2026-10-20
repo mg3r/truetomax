@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ask, askAboutFile } from "@/lib/ai";
-import { sameThing } from "@/lib/match";
+import { sameThing, alreadyCovered } from "@/lib/match";
 import { today } from "@/lib/dates";
 import { readGoogleDoc } from "@/lib/google";
 import { remember } from "@/lib/memory";
@@ -91,14 +91,16 @@ type SB = Awaited<ReturnType<typeof createClient>>;
 async function importActions(supabase: SB, items: { title: string; done: boolean }[], projectId: string | null) {
   const list = items.filter((i) => typeof i?.title === "string" && i.title.trim());
   if (!list.length) return { note: "Couldn't find any actions in that." };
-  const { data: existing } = await supabase.from("tasks").select("id, title, status").in("status", ["todo", "done"]).neq("source", "rhythm");
+  // Check titles and notes: something you already wrote into an action's notes isn't added again.
+  const { data: existing } = await supabase.from("tasks").select("id, title, status, reason").in("status", ["todo", "done"]).neq("source", "rhythm");
   const now = new Date().toISOString();
   let added = 0, finished = 0, already = 0;
   const fresh: Record<string, unknown>[] = [];
   for (const item of list) {
-    const match = (existing ?? []).find((t) => sameThing(t.title, item.title));
+    const match = (existing ?? []).find((t) => sameThing(t.title, item.title)) ?? (existing ?? []).find((t) => alreadyCovered(item.title, t));
     if (match) {
-      if (item.done && match.status !== "done") {
+      // Crossing something off that lives only in another action's notes doesn't finish that action.
+      if (item.done && match.status !== "done" && sameThing(match.title, item.title)) {
         await supabase.from("tasks").update({ status: "done", completed_at: now }).eq("id", match.id);
         finished++;
       } else already++;
@@ -140,8 +142,8 @@ async function importProjects(supabase: SB, items: { title: string; description?
     }
     const acts = (p.actions ?? []).filter((a) => typeof a?.title === "string" && a.title.trim());
     if (acts.length) {
-      const { data: have } = await supabase.from("tasks").select("title").eq("project_id", id);
-      const add = acts.filter((a) => !(have ?? []).some((h) => sameThing(h.title, a.title)));
+      const { data: have } = await supabase.from("tasks").select("title, reason").neq("source", "rhythm").in("status", ["todo", "done"]);
+      const add = acts.filter((a) => !(have ?? []).some((h) => alreadyCovered(a.title, h)));
       if (add.length)
         await supabase.from("tasks").insert(
           add.map((a) => ({ title: a.title.trim().slice(0, 300), project_id: id, day: a.done ? today() : UNDATED, status: a.done ? "done" : "todo", completed_at: a.done ? now : null }))
