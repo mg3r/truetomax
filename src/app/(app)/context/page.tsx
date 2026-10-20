@@ -6,6 +6,7 @@ import { BookUpload } from "@/components/BookUpload";
 import { DocUpload, GoogleDocLink } from "@/components/Docs";
 import { Chat } from "@/components/Chat";
 import { googleConfigured } from "@/lib/google";
+import { instagramConfigured } from "@/lib/instagram";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,19 @@ const GOOGLE_STATUS: Record<string, string> = {
   failed: "Google sign-in didn't finish. Try again.",
 };
 
-export default async function ContextPage({ searchParams }: { searchParams: Promise<{ tab?: string; google?: string }> }) {
-  const { tab: tabParam, google: googleStatus } = await searchParams;
-  const tab = TABS.some((t) => t.id === tabParam) ? tabParam! : googleStatus ? "settings" : "partner";
+const INSTAGRAM_STATUS: Record<string, string> = {
+  connected: "Connected. Your posts and their numbers will show under Ideas → Sharing within a minute.",
+  disconnected: "Disconnected. truetomax no longer has access to your Instagram.",
+  cancelled: "Instagram sign-in was cancelled. Nothing changed.",
+  expired: "That sign-in took too long. Try connecting again.",
+  "not-set-up": "Run the 0006 setup file in Supabase first, then connect again.",
+  "not-configured": "Add INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in Vercel first.",
+  failed: "Instagram sign-in didn't finish. Check the account is a professional account and is added as a tester in the Meta app.",
+};
+
+export default async function ContextPage({ searchParams }: { searchParams: Promise<{ tab?: string; google?: string; instagram?: string }> }) {
+  const { tab: tabParam, google: googleStatus, instagram: igStatus } = await searchParams;
+  const tab = TABS.some((t) => t.id === tabParam) ? tabParam! : googleStatus || igStatus ? "settings" : "partner";
   const supabase = await createClient();
 
   return (
@@ -52,7 +63,7 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
 
       {tab === "partner" && <PartnerTab />}
       {tab === "docs" && <DocsTab />}
-      {tab === "settings" && <SettingsTab googleStatus={googleStatus} />}
+      {tab === "settings" && <SettingsTab googleStatus={googleStatus} igStatus={igStatus} />}
     </div>
   );
 
@@ -154,8 +165,11 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
     );
   }
 
-  async function SettingsTab({ googleStatus }: { googleStatus?: string }) {
-    const { data: googleAcct } = await supabase.from("google_accounts").select("email").maybeSingle();
+  async function SettingsTab({ googleStatus, igStatus }: { googleStatus?: string; igStatus?: string }) {
+    const [{ data: googleAcct }, ig] = await Promise.all([
+      supabase.from("google_accounts").select("email").maybeSingle(),
+      supabase.from("instagram_accounts").select("username, followers").maybeSingle(),
+    ]);
     return (
       <div className="space-y-14">
         <section aria-labelledby="calendar-h" id="calendar" className="scroll-mt-6">
@@ -171,6 +185,22 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
             </form>
           ) : (
             <a href="/api/google/connect" className="btn mt-3">Connect Google</a>
+          )}
+        </section>
+
+        <section aria-labelledby="ig-h">
+          <h2 id="ig-h" className="section-title">instagram</h2>
+          <p className="mt-1 text-sm text-muted">Read-only: your posts and how they do. New posts count as moves automatically, and your partner learns what lands.</p>
+          {igStatus && INSTAGRAM_STATUS[igStatus] && <p role="status" className="mt-3 text-sm">{INSTAGRAM_STATUS[igStatus]}</p>}
+          {!instagramConfigured() ? (
+            <p className="mt-3 text-sm text-muted">Not set up yet: add INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in Vercel.</p>
+          ) : ig.data ? (
+            <form action="/api/instagram/disconnect" method="post" className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="text-sm">Connected as @{ig.data.username}{ig.data.followers != null ? `, ${ig.data.followers.toLocaleString()} followers` : ""}</span>
+              <button className="btn-quiet">Disconnect</button>
+            </form>
+          ) : (
+            <a href="/api/instagram/connect" className="btn mt-3">Connect Instagram</a>
           )}
         </section>
 

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, today, WEEKDAYS, weekdayOf } from "./dates";
 import { getStats } from "./learn";
 import { recall } from "./memory";
+import { instagramContext } from "./instagram";
 import { APP_NAME } from "@/lib/brand";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
@@ -45,12 +46,13 @@ export async function buildContext(
 async function learnedContext(supabase: SupabaseClient, query?: string) {
   const day = today();
   const weekStart = addDays(day, -((weekdayOf(day) + 6) % 7)); // Monday
-  const [insights, ctx, moves, stats, memories] = await Promise.all([
+  const [insights, ctx, moves, stats, memories, instagram] = await Promise.all([
     supabase.from("insights").select("statement, status, confidence, your_note, kind").in("status", ["confirmed", "proposed", "rejected"]).order("confidence", { ascending: false }),
     supabase.from("profile_context").select("policy").maybeSingle(),
     supabase.from("moves").select("kind, amount").gte("day", weekStart),
     getStats(supabase, 28),
     query ? recall(supabase, query, { count: 6, beforeDay: addDays(day, -14) }) : Promise.resolve([]),
+    instagramContext(supabase).catch(() => ""),
   ]);
   const ins = insights.data ?? [];
   const pick = (s: string) => ins.filter((i) => i.status === s);
@@ -66,6 +68,7 @@ async function learnedContext(supabase: SupabaseClient, query?: string) {
     Object.keys(policy).length ? `## How to guide him right now (tuned from results)\n${JSON.stringify(policy)}` : "",
     `## Results, last 4 weeks\n${stats.text}`,
     `## Moves this week (sharing work or asking to be paid — the number that matters most)\nShared ${count("shared")}, asked ${count("asked")}, booked ${count("booked")}, sold ${count("sold")}, $${money} in.`,
+    instagram,
     memories.length ? `## Relevant memories from further back\n${memories.map((m) => `- ${m.day} [${m.source_type}] ${line(m.content).slice(0, 400)}`).join("\n")}` : "",
   ]
     .filter(Boolean)

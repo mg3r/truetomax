@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addIdea, ideaToProject, contentIdeaToTask, setIdeaStatus } from "@/app/actions";
 import { AskPartner } from "@/components/AskPartner";
 import { ActionButton } from "@/components/DeleteButton";
+import { syncInstagram } from "@/lib/instagram";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,20 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
   const planned = ideas.filter((i) => i.status === "planned");
   const eliminated = ideas.filter((i) => i.status === "eliminated");
 
+  // On the Sharing tab, show how recent posts did (refreshing from Instagram at most every few hours).
+  let posts: { media_id: string; caption: string | null; permalink: string | null; posted_at: string | null; product_type: string | null; views: number | null; reach: number | null; likes: number | null; saves: number | null; shares: number | null }[] = [];
+  if (kind === "content") {
+    await syncInstagram(supabase).catch(() => {});
+    const { data: media, error } = await supabase
+      .from("instagram_media")
+      .select("media_id, caption, permalink, posted_at, product_type, views, reach, likes, saves, shares")
+      .order("posted_at", { ascending: false })
+      .limit(12);
+    if (!error) posts = media ?? [];
+  }
+  const score = (m: (typeof posts)[number]) => (m.views ?? m.reach ?? 0) + 5 * ((m.saves ?? 0) + (m.shares ?? 0));
+  const best = posts.length ? posts.reduce((a, b) => (score(b) > score(a) ? b : a)) : null;
+
   return (
     <div className="space-y-10">
       <div>
@@ -32,6 +47,29 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
           <Link role="tab" aria-selected={kind === "content"} href="/ideas?tab=content" className={`rounded-full px-3 py-1 text-sm ${kind === "content" ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>Sharing</Link>
         </div>
       </div>
+
+      {kind === "content" && posts.length > 0 && (
+        <section aria-labelledby="landing">
+          <h2 id="landing" className="section-title">what&rsquo;s landing</h2>
+          <ul className="mt-2 divide-y divide-line">
+            {posts.map((m) => (
+              <li key={m.media_id} className="flex items-baseline gap-3 py-2.5">
+                <span className="w-14 shrink-0 text-xs text-muted tabular-nums">
+                  {m.posted_at ? new Date(m.posted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                </span>
+                <a href={m.permalink ?? "#"} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate hover:underline hover:decoration-line hover:underline-offset-4">
+                  {best?.media_id === m.media_id && <span className="mr-1.5 text-xs text-muted">best</span>}
+                  {(m.caption ?? "(no caption)").split("\n")[0]}
+                </a>
+                <span className="shrink-0 text-xs text-muted tabular-nums">
+                  {(m.views ?? m.reach ?? 0).toLocaleString()} {m.views != null ? "views" : "reach"}
+                  {m.saves || m.shares ? `, ${(m.saves ?? 0) + (m.shares ?? 0)} saved/shared` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <AskPartner endpoint="/api/ideas" body={{ kind }} label={kind === "venture" ? "Surface 3 new ideas" : "Suggest 3 posts"} busyLabel="Thinking it through…" />
 
