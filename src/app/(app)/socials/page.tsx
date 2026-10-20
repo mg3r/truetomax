@@ -5,6 +5,8 @@ import { syncInstagram } from "@/lib/instagram";
 import { loadPosts, scoreOf, formatOf, type Post, type SocialRead } from "@/lib/socials";
 import { AskPartner } from "@/components/AskPartner";
 import { Thumb } from "@/components/Thumb";
+import { ActionButton } from "@/components/DeleteButton";
+import { contentIdeaToTask, letGoOfIdea } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +31,9 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
       </div>
     );
 
-  const [posts, readRow] = await Promise.all([
+  const [posts, ideaRows, readRow] = await Promise.all([
     loadPosts(supabase),
+    supabase.from("ideas").select("id, title, body, first_step, money_path").eq("kind", "content").in("status", ["new", "exploring"]).order("created_at", { ascending: false }),
     supabase.from("social_insights").select("body, created_at").eq("platform", "instagram").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const read = readRow.error ? null : (readRow.data?.body as SocialRead | undefined) ?? null;
@@ -112,8 +115,32 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
         )}
         <div className="mt-5 flex flex-wrap items-center gap-4">
           <AskPartner endpoint="/api/socials" label={read ? "Read my posts again" : "Read my posts"} busyLabel="Reading your posts…" className="btn-quiet" />
-          <Link href="/ideas?tab=content" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">Post ideas</Link>
+
         </div>
+      </section>
+
+      <section aria-labelledby="post-ideas">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="post-ideas" className="section-title">post ideas</h2>
+          <AskPartner endpoint="/api/ideas" body={{ kind: "content" }} label="Suggest 3 posts" busyLabel="Thinking it through…" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink" />
+        </div>
+        {(ideaRows.data ?? []).length ? (
+          <ul className="mt-2 divide-y divide-line">
+            {(ideaRows.data ?? []).map((i) => (
+              <li key={i.id} className="py-3">
+                <p className="font-medium">{i.title}</p>
+                {i.body && <p className="mt-0.5 text-sm text-muted">{i.body}</p>}
+                {i.first_step && <p className="mt-1 text-sm"><span className="text-muted">Next time: </span>{i.first_step}</p>}
+                <div className="mt-2 flex gap-2">
+                  <ActionButton action={contentIdeaToTask.bind(null, i.id)} className="btn-quiet !border-ink !text-ink">Add to Up next</ActionButton>
+                  <ActionButton action={letGoOfIdea.bind(null, i.id)}>Not this</ActionButton>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-1 text-sm text-muted">Ask for ideas built from what you&rsquo;re making this week and what&rsquo;s landing.</p>
+        )}
       </section>
 
       <section aria-labelledby="posts">

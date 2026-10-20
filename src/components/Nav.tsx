@@ -22,7 +22,6 @@ const GROUPS = [
     links: [
       { href: "/vision", label: "Vision" },
       { href: "/projects", label: "Projects" },
-      { href: "/ideas", label: "Ideas" },
     ],
   },
   {

@@ -299,8 +299,8 @@ export async function contentIdeaToTask(id: string) {
   const supabase = await db();
   const { data: idea } = await supabase.from("ideas").select("title, first_step").eq("id", id).single();
   if (!idea) return;
-  const { data: sharing } = await supabase.from("projects").select("id").eq("area", "sharing").limit(1).maybeSingle();
-  await supabase.from("tasks").insert({ title: idea.first_step ? `${idea.title}: ${idea.first_step}` : idea.title, project_id: sharing?.id ?? null, day: today() });
+  // A post idea you keep becomes an Up next action, ready for when it fits.
+  await supabase.from("tasks").insert({ title: idea.first_step ? `${idea.title}: ${idea.first_step}` : idea.title, day: UNDATED });
   await supabase.from("ideas").update({ status: "planned" }).eq("id", id);
   refresh();
 }
@@ -715,8 +715,12 @@ export async function deleteProject(id: string, goBack = false) {
   const { data: tasks } = await supabase.from("tasks").select("id").eq("project_id", id);
   const taskIds = (tasks ?? []).map((t) => t.id);
   await supabase.from("tasks").delete().eq("project_id", id);
+  // A project that started as one of the partner's ideas: deleting it is eliminating that idea, so it isn't suggested again.
+  const { data: proj } = await supabase.from("projects").select("title").eq("id", id).maybeSingle();
+  await supabase.from("ideas").update({ status: "eliminated", status_note: "deleted from projects" }).eq("project_id", id);
   await supabase.from("projects").delete().eq("id", id);
   await supabase.from("memory").delete().eq("source_type", "project").eq("source_id", id);
+  if (proj) after(() => remember(supabase, "idea", id, `Let go of "${proj.title}" (deleted it from projects)`));
   if (taskIds.length) await supabase.from("memory").delete().eq("source_type", "task").in("source_id", taskIds);
   refresh();
   if (goBack) redirect("/projects");
@@ -857,5 +861,13 @@ export async function editRoutineWhen(id: string, fields: { part_of_day?: string
   }
   const supabase = await db();
   await supabase.from("routines").update(patch).eq("id", id);
+  refresh();
+}
+
+/** Let a post idea go: it won't be suggested again. */
+export async function letGoOfIdea(id: string) {
+  const supabase = await db();
+  const { data: idea } = await supabase.from("ideas").update({ status: "eliminated" }).eq("id", id).select("title").single();
+  if (idea) after(() => remember(supabase, "idea", id, `Passed on idea "${idea.title}"`));
   refresh();
 }

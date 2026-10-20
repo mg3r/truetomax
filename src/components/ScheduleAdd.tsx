@@ -31,10 +31,7 @@ export function ScheduleAdd({
   projects: { id: string; title: string }[];
   practices?: { id: string; name: string }[];
 }) {
-  const todayWd = week.find((d) => d.date === today)?.weekday ?? 1;
   const [title, setTitle] = useState("");
-  const [repeat, setRepeat] = useState(false);
-  const [days, setDays] = useState<number[]>([todayWd]);
   const [date, setDate] = useState(today);
   const [part, setPart] = useState("");
   const [time, setTime] = useState("");
@@ -43,14 +40,14 @@ export function ScheduleAdd({
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
 
-  const ready = title.trim() && (repeat ? days.length > 0 : !!date);
+  const ready = title.trim() && !!date;
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!ready) return;
-        const input = { title, repeat, weekdays: days, date: repeat ? null : date, part_of_day: part || null, at_time: time || null, project_id: project, practice_id: practice };
+        const input = { title, repeat: false, weekdays: [], date, part_of_day: part || null, at_time: time || null, project_id: project, practice_id: practice };
         start(async () => {
           await addToSchedule(input);
           setTitle("");
@@ -69,23 +66,12 @@ export function ScheduleAdd({
       {open && (
         <>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="How often">
-        <Chip on={!repeat} onClick={() => setRepeat(false)}>Just once</Chip>
-        <Chip on={repeat} onClick={() => setRepeat(true)}>Every week</Chip>
-      </div>
-
-      <div className="flex flex-wrap gap-2" role="group" aria-label={repeat ? "Which days" : "Which day"}>
-        {week.map((d) =>
-          repeat ? (
-            <Chip key={d.date} on={days.includes(d.weekday)} onClick={() => setDays((s) => (s.includes(d.weekday) ? s.filter((x) => x !== d.weekday) : [...s, d.weekday]))}>
-              {d.short}
-            </Chip>
-          ) : (
-            <Chip key={d.date} on={date === d.date} onClick={() => setDate(d.date)}>
-              {d.short}
-            </Chip>
-          )
-        )}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Which day">
+        {week.map((d) => (
+          <Chip key={d.date} on={date === d.date} onClick={() => setDate(d.date)}>
+            {d.short}
+          </Chip>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="When in the day">

@@ -3,17 +3,15 @@
 import { useEffect, useState, useTransition } from "react";
 import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
 import { ActionEditor } from "./ActionEditor";
-import { Board, LANES, laneOf, type BoardTask } from "./Board";
+import { LANES, laneOf, type BoardTask } from "./Board";
 import { RemoveX } from "./RemoveX";
 import { LineEdit } from "./LineEdit";
 
-const VIEW_KEY = "ttm-project-view";
 const UNDATED = "9999-12-31";
 
 /** A project's tasks: one place to add (choosing where it goes), shown as a list or a board. */
 export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: { projectId: string; tasks: BoardTask[]; today: string; practices?: { id: string; name: string }[] }) {
   const [tasks, setTasks] = useState(initial);
-  const [view, setView] = useState<"list" | "board">("list");
   const [title, setTitle] = useState("");
   const [lane, setLane] = useState<Lane>("today");
   const [open, setOpen] = useState<string | null>(null);
@@ -22,19 +20,6 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
   useEffect(() => {
     setTasks(initial);
   }, [initial]);
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(VIEW_KEY);
-      if (v === "board" || v === "list") setView(v);
-    } catch {}
-  }, []);
-  function choose(v: "list" | "board") {
-    setView(v);
-    try {
-      localStorage.setItem(VIEW_KEY, v);
-    } catch {}
-  }
-
   function move(id: string, to: Lane) {
     setOpen(null);
     setTasks((ts) =>
@@ -80,20 +65,7 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
         </fieldset>
       </form>
 
-      <div className="mt-8 flex items-baseline justify-end gap-3 text-sm" role="tablist" aria-label="View">
-        {(["list", "board"] as const).map((v) => (
-          <button key={v} role="tab" aria-selected={view === v} onClick={() => choose(v)} className={view === v ? "text-ink underline decoration-line underline-offset-4" : "text-muted hover:text-ink"}>
-            {v === "list" ? "List" : "Board"}
-          </button>
-        ))}
-      </div>
-
-      {view === "board" ? (
-        <div className="mt-3">
-          <Board tasks={tasks} today={today} />
-        </div>
-      ) : (
-        <div className={`mt-3 space-y-6 ${pending ? "opacity-80" : ""}`}>
+      <div className={`mt-8 space-y-6 ${pending ? "opacity-80" : ""}`}>
           {LANES.map((l) => {
             const mine = tasks.filter((t) => laneOf(t, today) === l.id);
             if (!mine.length) return null;
@@ -154,8 +126,7 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
             );
           })}
           {!tasks.length && <p className="text-sm text-muted">No actions yet. Add the next step above.</p>}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

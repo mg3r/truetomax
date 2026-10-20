@@ -73,18 +73,6 @@ export function Chat({ initial, conversations, current, threads }: { initial: Ms
     settle(json.conversationId ?? null);
   }
 
-  async function focusReview() {
-    setError(null);
-    setBusy("focus");
-    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "user", content: "Run a focus review.", kind: "focus_review", created_at: new Date().toISOString() }]);
-    const res = await fetch("/api/focus", { method: "POST", body: JSON.stringify({ conversationId: convId }) });
-    const json = await res.json().catch(() => ({}));
-    setBusy(null);
-    if (!res.ok) return setError(json.error ?? "The review didn't finish. Try again.");
-    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: json.reply, kind: "focus_review", created_at: json.repliedAt ?? new Date().toISOString() }]);
-    settle(json.conversationId ?? null);
-  }
-
   return (
     <div>
       {threads && (
@@ -150,9 +138,6 @@ export function Chat({ initial, conversations, current, threads }: { initial: Ms
           />
           <button className="btn" disabled={!!busy || !draft.trim()}>Send</button>
         </form>
-        <button onClick={focusReview} disabled={!!busy} className="mt-2 text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
-          Run a focus review: what to keep, pause, or eliminate
-        </button>
       </div>
     </div>
   );

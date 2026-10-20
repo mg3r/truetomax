@@ -1,11 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { today, weekdayOf, WEEKDAYS, addDays } from "@/lib/dates";
-import { applyRoutineToday } from "@/app/actions";
 import { ScheduleAdd } from "@/components/ScheduleAdd";
 import { ScheduleItem } from "@/components/ScheduleItem";
 import { sameThing } from "@/lib/match";
 import { eventsForRange, timeLabel } from "@/lib/google";
-import { ActionButton } from "@/components/DeleteButton";
 import Link from "next/link";
 import { isDue, isPinned, isPractice, timesOf, loadPractices, type Routine } from "@/lib/routine";
 
@@ -266,11 +264,6 @@ export default async function SchedulePage() {
                   {WEEKDAYS[wd]}
                   {isToday && <span className="ml-2 font-sans text-xs text-muted">today</span>}
                 </h2>
-                {isToday && list.length > 0 && (
-                  <ActionButton action={applyRoutineToday} className="text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink">
-                    Add changes to today
-                  </ActionButton>
-                )}
               </div>
               {entries.length ? (
                 <ul className="mt-2 divide-y divide-line">{entries.map((e) => e.node)}</ul>

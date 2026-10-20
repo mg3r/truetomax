@@ -11,7 +11,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
       "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },
@@ -36,7 +36,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Schedule",
     body: [
       "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any action set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
-      "Add something as Just once (pick the day) or Every week (pick the days); anything that lands on today shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time action is the same action everywhere: tick it, edit it or delete it here, on Today, or in its project.",
+      "Add something for one day of this week (anything that repeats lives in Rhythm); if it lands on today it shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time action is the same action everywhere: tick it, edit it or delete it here, on Today, or in its project.",
       "Tap an item's words to edit it, or its time to change when it happens. If something is in your Google Calendar and also here (same name), it shows once: your item, at the calendar's time, with a link to the event. Tap a calendar event to open it in Google Calendar. Weekly items are added to Today each morning; \u201cAdd changes to today\u201d brings in edits right away.",
     ],
   },
@@ -59,16 +59,11 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Projects",
     body: [
-      "What you're building. Each project has a status (In progress, Backlog or Done), goals (plain text with a checkbox) and actions, shown as a list or a board. Everything edits in place; × deletes.",
+      "What you're building. Each project has a status (In progress, Backlog or Done), goals (plain text with a checkbox) and actions. Everything edits in place; × deletes.",
       "A project's actions sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned and waiting. It shows in your Actions list, and your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d); adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
       "Your partner suggests next steps for each project: tap \u201cSuggest next steps\u201d and it proposes 3\u20135, drawing on the project's goals and actions, your vision, your docs and uploads, your journal, your socials and what it has learned about how you work. Keep the ones you want (they go to Up next); let the rest go.",
+      "Ideas for work and income live in the Backlog: tap \u201cSuggest ideas\u201d and your partner adds 3 feasible ways to earn from what you already do, each as a Backlog project with its money path and first step. Start one when it's alive (In progress), or delete it: that's the process of elimination, and it won't be suggested again.",
       "Deleting a project removes its actions and goals, and your partner forgets them too.",
-    ],
-  },
-  {
-    title: "Ideas",
-    body: [
-      "Two kinds. Work & income: feasible ways to earn from what you already do. Test one, or eliminate it and say why, and it won't be suggested again. Sharing: posts and series to make, built from what you're doing this week and from what's landing on your socials.",
     ],
   },
   {
@@ -82,16 +77,16 @@ const SECTIONS: { title: string; body: string[] }[] = [
     body: [
       "Your pages in one place. Instagram for now; more platforms will join it here.",
       "See your followers and the last 30 days at a glance (posts, views, reach, saves, shares), then every post with its numbers, sorted by Latest or Best. Tap a post to open it on Instagram.",
-      "\u201cRead my posts\u201d has your partner go through them and say what's working, what isn't, and 3\u20135 specific things to try this week, each with the evidence behind it. Post ideas under Ideas \u2192 Sharing use all of this.",
+      "\u201cRead my posts\u201d has your partner go through them and say what's working, what isn't, and 3\u20135 specific things to try this week, each with the evidence behind it. Post ideas live here too: \u201cSuggest 3 posts\u201d builds them from what you're making this week and what's landing. Keep one (it goes to Up next in Actions) or let it go.",
       "Posts refresh from Instagram every few hours. New posts count as a move (shared) on Today automatically.",
     ],
   },
   {
     title: "Partner",
     body: [
-      "Chat is your creative partner. Ask it anything, think out loud, or tell it what happened. Each conversation is its own thread; start a new one any time and find past ones under Conversations. A focus review runs process of elimination: what to keep, pause or drop, and the one path most likely to bring in income in the next 90 days.",
-      "Before every reply it reads your Vision, projects, routine, schedule, recent journal, your docs, what it has learned, memories from further back that match what you're talking about, and the passages from your docs that bear on it, found by meaning rather than exact words. Every doc is read in full and kept as page-sized passages, so even a very long doc is searchable all the way through; the partner always sees the opening of each doc plus the passages that matter right now. What you tell it in chat becomes memory too.",
-      "Learned is what it has figured out about you. Once a week (when there's enough to go on) it reads everything and proposes things it thinks are true for you to confirm or reject, suggests schedule changes, tunes how it suggests actions, and writes you a short review. Confirmed things steer every suggestion; rejected things are never acted on. A dot shows when something is waiting for you.",
+      "Chat is your creative partner. Ask it anything, think out loud, or tell it what happened. Each conversation is its own thread; start a new one any time and find past ones under Conversations.",
+      "Before every reply it reads your Vision, projects, rhythm, schedule, recent journal, your docs, what it has learned, memories from further back that match what you're talking about, and the passages from your docs that bear on it, found by meaning rather than exact words. Every doc is read in full and kept as page-sized passages, so even a very long doc is searchable all the way through; the partner always sees the opening of each doc plus the passages that matter right now. What you tell it in chat becomes memory too.",
+      "Learned is what it has figured out about you. Once a week (when there's enough to go on) it reads everything and proposes things it thinks are true for you to confirm or reject, suggests schedule changes, tunes how it suggests actions, and writes you a short review. Confirmed things steer every suggestion; rejected things are never acted on. A dot shows when something is waiting for you. Want a fresh read sooner? Tap Run now at the bottom of Learned.",
     ],
   },
   {

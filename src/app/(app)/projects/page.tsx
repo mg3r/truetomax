@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
 import { saveProject, deleteProject } from "@/app/actions";
 import { RemoveX } from "@/components/RemoveX";
+import { AskPartner } from "@/components/AskPartner";
 import { ProjectCard, type CardData } from "@/components/PlanParts";
 
 export const dynamic = "force-dynamic";
@@ -70,10 +71,24 @@ export default async function ProjectsPage() {
         { title: "backlog", list: resting.filter((p) => p.status === "paused") },
         { title: "done", list: resting.filter((p) => p.status !== "paused") },
       ]
-        .filter((g) => g.list.length)
+        .filter((g) => g.list.length || g.title === "backlog")
         .map((g) => (
           <section key={g.title} aria-label={g.title}>
-            <h2 className="section-title">{g.title}</h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="section-title">{g.title}</h2>
+              {g.title === "backlog" && (
+                <AskPartner
+                  endpoint="/api/ideas"
+                  body={{ kind: "venture" }}
+                  label="Suggest ideas"
+                  busyLabel="Thinking it through…"
+                  className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink"
+                />
+              )}
+            </div>
+            {g.title === "backlog" && !g.list.length && (
+              <p className="mt-1 text-sm text-muted">Ideas for work and income land here. Start one when it&rsquo;s alive, or delete it and it won&rsquo;t be suggested again.</p>
+            )}
             <ul className="mt-2 divide-y divide-line">
               {g.list.map((p) => (
                 <li key={p.id} className="flex items-center gap-2">
