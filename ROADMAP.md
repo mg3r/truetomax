@@ -21,12 +21,12 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Partner chat, focus review, ideas (income and sharing), process of elimination
 - [x] Learning: moves, suggestion results, long-term memory, weekly learning pass, insights you confirm or reject, rhythm proposals
 - [x] PWA on Supabase + Vercel + Claude API; muted, minimal, organic theme
-- [x] Google Calendar connection (code done; Google Cloud setup still to do)
+- [x] Google Calendar and Google Docs connection (code done; Google Cloud setup still to do)
 
 ## Next, in priority order
-1. **Fill in the plan, step by step:** visions first, then projects, then the routine. Most important, because every suggestion the partner makes comes from this.
-2. **Partner suggests tasks for a vision or project:** a "Suggest next steps" button on each project and vision, which proposes 3–5 tasks to accept into a lane; it also runs when you create a project.
-3. **Your setup steps:** clear the starter projects (Setup → Start your plan fresh), and the Google Cloud setup for Calendar.
+1. **Fill in your Vision, Projects and Schedule yourself,** with what's alive today. Most important, because every suggestion the partner makes comes from this.
+2. **Partner suggests tasks for a project:** proposes 3–5 next steps from your vision, docs and history; you accept them into the project.
+3. **Your setup steps:** run `0005_docs_schedule.sql`; Context → Settings → Start fresh; Google Cloud setup (enable the Calendar and Docs APIs), then Connect Google.
 
 ## v2 integrations
 5. **Instagram (truetomax):** professional account since Oct 19, 2026. Read posts, reach and engagement so the partner learns which posts land. Needs a Meta developer app (`instagram_business_basic`, `instagram_business_manage_insights`).
