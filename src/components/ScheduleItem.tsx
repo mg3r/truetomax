@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { editRhythm, deleteRhythm, editTask, deleteTask, setTaskStatus } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
+import { LineEdit } from "./LineEdit";
 
 const PARTS = [
   { value: null, label: "Anytime" },
@@ -93,14 +94,13 @@ export function ScheduleItem({
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <input
+          <LineEdit
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => {
               if (!title.trim()) return setTitle(item.title);
               if (title !== item.title) save({ title });
             }}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             aria-label="What"
             className={`w-full bg-transparent focus:outline-none ${isDone ? "text-muted line-through decoration-line" : ""}`}
           />

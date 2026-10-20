@@ -6,6 +6,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { addRoutine, updateRoutine, deleteRoutine, checkRoutine, reorderRoutines } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
+import { LineEdit } from "./LineEdit";
 import { CADENCES, DAY_LETTERS, timesOf, isPinned, type Routine } from "@/lib/routine";
 
 // Monday first, like the Schedule.
@@ -229,11 +230,10 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
             {[3, 8, 13].map((y) => [2.5, 7.5].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.2" fill="currentColor" />))}
           </svg>
         </button>
-        <input
+        <LineEdit
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={() => title.trim() && title !== r.title && start(() => updateRoutine(r.id, { title }))}
-          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
           aria-label="What"
           className="min-w-0 flex-1 bg-transparent focus:outline-none"
         />

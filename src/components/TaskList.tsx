@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { addProjectTask, moveTask, deleteTask, renameTask, setTaskStatus, setTaskProject, type Lane } from "@/app/actions";
 import { RemoveX } from "./RemoveX";
+import { LineEdit } from "./LineEdit";
 
 const UNDATED = "9999-12-31";
 
@@ -66,14 +67,14 @@ export function TaskList({ tasks: initial, projects, today, filter }: { tasks: L
                 const meta = [t.day && t.day !== UNDATED && (g.id === "scheduled" || t.day < today) ? dayLabel(t.day, today) : null, t.project_id ? projName.get(t.project_id) : null].filter(Boolean).join(", ");
                 return (
                   <li key={t.id} className="group border-b border-line py-1.5">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       <button
                         aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
                         onClick={() => {
                           setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, status: done ? "todo" : "done" } : x)));
                           start(() => setTaskStatus(t.id, done ? "todo" : "done"));
                         }}
-                        className={`ring-check grid h-5 w-5 shrink-0 place-items-center rounded-full border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
+                        className={`ring-check mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
                       >
                         {done && (
                           <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
@@ -192,7 +193,7 @@ function Title({ task, done, onFocus, onRename }: { task: ListTask; done: boolea
     setValue(task.title);
   }, [task.title]);
   return (
-    <input
+    <LineEdit
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onFocus={onFocus}
@@ -200,7 +201,6 @@ function Title({ task, done, onFocus, onRename }: { task: ListTask; done: boolea
         if (!value.trim()) return setValue(task.title);
         if (value !== task.title) onRename(value.trim());
       }}
-      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       aria-label="Task"
       className={`w-full bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""}`}
     />

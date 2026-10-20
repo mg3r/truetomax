@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { addProjectTask, moveTask, deleteTask, renameTask, type Lane } from "@/app/actions";
 import { Board, LANES, laneOf, type BoardTask } from "./Board";
 import { RemoveX } from "./RemoveX";
+import { LineEdit } from "./LineEdit";
 
 const VIEW_KEY = "ttm-project-view";
 const UNDATED = "9999-12-31";
@@ -103,11 +104,11 @@ export function TaskPanel({ projectId, tasks: initial, today }: { projectId: str
                     const done = t.status === "done";
                     return (
                       <li key={t.id} className="py-1.5">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-start gap-3">
                           <button
                             aria-label={done ? `Mark "${t.title}" not done` : `Mark "${t.title}" done`}
                             onClick={() => move(t.id, done ? "today" : "done")}
-                            className={`ring-check grid h-5 w-5 shrink-0 place-items-center border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
+                            className={`ring-check mt-0.5 grid h-5 w-5 shrink-0 place-items-center border ${done ? "border-ink bg-ink text-bg" : "border-muted hover:border-ink"}`}
                           >
                             {done && (
                               <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
@@ -162,7 +163,7 @@ function TitleInput({ task, done, onFocus, onRename }: { task: BoardTask; done: 
     setValue(task.title);
   }, [task.title]);
   return (
-    <input
+    <LineEdit
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onFocus={onFocus}
@@ -170,7 +171,6 @@ function TitleInput({ task, done, onFocus, onRename }: { task: BoardTask; done: 
         if (!value.trim()) return setValue(task.title);
         if (value !== task.title) onRename(value.trim());
       }}
-      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       aria-label="Task"
       className={`min-w-0 flex-1 bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""}`}
     />
