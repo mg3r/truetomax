@@ -247,3 +247,8 @@ p, li, h1, h2, h3, a, span, textarea, input { overflow-wrap: anywhere; }
 .vision-doc li p { margin: 0; }
 .vision-doc strong { font-weight: 600; }
 .vision-doc p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--muted); float: left; height: 0; pointer-events: none; }
+
+/* Project side peek: slides in from the right. */
+.panel-right { animation: panel-right-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes panel-right-in { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .panel-right { animation: none; } }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { updateProject, addGoal, renameGoal, setGoalStatus, acceptProject } from "@/app/actions";
 import { Grow } from "./Grow";
 import { Select } from "./Select";
+import { LineEdit } from "./LineEdit";
 
 // Three states: in progress, in the backlog, or done. (Older "let go" projects count as done.)
 const STATUSES = [
@@ -23,23 +24,18 @@ export function ProjectHeader({ p }: { p: { id: string; title: string; descripti
 
   return (
     <div>
-      <input
+      <LineEdit
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={() => title.trim() && title !== p.title && start(() => updateProject(p.id, { title }))}
-        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        placeholder="Untitled"
         aria-label="Project name"
-        className="mt-1 w-full bg-transparent font-serif text-3xl focus:outline-none"
+        className="w-full bg-transparent font-serif text-3xl leading-tight focus:outline-none"
       />
-      <Grow
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        onBlur={() => description !== (p.description ?? "") && start(() => updateProject(p.id, { description }))}
-        placeholder="What it is and what it's for"
-        aria-label="Description"
-        className="mt-2 w-full resize-none overflow-hidden bg-transparent text-muted placeholder:text-muted/70 focus:text-ink focus:outline-none"
-      />
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      {/* Properties, Notion-style: a label on the left, the value on the right. */}
+      <dl className="mt-5 grid grid-cols-[6.5rem_1fr] items-start gap-x-3 gap-y-3 text-sm">
+        <dt className="pt-1.5 text-muted">Status</dt>
+        <dd className="flex flex-wrap items-center gap-2">
         <Select
           key={status}
           name="status"
@@ -64,7 +60,19 @@ export function ProjectHeader({ p }: { p: { id: string; title: string; descripti
             Accept project
           </button>
         )}
-      </div>
+        </dd>
+        <dt className="pt-0.5 text-muted">Description</dt>
+        <dd>
+          <Grow
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={() => description !== (p.description ?? "") && start(() => updateProject(p.id, { description }))}
+            placeholder="What it is and what it's for"
+            aria-label="Description"
+            className="w-full resize-none overflow-hidden bg-transparent leading-relaxed placeholder:text-muted/70 focus:outline-none"
+          />
+        </dd>
+      </dl>
     </div>
   );
 }

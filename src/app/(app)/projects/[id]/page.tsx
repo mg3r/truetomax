@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { today, addDays } from "@/lib/dates";
-import { type BoardTask } from "@/components/Board";
-import { TaskPanel } from "@/components/TaskPanel";
-import { ProjectSuggestions } from "@/components/ProjectSuggestions";
-import { loadPractices } from "@/lib/routine";
-import { ProjectHeader, GoalList } from "@/components/ProjectEditor";
+import { ProjectDetail } from "@/components/ProjectDetail";
 import { DeleteButton } from "@/components/DeleteButton";
 import { deleteProject } from "@/app/actions";
 
@@ -15,58 +10,16 @@ export const dynamic = "force-dynamic";
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const day = today();
-
-  const { data: p } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
+  const { data: p } = await supabase.from("projects").select("id, title").eq("id", id).maybeSingle();
   if (!p) notFound();
 
-  const [goals, open, done, suggested] = await Promise.all([
-    supabase.from("goals").select("id, title, status").eq("project_id", id).neq("status", "dropped").order("created_at"),
-    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "todo").order("created_at"),
-    supabase
-      .from("tasks")
-      .select("*")
-      .eq("project_id", id)
-      .eq("status", "done")
-      .gte("completed_at", addDays(day, -14))
-      .order("completed_at", { ascending: false })
-      .limit(20),
-    supabase.from("tasks").select("*").eq("project_id", id).eq("status", "suggested").is("day", null).order("created_at"),
-  ]);
-
-  const practices = await loadPractices(supabase);
-  const tasks = [...(open.data ?? []), ...(done.data ?? [])] as BoardTask[];
-
   return (
-    <div className="space-y-12">
-      <div>
-        <div className="flex items-baseline justify-between">
-          <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
-          <DeleteButton action={deleteProject.bind(null, id, true)} label="Delete project" confirm={`Delete "${p.title}" and its actions?`} />
-        </div>
-        <ProjectHeader p={p} />
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
+        <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
+        <DeleteButton action={deleteProject.bind(null, id, true)} label="Delete project" confirm={`Delete "${p.title}" and its actions?`} />
       </div>
-
-      <section aria-labelledby="goals">
-        <h2 id="goals" className="section-title">goals</h2>
-        <div className="mt-1">
-          <GoalList projectId={id} goals={goals.data ?? []} />
-        </div>
-      </section>
-
-      <section aria-labelledby="suggested">
-        <h2 id="suggested" className="section-title">your partner suggests</h2>
-        <div className="mt-2">
-          <ProjectSuggestions projectId={id} steps={suggested.data ?? []} today={day} practices={practices} />
-        </div>
-      </section>
-
-      <section aria-labelledby="tasks">
-        <h2 id="tasks" className="section-title">actions</h2>
-        <div className="mt-3">
-          <TaskPanel projectId={id} tasks={tasks} today={day} practices={practices} />
-        </div>
-      </section>
+      <ProjectDetail id={id} />
     </div>
   );
 }

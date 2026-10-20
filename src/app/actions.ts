@@ -907,3 +907,14 @@ export async function saveVisionDoc(html: string): Promise<{ error?: string }> {
   revalidatePath("/vision");
   return {};
 }
+
+/** Add a project straight onto the board, in the column you typed it in. */
+export async function createProject(title: string, status: string): Promise<{ id?: string }> {
+  if (!title.trim()) return {};
+  const s = ["review", "active", "paused", "done"].includes(status) ? status : "active";
+  const supabase = await db();
+  let res = await supabase.from("projects").insert({ title: title.trim(), status: s }).select("id").single();
+  if (res.error && s === "review") res = await supabase.from("projects").insert({ title: title.trim(), status: "paused" }).select("id").single();
+  refresh();
+  return { id: res.data?.id };
+}

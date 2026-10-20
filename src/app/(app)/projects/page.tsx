@@ -2,13 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
 import { IdeaList } from "@/components/IdeaList";
 import { ProjectBoard, type BoardProject } from "@/components/ProjectBoard";
-import { NewProject } from "@/components/NewProject";
+import { SidePanel } from "@/components/SidePanel";
+import { ProjectDetail } from "@/components/ProjectDetail";
+import { DeleteButton } from "@/components/DeleteButton";
+import { deleteProject } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
 type Task = { project_id: string; title: string; day: string | null };
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
+  const { p: selected } = await searchParams;
   const supabase = await createClient();
   const day = today();
 
@@ -29,14 +33,23 @@ export default async function ProjectsPage() {
     <div className="space-y-8">
       <h1 className="font-serif text-3xl">Projects</h1>
 
-      <NewProject />
-
       <IdeaList kind="venture" ideas={ideaRows.data ?? []} />
 
       {/* The board is wider than the page's reading column on a computer, so four columns have room. */}
       <div className="lg:relative lg:left-1/2 lg:w-[min(68rem,calc(100vw-18rem))] lg:-translate-x-1/2">
-        <ProjectBoard projects={board} />
+        <ProjectBoard projects={board} selected={selected ?? null} />
       </div>
+
+      {selected && board.some((b) => b.id === selected) && (
+        <SidePanel
+          closeHref="/projects"
+          openHref={`/projects/${selected}`}
+          label="Project"
+          actions={<DeleteButton action={deleteProject.bind(null, selected, true)} label="Delete" confirm="Delete this project and its actions?" />}
+        >
+          <ProjectDetail id={selected} />
+        </SidePanel>
+      )}
     </div>
   );
 }
