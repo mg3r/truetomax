@@ -38,9 +38,11 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 - [x] Tasks renamed Actions (`/actions`); Today shows Calendar separately from Actions; Practices tab is information only, logged on Today, schedulable on Schedule
 
+- [x] Docs searchable all the way through: every doc kept as passages and recalled by meaning (run `0015_doc_passages.sql`); Google Docs read every tab
+
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0014` in order if any haven't been run; check the 7am notification arrives.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0015` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.

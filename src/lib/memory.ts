@@ -27,17 +27,17 @@ export async function remember(supabase: SupabaseClient, sourceType: string, sou
     const embedding = await embed(supabase, text);
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return;
-    await supabase.from("memory").upsert(
-      {
-        user_id: auth.user.id,
-        source_type: sourceType,
-        source_id: sourceId,
-        content: text.slice(0, 6000),
-        day: day ?? today(),
-        ...(embedding ? { embedding: JSON.stringify(embedding) } : {}),
-      },
-      { onConflict: "user_id,source_type,source_id" }
-    );
+    const row = {
+      user_id: auth.user.id,
+      source_type: sourceType,
+      source_id: sourceId,
+      content: text.slice(0, 6000),
+      day: day ?? today(),
+      ...(embedding ? { embedding: JSON.stringify(embedding) } : {}),
+    };
+    const { error } = await supabase.from("memory").upsert({ ...row, part: 0 }, { onConflict: "user_id,source_type,source_id,part" });
+    // Before the doc-passages migration runs, memory has one row per source.
+    if (error) await supabase.from("memory").upsert(row, { onConflict: "user_id,source_type,source_id" });
   } catch (e) {
     console.error("remember failed", e);
   }
@@ -108,5 +108,97 @@ export async function pruneMemory(supabase: SupabaseClient) {
     const keep = new Set((live ?? []).map((r) => r.id));
     const gone = ids.filter((id) => !keep.has(id));
     if (gone.length) await supabase.from("memory").delete().eq("source_type", type).in("source_id", gone);
+  }
+}
+
+/** Split a doc into passages of about a page, each labelled with the doc and the nearest heading above it. */
+export function passagesOf(title: string, text: string, size = 1500) {
+  const out: string[] = [];
+  let heading = "";
+  let buf = "";
+  const flush = () => {
+    const body = buf.trim();
+    if (body) out.push(`Doc "${title}"${heading ? ` — ${heading}` : ""}: ${body}`);
+    buf = "";
+  };
+  for (const para of text.split(/\n{2,}/)) {
+    const p = para.trim();
+    if (!p) continue;
+    // A short line on its own reads as a heading (tab names come in as "## Tab").
+    const h = p.replace(/^#+\s*/, "");
+    if (p.length < 80 && !/[.!?,;:]$/.test(p) && !p.includes("\n")) {
+      flush();
+      heading = h;
+      continue;
+    }
+    if (buf.length + p.length > size) flush();
+    if (p.length > size) {
+      for (let i = 0; i < p.length; i += size) {
+        buf = p.slice(i, i + size);
+        flush();
+      }
+    } else buf += (buf ? "\n\n" : "") + p;
+  }
+  flush();
+  return out;
+}
+
+/**
+ * Keep a whole doc in long-term memory as passages, so any part of it can be found when it matters.
+ * Meaning fingerprints are added in the background (a batch at a time), so even a long doc saves quickly.
+ */
+export async function rememberDoc(supabase: SupabaseClient, docId: string, title: string, text: string) {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const parts = passagesOf(title, text);
+    if (!parts.length) return;
+    await supabase.from("memory").delete().eq("source_type", "doc").eq("source_id", docId);
+    const rows = parts.map((content, part) => ({ user_id: auth.user!.id, source_type: "doc", source_id: docId, part, content: content.slice(0, 6000), day: today() }));
+    let failed = false;
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await supabase.from("memory").insert(rows.slice(i, i + 200));
+      if (error) {
+        failed = true;
+        break;
+      }
+    }
+    // Before the doc-passages migration runs, keep the doc's opening as one memory, as before.
+    if (failed) {
+      await supabase.from("memory").delete().eq("source_type", "doc").eq("source_id", docId);
+      await remember(supabase, "doc", docId, `Doc "${title}": ${text.slice(0, 5000)}`);
+      return;
+    }
+    await embedMissing(supabase, 60);
+  } catch (e) {
+    console.error("rememberDoc failed", e);
+  }
+}
+
+/** The passages from your docs that best match what's being asked or planned. */
+export async function recallDocs(supabase: SupabaseClient, query: string, count = 6) {
+  try {
+    const embedding = await embed(supabase, query);
+    const { data, error } = await supabase.rpc("match_docs", { query_text: query, query_embedding: embedding ? JSON.stringify(embedding) : null, match_count: count });
+    if (error) return [];
+    return (data ?? []) as { content: string; score: number }[];
+  } catch {
+    return [];
+  }
+}
+
+/** Docs saved before passages existed are re-read into passages, a few at a time. */
+export async function indexDocs(supabase: SupabaseClient, limit = 3) {
+  const { data: docs } = await supabase.from("context_docs").select("id, title, text").order("updated_at", { ascending: false });
+  let done = 0;
+  for (const d of docs ?? []) {
+    if (done >= limit) break;
+    const expected = passagesOf(d.title, d.text ?? "").length;
+    if (expected <= 1) continue;
+    const { count, error } = await supabase.from("memory").select("id", { count: "exact", head: true }).eq("source_type", "doc").eq("source_id", d.id);
+    if (error) return;
+    if ((count ?? 0) >= expected) continue;
+    await rememberDoc(supabase, d.id, d.title, d.text ?? "");
+    done++;
   }
 }

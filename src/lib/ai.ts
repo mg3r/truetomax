@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, today, WEEKDAYS, weekdayOf } from "./dates";
 import { getStats } from "./learn";
-import { recall } from "./memory";
+import { recall, recallDocs } from "./memory";
 import { instagramContext } from "./instagram";
 import { APP_NAME } from "@/lib/brand";
 
@@ -39,7 +39,10 @@ export async function buildContext(
   opts: { journalCount?: number; query?: string; skipLearned?: boolean } = {}
 ) {
   const learned = opts.skipLearned ? "" : await learnedContext(supabase, opts.query);
-  return [await baseContext(supabase, opts), learned].filter(Boolean).join("\n\n");
+  // The parts of his docs that bear on what's being asked or planned, from anywhere in them, however long.
+  const passages = opts.query ? await recallDocs(supabase, opts.query, 6) : [];
+  const docPassages = passages.length ? `## Passages from his docs that bear on this (his own words)\n${passages.map((p) => `- ${p.content.replace(/\s+/g, " ").slice(0, 1600)}`).join("\n")}` : "";
+  return [await baseContext(supabase, opts), docPassages, learned].filter(Boolean).join("\n\n");
 }
 
 /** What the partner has learned and the results that taught it — this is what makes it evolve. */
@@ -124,10 +127,10 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
   const elimIdeas = await supabase.from("ideas").select("title, status_note").eq("status", "eliminated").limit(20);
   // His own docs (vision, routine, plans, coaching notes). Most recently updated first, capped so they don't crowd out the rest.
   const docs = await supabase.from("context_docs").select("title, text, updated_at").order("updated_at", { ascending: false }).limit(12);
-  let docBudget = 24000;
+  let docBudget = 20000;
   const docText = (docs.error ? [] : docs.data ?? [])
     .map((d: Row) => {
-      const take = Math.max(0, Math.min(9000, docBudget));
+      const take = Math.max(0, Math.min(5000, docBudget));
       docBudget -= take;
       return take ? `### ${d.title}\n${(d.text as string).slice(0, take)}${(d.text as string).length > take ? "\n[…]" : ""}` : "";
     })
@@ -142,7 +145,7 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     `## Max in his own words\n${ctx.data?.about_me || "(not written yet)"}`,
     ctx.data?.summary ? `## What you have learned about Max so far\n${ctx.data.summary}` : "",
     `## Vision (his running doc of what's alive for him)\n${(visions.data ?? []).map((v: Row) => `- ${v.title}: ${line(v.body as string)}`).join("\n") || "(none yet)"}`,
-    docText ? `## His own docs (written by him; use them for context, suggestions and questions)\n${docText}` : "",
+    docText ? `## His own docs (written by him; the opening of each — the most relevant passages from anywhere in them follow below; use them for context, suggestions and questions)\n${docText}` : "",
     `## Projects (the live list right now; anything not here was deleted or never existed)\n${(projects.data ?? []).map((p: Row) => `- ${p.title} [${p.status}${p.makes_money ? ", income" : ""}]: ${line(p.description as string)}${p.status_note ? ` — note: ${line(p.status_note as string)}` : ""}`).join("\n") || "(none)"}`,
     `## Active goals\n${(goals.data ?? []).map((g: Row) => `- ${g.title}${g.metric ? ` — ${g.current}/${g.target ?? "?"} ${g.metric}` : ""}${g.due_date ? ` by ${g.due_date}` : ""}${g.project_id ? ` (${projName.get(g.project_id as string) ?? ""})` : ""}`).join("\n") || "(none)"}`,
     `## Weekly rhythm — today\n${todayRhythm.map((t) => `- ${t}`).join("\n") || "(nothing fixed today)"}`,

@@ -1,5 +1,5 @@
 import { NextResponse, after } from "next/server";
-import { remember, pruneMemory } from "@/lib/memory";
+import { remember, pruneMemory, indexDocs, embedMissing } from "@/lib/memory";
 import { createClient } from "@/lib/supabase/server";
 import { ask, buildContext, PARTNER } from "@/lib/ai";
 import { ensureConversation, touchConversation } from "@/lib/conversations";
@@ -45,6 +45,11 @@ export async function POST(req: Request) {
     });
     const { data: answer } = await supabase.from("messages").insert({ role: "assistant", content: reply, ...conv }).select("created_at").single();
     await touchConversation(supabase, convId);
+    // Keep your docs fully searchable: re-read older ones into passages and add their meaning, a little each time.
+    after(async () => {
+      await indexDocs(supabase, 2).catch(() => {});
+      await embedMissing(supabase, 40).catch(() => {});
+    });
     return NextResponse.json({ reply, conversationId: convId, sentAt: saved?.created_at ?? null, repliedAt: answer?.created_at ?? null });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "The partner is unavailable." }, { status: 502 });

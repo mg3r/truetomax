@@ -96,7 +96,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Partner",
     body: [
       "Chat is your creative partner. Ask it anything, think out loud, or tell it what happened. Each conversation is its own thread; start a new one any time and find past ones under Conversations. A focus review runs process of elimination: what to keep, pause or drop, and the one path most likely to bring in income in the next 90 days.",
-      "Before every reply it reads your Vision, projects, routine, schedule, recent journal, your docs, what it has learned, and memories from further back that match what you're talking about, found by meaning rather than exact words. What you tell it in chat becomes memory too.",
+      "Before every reply it reads your Vision, projects, routine, schedule, recent journal, your docs, what it has learned, memories from further back that match what you're talking about, and the passages from your docs that bear on it, found by meaning rather than exact words. Every doc is read in full and kept as page-sized passages, so even a very long doc is searchable all the way through; the partner always sees the opening of each doc plus the passages that matter right now. What you tell it in chat becomes memory too.",
       "Learned is what it has figured out about you. Once a week (when there's enough to go on) it reads everything and proposes things it thinks are true for you to confirm or reject, suggests schedule changes, tunes how it suggests tasks, and writes you a short review. Confirmed things steer every suggestion; rejected things are never acted on. A dot shows when something is waiting for you.",
     ],
   },

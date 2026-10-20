@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { today } from "@/lib/dates";
-import { remember, forget, journalText } from "@/lib/memory";
+import { remember, forget, journalText, rememberDoc } from "@/lib/memory";
 import { readGoogleDoc } from "@/lib/google";
 import { syncDriveFolder } from "@/lib/drive";
 
@@ -574,7 +574,7 @@ export async function addContextDoc(title: string, text: string): Promise<{ erro
     .select("id")
     .single();
   if (error) return { error: error.message.includes("context_docs") ? "Run the 0005 setup file in Supabase first." : error.message };
-  if (data) after(() => remember(supabase, "doc", data.id, `Doc "${title}": ${clean.slice(0, 5000)}`));
+  if (data) after(() => rememberDoc(supabase, data.id, title, clean));
   refresh();
   return {};
 }
@@ -591,7 +591,7 @@ export async function addGoogleDoc(link: string): Promise<{ error?: string }> {
     .select("id")
     .single();
   if (error) return { error: error.message.includes("context_docs") ? "Run the 0005 setup file in Supabase first." : error.message };
-  if (data) after(() => remember(supabase, "doc", data.id, `Doc "${doc.title}": ${doc.text.slice(0, 5000)}`));
+  if (data) after(() => rememberDoc(supabase, data.id, doc.title, doc.text));
   refresh();
   return {};
 }
@@ -603,7 +603,7 @@ export async function refreshGoogleDoc(id: string) {
   const doc = await readGoogleDoc(supabase, row.gdoc_id);
   if ("error" in doc) return;
   await supabase.from("context_docs").update({ title: doc.title, text: doc.text.slice(0, 200_000), updated_at: new Date().toISOString() }).eq("id", id);
-  after(() => remember(supabase, "doc", id, `Doc "${doc.title}": ${doc.text.slice(0, 5000)}`));
+  after(() => rememberDoc(supabase, id, doc.title, doc.text));
   refresh();
 }
 

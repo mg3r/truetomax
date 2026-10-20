@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { accessToken, driveFolderName, listDriveFolder, readDriveFile } from "./google";
-import { remember, forget } from "./memory";
+import { forget, rememberDoc } from "./memory";
 
 /**
  * Bring a Drive folder's docs into context. Only files that changed since the last sync are re-read;
@@ -23,7 +23,7 @@ export async function syncDriveFolder(supabase: SupabaseClient, folderId: string
     const { data } = have
       ? await supabase.from("context_docs").update(row).eq("id", have.id).select("id").single()
       : await supabase.from("context_docs").insert(row).select("id").single();
-    if (data) await remember(supabase, "doc", data.id, `Doc "${row.title}": ${text.slice(0, 5000)}`);
+    if (data) await rememberDoc(supabase, data.id, row.title, text);
   }
 
   const present = new Set(files.map((f) => f.id));
