@@ -225,3 +225,6 @@ textarea.field:focus {
 @media (prefers-reduced-motion: reduce) {
   .sidebar-scrim, .sidebar-panel { animation: none; }
 }
+
+/* Long words or links never push past their container. */
+p, li, h1, h2, h3, a, span, textarea, input { overflow-wrap: anywhere; }

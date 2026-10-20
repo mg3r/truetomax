@@ -150,7 +150,7 @@ function Card({ task, lane, today, onMove, onDelete }: { task: BoardTask; lane: 
   ].filter(Boolean);
 
   return (
-    <li ref={setNodeRef} className={isDragging ? "opacity-30" : ""}>
+    <li ref={setNodeRef} className={`min-w-0 ${isDragging ? "opacity-30" : ""}`}>
       <div className="pebble relative border border-line bg-bg">
         <RemoveX label={`Delete ${task.title}`} action={() => onDelete(task.id)} className="absolute top-1 right-1 !h-6 !w-6" />
         <button
@@ -161,7 +161,7 @@ function Card({ task, lane, today, onMove, onDelete }: { task: BoardTask; lane: 
           onClick={() => setOpen((o) => !o)}
           className="w-full cursor-grab touch-manipulation py-2.5 pr-8 pl-3 text-left active:cursor-grabbing"
         >
-          <span className={`block text-[0.95rem] leading-snug ${lane === "done" ? "text-muted line-through decoration-line" : ""}`}>{task.title}</span>
+          <span className={`block text-[0.95rem] leading-snug [overflow-wrap:anywhere] ${lane === "done" ? "text-muted line-through decoration-line" : ""}`}>{task.title}</span>
           {meta.length > 0 && <span className="mt-1 block text-xs text-muted">{meta.join(", ")}</span>}
         </button>
         {open && (
