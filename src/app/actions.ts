@@ -418,41 +418,6 @@ export async function addBoardTask(projectId: string, lane: Exclude<Lane, "done"
   refresh();
 }
 
-/* Practices: the aligned actions that feed your projects */
-export async function addPractice(fd: FormData) {
-  const name = str(fd, "name");
-  if (!name) return;
-  const supabase = await db();
-  await supabase.from("practices").insert({ name, description: str(fd, "description") ?? "" });
-  refresh();
-}
-
-export async function renamePractice(fd: FormData) {
-  const id = str(fd, "id");
-  const name = str(fd, "name");
-  if (!id || !name) return;
-  const supabase = await db();
-  await supabase.from("practices").update({ name, description: str(fd, "description") ?? "" }).eq("id", id);
-  refresh();
-}
-
-export async function deletePractice(id: string) {
-  const supabase = await db();
-  await supabase.from("practices").delete().eq("id", id);
-  refresh();
-}
-
-export async function setProjectPractices(projectId: string, practiceIds: string[]) {
-  const supabase = await db();
-  await supabase.from("project_practices").delete().eq("project_id", projectId);
-  if (practiceIds.length) await supabase.from("project_practices").insert(practiceIds.map((practice_id) => ({ project_id: projectId, practice_id })));
-  refresh();
-}
-
-/**
- * Start fresh: clears every vision and project, with their goals and tasks.
- * Keeps your schedule, journal, docs, moves and everything the partner has learned.
- */
 export async function resetPlan(fd: FormData) {
   if (fd.get("confirm") !== "clear") return;
   const supabase = await db();
@@ -826,5 +791,50 @@ export async function answerProjectSuggestion(id: string, keep: boolean) {
   const supabase = await db();
   if (keep) await supabase.from("tasks").update({ status: "todo", day: UNDATED, accepted_at: new Date().toISOString() }).eq("id", id);
   else await supabase.from("tasks").update({ status: "skipped" }).eq("id", id);
+  refresh();
+}
+
+/* Practices: what you make and offer, feeding your projects */
+export async function createPractice(name: string) {
+  if (!name.trim()) return;
+  const supabase = await db();
+  const { data: last } = await supabase.from("practices").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();
+  await supabase.from("practices").insert({ name: name.trim(), sort: (last?.sort ?? 0) + 1 });
+  refresh();
+}
+
+export async function renamePracticeTo(id: string, name: string) {
+  if (!name.trim()) return;
+  const supabase = await db();
+  await supabase.from("practices").update({ name: name.trim() }).eq("id", id);
+  refresh();
+}
+
+export async function removePractice(id: string) {
+  const supabase = await db();
+  await supabase.from("practices").delete().eq("id", id);
+  refresh();
+}
+
+export async function reorderPractices(ids: string[]) {
+  const supabase = await db();
+  await Promise.all(ids.map((id, i) => supabase.from("practices").update({ sort: i }).eq("id", id)));
+  refresh();
+}
+
+/** Link a practice to a project it feeds, or unlink it. */
+export async function linkPractice(practiceId: string, projectId: string, on: boolean) {
+  const supabase = await db();
+  if (on) await supabase.from("project_practices").upsert({ practice_id: practiceId, project_id: projectId }, { onConflict: "project_id,practice_id" });
+  else await supabase.from("project_practices").delete().eq("practice_id", practiceId).eq("project_id", projectId);
+  refresh();
+}
+
+/** You practiced today (or take it back). */
+export async function logPractice(id: string, day: string, on: boolean) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+  const supabase = await db();
+  if (on) await supabase.from("practice_sessions").upsert({ practice_id: id, day }, { onConflict: "practice_id,day" });
+  else await supabase.from("practice_sessions").delete().eq("practice_id", id).eq("day", day);
   refresh();
 }

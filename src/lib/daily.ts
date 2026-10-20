@@ -17,7 +17,7 @@ const CATEGORIES = ["make", "practice", "share", "ask", "learn", "admin", "body"
 type DayPlan = {
   affirmation: string;
   question: string;
-  focus: string;
+  focus: string | null;
   tasks: { title: string; project?: string; reason: string; category?: string; size?: string; from?: number }[];
 };
 
@@ -99,7 +99,7 @@ Return:
 {
   "affirmation": one sentence in first person, under 20 words, drawn from the idea in today's reading and made specific to where he is right now — in your own words, not a quote,
   "question": one reflective journal question rooted in today's reading and connected to what's actually happening in his life and work right now,
-  "focus": one sentence naming the single thing that would make today count,
+  "focus": one sentence naming the single thing that would make today count, taken ONLY from what Max has set or written himself: his tasks for today or Up next, his projects and their goals, his schedule and calendar, his rituals and practices, his Vision doc, his journal, or the docs he uploaded. Never from your own suggestions, ideas, past chats or anything you inferred; don't name a plan, event or offer unless it appears in his own words. If he hasn't set anything yet, return null,
   "tasks": up to ${maxSuggestions} suggested tasks that fit today's rhythm and move a vision forward. Offer his own Up next tasks first when one fits today (set "from" to its number and keep its title); only invent a new task when none of them fit — favor finishing, sharing, and getting paid, and follow your current guidance policy. Each: {"title": short imperative with a clear definition of done, "project": exact project title from this list or omit [${(projects ?? []).map((p) => p.title).join(", ")}], "reason": one sentence on why today, grounded in what you've learned, "category": one of make/practice/share/ask/learn/admin/body/rest ("share" = putting his work in front of people, "ask" = asking someone to book, buy, or pay), "size": small (under 30 min) / medium (1–2 hours) / large}
 }
 ${upNext.length ? `\n## His Up next tasks (planned in his projects, no day yet)\n${upNext.map((t, i) => `${i + 1}. ${t.title}${t.project_id ? ` (${(projects ?? []).find((p) => p.id === t.project_id)?.title ?? "a project"})` : ""}`).join("\n")}\n` : ""}
@@ -139,7 +139,7 @@ Don't repeat anything already open or skipped recently. If he has made no moves 
       ...(page ? { page_id: page.id } : {}),
       affirmation: plan?.affirmation ?? FALLBACK_AFFIRMATIONS[new Date().getDate() % FALLBACK_AFFIRMATIONS.length],
       question: plan?.question ?? "What would you make today if no one ever saw it — and what would you make if everyone did?",
-      focus: plan?.focus ?? null,
+      focus: typeof plan?.focus === "string" && plan.focus.trim() ? plan.focus.trim() : null,
     })
     .eq("day", day);
 }

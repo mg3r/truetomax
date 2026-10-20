@@ -12,6 +12,7 @@ import { JournalForm } from "@/components/JournalForm";
 import { RoutineToday } from "@/components/Routine";
 import { isDue, isPinned, timesOf, mondayOf, type Routine } from "@/lib/routine";
 import { sameThing } from "@/lib/match";
+import { PracticeToday, type Practice } from "@/components/Practices";
 import { sectionAround, type Passage } from "@/lib/passage";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +68,14 @@ export default async function TodayPage() {
       .lte("page", page.data.page + 9);
     passage = sectionAround({ page: page.data.page, text: page.data.text }, around ?? []);
   }
+
+  // Practices: tap what you practiced today.
+  const [practiceRows, practiceToday] = await Promise.all([
+    supabase.from("practices").select("id, name, sort").order("sort").order("created_at"),
+    supabase.from("practice_sessions").select("practice_id").eq("day", day),
+  ]);
+  const practices = practiceToday.error ? [] : ((practiceRows.data ?? []) as Practice[]);
+  const practiced = (practiceToday.data ?? []).map((p) => p.practice_id as string);
 
   const mv = moves.data ?? [];
   const shares = mv.filter((m) => m.kind === "shared").length;
@@ -185,12 +194,23 @@ export default async function TodayPage() {
         <section aria-labelledby="routine">
           <div className="flex items-baseline justify-between">
             <h2 id="routine" className="section-title">
-              <Link href="/routine" className="hover:text-ink">Routine</Link>
+              <Link href="/rituals" className="hover:text-ink">Rituals</Link>
             </h2>
             <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
           </div>
           <div className="mt-2">
             <RoutineToday items={routine} checked={checked} day={day} times={Object.fromEntries(routineTime)} weekDone={weekDone} />
+          </div>
+        </section>
+      )}
+
+      {practices.length > 0 && (
+        <section aria-labelledby="practiced">
+          <h2 id="practiced" className="section-title">
+            <Link href="/practices" className="hover:text-ink">Practiced today</Link>
+          </h2>
+          <div className="mt-3">
+            <PracticeToday practices={practices} practiced={practiced} today={day} />
           </div>
         </section>
       )}

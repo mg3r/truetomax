@@ -33,10 +33,12 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Partner suggests next steps inside each project
 - [x] Today's reading is a whole section of the book, not a single page
 
+- [x] Routine renamed Rituals; new Practices tab (what you make and offer, linked to the projects it feeds, sessions logged here or on Today) — run `0014_practices.sql`
+- [x] The daily focus line comes only from what Max set or uploaded
+
 ## Next, in priority order
-1. **Decide:** the name for the second Practices tab (DJing, pottery, cooking, hosting) and how the daily focus line should work, then build Practices (Rituals + that tab).
-2. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-3. **Your setup steps still to confirm:** run migrations `0009` to `0013` in order if any haven't been run; check the 7am notification arrives.
+1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0014` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.

@@ -141,7 +141,7 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
   return (
     <div className="space-y-12">
       <form onSubmit={add} className="pebble bg-surface p-5">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your routine" aria-label="Add to your routine" className="field" />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add a ritual" aria-label="Add a ritual" className="field" />
         <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="How often">
           {CADENCES.map((c) => (
             <Chip key={c.value} on={cadence === c.value} onClick={() => setCadence(c.value)}>
@@ -243,7 +243,7 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
             <span key={d} aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${doneOn.has(`${r.id}:${d}`) ? "bg-ink" : "bg-line"}`} />
           ))}
         </span>
-        <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your routine?`} action={() => deleteRoutine(r.id)} />
+        <RemoveX label={`Remove ${r.title}`} confirm={`Remove "${r.title}" from your rituals?`} action={() => deleteRoutine(r.id)} />
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
         {CADENCES.map((c) => (

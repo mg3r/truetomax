@@ -49,8 +49,8 @@ function EventLine({ label, title, link }: { label: string; title: string; link?
 function RoutineSummary({ label, done, total, ahead }: { label: string; done: number; total: number; ahead: boolean }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted">routine</span>
-      <Link href="/routine" className="min-w-0 flex-1 hover:underline">{label}</Link>
+      <span className="w-24 shrink-0 text-sm text-muted">ritual</span>
+      <Link href="/rituals" className="min-w-0 flex-1 hover:underline">{label}</Link>
       <span className="shrink-0 text-xs text-muted tabular-nums">{ahead ? total : `${done} of ${total}`}</span>
     </li>
   );
@@ -59,9 +59,9 @@ function RoutineSummary({ label, done, total, ahead }: { label: string; done: nu
 function RoutineLine({ title, cal }: { title: string; cal?: { link?: string; label: string } | null }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : "routine"}</span>
-      <Link href="/routine" className="min-w-0 flex-1 hover:underline">{title}</Link>
-      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">routine, calendar</a> : <span className="shrink-0 text-xs text-muted">routine, calendar</span>)}
+      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : "ritual"}</span>
+      <Link href="/rituals" className="min-w-0 flex-1 hover:underline">{title}</Link>
+      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">ritual, calendar</a> : <span className="shrink-0 text-xs text-muted">ritual, calendar</span>)}
     </li>
   );
 }
@@ -116,9 +116,9 @@ export default async function SchedulePage() {
       />
 
       {anyDay.length > 0 && (
-        <Link href="/routine" className="flex items-baseline justify-between gap-3 border-y border-line py-3 hover:text-ink">
+        <Link href="/rituals" className="flex items-baseline justify-between gap-3 border-y border-line py-3 hover:text-ink">
           <span>
-            Weekly routine <span className="text-sm text-muted">· any day: {anyDay.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
+            Weekly rituals <span className="text-sm text-muted">· any day: {anyDay.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
           </span>
           <span className="shrink-0 text-sm text-muted tabular-nums">{anyDayDone} of {anyDayTotal} this week</span>
         </Link>
@@ -149,10 +149,10 @@ export default async function SchedulePage() {
               return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
             }),
             ...(dailyItems.length
-              ? [{ key: "rd", bucket: 0, at: null, sort: -1, node: <RoutineSummary key="rd" label="Daily routine" total={dailyItems.length} done={dailyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
+              ? [{ key: "rd", bucket: 0, at: null, sort: -1, node: <RoutineSummary key="rd" label="Daily rituals" total={dailyItems.length} done={dailyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
               : []),
             ...(nightlyItems.length
-              ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly routine" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
+              ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly rituals" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
               : []),
             ...weeklyMatched.map(({ r, cal }) => ({
               key: `w-${r.id}`,
