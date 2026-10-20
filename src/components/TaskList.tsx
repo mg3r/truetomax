@@ -287,7 +287,9 @@ function Title({ task, done, onFocus, onRename }: { task: ListTask; done: boolea
         if (value !== task.title) onRename(value.trim());
       }}
       aria-label="Action"
-      className={`w-full bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""}`}
+      // A finished action with notes reads like a link (as on Today): tap it to open the notes.
+      readOnly={done}
+      className={`w-full bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""} ${done && task.reason ? "cursor-pointer hover:text-ink hover:underline hover:underline-offset-4" : ""}`}
     />
   );
 }
