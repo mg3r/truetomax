@@ -86,9 +86,8 @@ export function ScheduleAdd({
       </div>
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Project (optional)">
-        <Chip on={project === null} onClick={() => setProject(null)}>No project</Chip>
         {projects.map((p) => (
-          <Chip key={p.id} on={project === p.id} onClick={() => setProject(p.id)}>
+          <Chip key={p.id} on={project === p.id} onClick={() => setProject(project === p.id ? null : p.id)}>
             {p.title}
           </Chip>
         ))}

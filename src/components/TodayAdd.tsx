@@ -54,11 +54,8 @@ export function TodayAdd({ day, projects }: { day: string; projects: { id: strin
       )}
       {open && (
         <div className="mt-2 flex flex-wrap items-center gap-1 text-sm" role="group" aria-label="Project (optional)">
-          <button type="button" aria-pressed={project === null} onClick={() => setProject(null)} className={pill(project === null)}>
-            No project
-          </button>
           {projects.map((p) => (
-            <button key={p.id} type="button" aria-pressed={project === p.id} onClick={() => setProject(p.id)} className={pill(project === p.id)}>
+            <button key={p.id} type="button" aria-pressed={project === p.id} onClick={() => setProject(project === p.id ? null : p.id)} className={pill(project === p.id)}>
               {p.title}
             </button>
           ))}

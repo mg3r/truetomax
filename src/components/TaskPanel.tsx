@@ -22,12 +22,10 @@ const dayLabel = (day: string | null) =>
 /** Optional day for an Up next task: none, or one of the coming week's days. */
 function DayPick({ value, today, onPick }: { value: string | null; today: string; onPick: (day: string | null) => void }) {
   const pill = (on: boolean) => `rounded-full border px-2.5 py-1 text-xs ${on ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`;
-  const none = !value || value === UNDATED;
   return (
     <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Day (optional)">
-      <button type="button" aria-pressed={none} onClick={() => onPick(null)} className={pill(none)}>No day</button>
       {comingDays(today).map((d) => (
-        <button key={d.date} type="button" aria-pressed={value === d.date} onClick={() => onPick(d.date)} className={pill(value === d.date)}>
+        <button key={d.date} type="button" aria-pressed={value === d.date} onClick={() => onPick(value === d.date ? null : d.date)} className={pill(value === d.date)}>
           {d.label}
         </button>
       ))}

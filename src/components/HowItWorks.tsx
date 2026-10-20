@@ -50,7 +50,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     title: "Projects",
     body: [
       "What you're building. Each project has goals (plain text with a checkbox) and tasks, shown as a list or a board. Everything edits in place; × deletes.",
-      "Tasks sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned, waiting in the project. Give it a day (Mon, Tue\u2026) and it shows on Schedule that day and on Today when the day comes; with no day, your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d), and adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
+      "Tasks sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned, waiting in the project. Give it a day (Mon, Tue\u2026) and it shows on Schedule that day and on Today when the day comes; tap the day again to clear it. With no day, your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d), and adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
       "Deleting a project removes its tasks and goals, and your partner forgets them too.",
     ],
   },
