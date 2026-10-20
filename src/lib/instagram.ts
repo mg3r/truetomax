@@ -292,6 +292,7 @@ export type SeenDetail = {
   hook?: string;
   on_screen_text?: string;
   watched?: string;
+  takeaway?: string;
 };
 
 type Child = { media_type?: string; media_url?: string; thumbnail_url?: string };
@@ -301,15 +302,25 @@ type Child = { media_type?: string; media_url?: string; thumbnail_url?: string }
  * each video (a reel, or a video inside a carousel). It keeps a short summary for the list, and the full read,
  * slide by slide or moment by moment, for when you open it. Sound isn't heard; on-screen text is read.
  */
-export async function lookAtPosts(supabase: SupabaseClient, limit = 8) {
+export async function lookAtPosts(supabase: SupabaseClient, limit = 8, only?: string) {
   if (!instagramConfigured()) return 0;
-  const { data: rows, error } = await supabase
-    .from("instagram_media")
-    .select("media_id, caption, media_type, product_type")
-    .is("seen", null)
-    .order("posted_at", { ascending: false })
-    .limit(limit);
+  let q = supabase.from("instagram_media").select("*");
+  q = only ? q.eq("media_id", only) : q.is("seen", null).order("posted_at", { ascending: false }).limit(limit);
+  const { data: rows, error } = await q;
   if (error || !rows?.length) return 0;
+  // How his posts usually do, so each one can be read against the rest.
+  const { data: all } = await supabase.from("instagram_media").select("views, reach, shares, saves, comments");
+  const mean = (f: (r: Record<string, number | null>) => number | null) => {
+    const xs = (all ?? []).map((r) => f(r as Record<string, number | null>)).filter((v): v is number => v != null && isFinite(v));
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  };
+  const usual = {
+    views: mean((r) => r.views ?? r.reach),
+    share: mean((r) => (r.reach ? (100 * (r.shares ?? 0)) / r.reach : null)),
+    save: mean((r) => (r.reach ? (100 * (r.saves ?? 0)) / r.reach : null)),
+    comments: mean((r) => r.comments),
+  };
+  const f1 = (v: number | null) => (v == null ? "?" : v.toFixed(1));
   const access = await token(supabase);
   if (!access) return 0;
   const { askAboutSequence } = await import("./ai");
@@ -365,22 +376,31 @@ export async function lookAtPosts(supabase: SupabaseClient, limit = 8) {
       return false;
     }
 
+    const numbers = [
+      `${m.views ?? "?"} views`, `${m.reach ?? "?"} reach`, `${m.likes ?? 0} likes`, `${m.comments ?? 0} comments`, `${m.saves ?? 0} saves`, `${m.shares ?? 0} shares`,
+      m.avg_watch_ms != null && `avg watch ${(m.avg_watch_ms / 1000).toFixed(1)}s${duration ? ` of ${Math.round(duration)}s` : ""}`,
+      m.skip_rate != null && `skip rate ${m.skip_rate <= 1 ? Math.round(m.skip_rate * 100) : Math.round(m.skip_rate)}%`,
+      m.follows != null && `${m.follows} follows`,
+      m.profile_visits != null && `${m.profile_visits} profile visits`,
+    ].filter(Boolean).join(", ");
     const kind = carousel ? `a carousel of ${items.length} slides` : info.media_type === "VIDEO" || m.product_type === "REELS" ? "a reel" : "a photo";
     const reply = await askAboutSequence({
       parts,
       maxTokens: 2500,
       prompt: `That is one of Max's Instagram posts: ${kind}, all of it.
 Caption: "${(m.caption ?? "").slice(0, 800)}"
-Describe what's actually there. No praise, no advice. Sound isn't available, so don't guess at audio; read any on-screen text exactly.
+Its numbers: ${numbers}. His posts usually get about ${Math.round(usual.views ?? 0)} views, a ${f1(usual.share)}% share rate and a ${f1(usual.save)}% save rate (out of reach), and ${Math.round(usual.comments ?? 0)} comments.
+First describe what's actually there, with no praise or advice. Sound isn't available, so don't guess at audio; read any on-screen text exactly.
 Return only JSON:
 {"summary": "2–3 plain sentences: the subject (food, pottery, music, people, place), whether Max is in it, the setting and light, the style (close-up, process, finished piece, candid, polished)",
  "hook": "what the very first frame or slide shows, the moment someone decides to stay or scroll",
  "parts": [${carousel ? `{"label": "Slide 1", "text": "what this slide shows, in a sentence or two"}, one per slide` : kind === "a reel" ? `{"label": "0–4s", "text": "what happens in this stretch"}, covering the whole video in order` : `{"label": "Photo", "text": "what's in it"}`}],
- "on_screen_text": "every bit of text shown on screen, in order (empty if none)"}`,
+ "on_screen_text": "every bit of text shown on screen, in order (empty if none)",
+ "takeaway": "2–3 honest sentences on what this post teaches about his content: how it did against his usual, and what in it most likely explains that (the opening, the subject, whether he's in it, the words, the format). Say plainly when the numbers are too few to tell."}`,
     });
     const s0 = reply.indexOf("{");
     const e0 = reply.lastIndexOf("}");
-    let parsed: { summary?: string; hook?: string; parts?: SeenDetail["parts"]; on_screen_text?: string } = {};
+    let parsed: { summary?: string; hook?: string; parts?: SeenDetail["parts"]; on_screen_text?: string; takeaway?: string } = {};
     try {
       parsed = JSON.parse(reply.slice(s0, e0 + 1));
     } catch {
@@ -390,6 +410,7 @@ Return only JSON:
       parts: (parsed.parts ?? []).filter((x) => x?.text).slice(0, 30),
       hook: parsed.hook || undefined,
       on_screen_text: parsed.on_screen_text || undefined,
+      takeaway: parsed.takeaway || undefined,
       watched: carousel ? `All ${items.length} slides` : kind === "a reel" ? (duration ? `Frames from across all ${Math.round(duration)}s (no sound)` : "Frames from across the video (no sound)") : undefined,
     };
     const seen = (parsed.summary ?? "").slice(0, 900);

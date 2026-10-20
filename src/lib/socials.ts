@@ -24,7 +24,7 @@ export type Post = {
   watch_ms?: number | null;
   skip_rate?: number | null;
   duration_s?: number | null;
-  seen_detail?: { parts: { label: string; text: string }[]; hook?: string; on_screen_text?: string; watched?: string } | null;
+  seen_detail?: { parts: { label: string; text: string }[]; hook?: string; on_screen_text?: string; watched?: string; takeaway?: string } | null;
 };
 
 /** A share of people reached, as a percent (null when there's nothing to divide by). */

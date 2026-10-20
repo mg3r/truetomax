@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Thumb } from "./Thumb";
 import { type Post, formatOf, rateOf, skipPct } from "@/lib/socials";
 
@@ -12,6 +13,17 @@ const shortDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateStrin
 /** One post: tap the picture or caption to open it on Instagram; tap "What it saw" to see everything the partner noticed, and every number. */
 export function PostRow({ m, best }: { m: Post; best: boolean }) {
   const [open, setOpen] = useState(false);
+  const [looking, setLooking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const router = useRouter();
+  const lookNow = async () => {
+    setLooking(true);
+    setNote(null);
+    const res = await fetch("/api/socials/look", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: m.media_id }) }).catch(() => null);
+    if (res?.ok) router.refresh();
+    else setNote((await res?.json().catch(() => null))?.error ?? "Couldn't look at it just now.");
+    setLooking(false);
+  };
   const reel = m.product_type === "REELS";
   const d = m.seen_detail;
   const skip = skipPct(m.skip_rate);
@@ -60,14 +72,35 @@ export function PostRow({ m, best }: { m: Post; best: boolean }) {
             {reel && m.avg_watch_ms != null && <span>{secs(m.avg_watch_ms)} avg watch</span>}
             {reel && skip != null && <span>{pct(skip)} skip</span>}
           </p>
-          {(m.seen || shown.length > 0) && (
-            <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-1.5 text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink">
-              {open ? "Less" : "What it saw"}
-            </button>
-          )}
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mt-1.5 text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink">
+            {open ? "Less" : "What it saw"}
+          </button>
 
           {open && (
             <div className="mt-3 space-y-4 border-l border-line pl-3 text-sm">
+              {!m.seen && (
+                <div className="space-y-2">
+                  <p className="text-muted">{looking ? "Looking at every slide and frame… this can take a minute." : "Your partner hasn\u2019t looked at this one yet."}</p>
+                  {!looking && (
+                    <button type="button" onClick={lookNow} className="rounded-full border border-ink px-3 py-1 text-xs text-ink hover:bg-ink hover:text-bg">
+                      Look at it now
+                    </button>
+                  )}
+                  {note && <p role="status" className="text-xs text-muted">{note}</p>}
+                </div>
+              )}
+              {d?.takeaway && (
+                <div>
+                  <h4 className="text-xs text-muted">What it learned</h4>
+                  <p className="mt-0.5 font-serif text-base leading-relaxed">{d.takeaway}</p>
+                </div>
+              )}
+              {m.seen && (
+                <div>
+                  <h4 className="text-xs text-muted">What&rsquo;s in it</h4>
+                  <p className="mt-0.5">{m.seen}</p>
+                </div>
+              )}
               {d?.watched && <p className="text-xs text-muted">{d.watched}</p>}
               {d?.hook && (
                 <div>
@@ -104,7 +137,15 @@ export function PostRow({ m, best }: { m: Post; best: boolean }) {
                   ))}
                 </dl>
               )}
-              {!d && m.seen && <p className="text-xs text-muted">The full slide-by-slide read comes the next time your partner looks at your posts.</p>}
+              {!d && m.seen && (
+                <p className="text-xs text-muted">
+                  This is from an earlier, quicker look.{" "}
+                  <button type="button" onClick={lookNow} disabled={looking} className="underline decoration-line underline-offset-4 hover:text-ink">
+                    {looking ? "Looking…" : "Look again, all of it"}
+                  </button>
+                  {note && <span className="ml-2">{note}</span>}
+                </p>
+              )}
             </div>
           )}
         </div>

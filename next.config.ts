@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/socials": ffmpeg,
     "/api/socials": ffmpeg,
+    "/api/socials/look": ffmpeg,
   },
 };
 
