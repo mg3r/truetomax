@@ -3,7 +3,7 @@ import { remember } from "@/lib/memory";
 import { createClient } from "@/lib/supabase/server";
 import { ask, buildContext, PARTNER } from "@/lib/ai";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const reply = await ask({
       system: `${PARTNER}\n\nThis is a conversation in the Partner tab. Keep replies short unless he asks for depth. If he decides something, offer to turn it into a task or goal by naming it exactly.\n\n# Current context\n${context}`,
       messages: turns,
-      maxTokens: 1200,
+      maxTokens: 2500,
     });
     await supabase.from("messages").insert({ role: "assistant", content: reply });
     return NextResponse.json({ reply });

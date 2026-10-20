@@ -14,7 +14,6 @@ export default async function VisionPage() {
     <div className="space-y-8">
       <div>
         <h1 className="font-serif text-3xl">Vision</h1>
-        <p className="mt-1 max-w-[56ch] text-muted">What&rsquo;s alive for you, in your words. Your partner reads this and asks you about it.</p>
       </div>
       <VisionDoc visions={visions} />
     </div>

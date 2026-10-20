@@ -41,7 +41,6 @@ export default async function ProjectsPage() {
     <div className="space-y-12">
       <div>
         <h1 className="font-serif text-3xl">Projects</h1>
-        <p className="mt-1 max-w-[56ch] text-muted">What you&rsquo;re building. Open one to see its tasks.</p>
       </div>
 
       <details id="new" className="pebble scroll-mt-6 border border-dashed border-line p-5" open={!active.length}>

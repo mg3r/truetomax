@@ -37,11 +37,6 @@ export default async function IdeasPage({ searchParams }: { searchParams: Promis
     <div className="space-y-10">
       <div>
         <h1 className="font-serif text-3xl">Ideas</h1>
-        <p className="mt-1 text-muted">
-          {kind === "venture"
-            ? "Feasible ways to earn from what you already do. Test one, or eliminate it and say why."
-            : "Posts and series for truetomax, drawn from what you're actually making this week."}
-        </p>
         <div className="mt-4 flex gap-1" role="tablist">
           <Link role="tab" aria-selected={kind === "venture"} href="/ideas" className={`rounded-full px-3 py-1 text-sm ${kind === "venture" ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>Work & income</Link>
           <Link role="tab" aria-selected={kind === "content"} href="/ideas?tab=content" className={`rounded-full px-3 py-1 text-sm ${kind === "content" ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}>Sharing</Link>

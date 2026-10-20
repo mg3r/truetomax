@@ -19,7 +19,6 @@ export default async function RoutinePage() {
     <div className="space-y-10">
       <div>
         <h1 className="font-serif text-3xl">Routine</h1>
-        <p className="mt-1 max-w-[56ch] text-muted">What you do every day, every night, and on certain days. It shows up on Today to tick off, and on your Schedule.</p>
       </div>
       {routines.error ? (
         <p className="text-muted">Run <code>0009_routine.sql</code> in Supabase to turn this on.</p>

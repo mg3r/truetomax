@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ask, buildContext } from "@/lib/ai";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 /** Process of elimination: what to keep, what to pause, what to drop. */
 export async function POST() {
@@ -18,7 +18,7 @@ export async function POST() {
 3. Name the single thing to stop doing.
 4. Ask him one question that would settle the biggest open uncertainty.
 Be honest and brief. If the record is too thin to judge something, say so instead of guessing.`;
-    const reply = await ask({ messages: [{ role: "user", content: `${context}\n\n---\n\n${prompt}` }], maxTokens: 1500 });
+    const reply = await ask({ messages: [{ role: "user", content: `${context}\n\n---\n\n${prompt}` }], maxTokens: 4000 });
     await supabase.from("messages").insert([
       { role: "user", content: "Run a focus review.", kind: "focus_review" },
       { role: "assistant", content: reply, kind: "focus_review" },

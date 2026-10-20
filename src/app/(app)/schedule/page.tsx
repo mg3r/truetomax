@@ -46,7 +46,6 @@ export default async function SchedulePage() {
     supabase.from("routines").select("*").order("sort"),
   ]);
   const routines = (routineRows.data ?? []) as Routine[];
-  const everyDay = routines.filter((r) => r.cadence !== "weekly").length;
   const items = (rhythm.data ?? []) as Item[];
   const ordered = (wd: number) =>
     items
@@ -57,13 +56,6 @@ export default async function SchedulePage() {
     <div className="space-y-12">
       <div>
         <h1 className="font-serif text-3xl">Schedule</h1>
-        <p className="mt-1 max-w-[56ch] text-muted">Your week: the rhythm you repeat, plus your calendar. Today pulls from here.</p>
-        {routines.length > 0 && (
-          <p className="mt-2 text-sm text-muted">
-            Plus your <Link href="/routine" className="text-ink underline decoration-line underline-offset-4">routine</Link>
-            {everyDay ? `: ${everyDay} thing${everyDay === 1 ? "" : "s"} every day and night` : ""}, with weekly ones shown on their days.
-          </p>
-        )}
       </div>
 
       <section aria-labelledby="add" className="pebble bg-surface p-5">

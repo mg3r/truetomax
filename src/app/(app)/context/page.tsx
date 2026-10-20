@@ -47,7 +47,6 @@ export default async function ContextPage({ searchParams }: { searchParams: Prom
     <div className="space-y-8">
       <div>
         <h1 className="font-serif text-3xl">Context</h1>
-        <p className="mt-1 max-w-[56ch] text-muted">Everything your partner knows about your life, and where you talk with it.</p>
         <nav className="mt-4 flex gap-1" aria-label="Context">
           {TABS.map((t) => (
             <Link

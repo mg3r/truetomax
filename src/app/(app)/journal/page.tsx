@@ -14,7 +14,6 @@ export default async function JournalPage() {
     <div className="space-y-10">
       <section>
         <h1 className="font-serif text-3xl">Journal</h1>
-        <p className="mt-1 text-muted">Everything you write here shapes what your partner suggests.</p>
         <div className="mt-5">
           <JournalForm day={today()} placeholder="What's on your mind?" />
         </div>
