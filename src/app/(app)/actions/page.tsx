@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { today as todayOf, addDays } from "@/lib/dates";
 import { TaskList, type ListTask } from "@/components/TaskList";
 import { ImportDialog } from "@/components/ImportDialog";
+import { IdeaList } from "@/components/IdeaList";
 import { loadPractices } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
     supabase.from("projects").select("id, title, status").order("created_at"),
   ]);
   const practices = await loadPractices(supabase);
+  const ideaRows = await supabase.from("ideas").select("id, title, body, first_step, money_path").eq("kind", "action").in("status", ["new", "exploring"]).order("created_at", { ascending: false });
   // Only projects you've accepted (In progress) show their actions here; the rest stay inside the project.
   const allProjects = projectRows.data ?? [];
   const projects = allProjects.filter((p) => p.status === "active");
@@ -53,6 +55,11 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
       )}
 
       <TaskList key={filter ?? "all"} tasks={tasks} projects={projects} practices={practices} today={day} filter={filter} openId={openId ?? null} />
+
+      {/* More actions when Today's suggestions run out. */}
+      <div className="pt-6">
+        <IdeaList kind="action" ideas={ideaRows.error ? [] : ideaRows.data ?? []} />
+      </div>
     </div>
   );
 }

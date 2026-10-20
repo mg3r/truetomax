@@ -308,6 +308,16 @@ export async function contentIdeaToTask(id: string) {
   refresh();
 }
 
+/** An action idea you keep goes to Up next (in its project, if it has one), with its why kept as notes. */
+export async function actionIdeaToTask(id: string) {
+  const supabase = await db();
+  const { data: idea } = await supabase.from("ideas").select("title, body, project_id").eq("id", id).single();
+  if (!idea) return;
+  await supabase.from("tasks").insert({ title: idea.title, reason: idea.body ?? null, project_id: idea.project_id ?? null, day: UNDATED, source: "partner" });
+  await supabase.from("ideas").update({ status: "planned" }).eq("id", id);
+  refresh();
+}
+
 /* Profile */
 export async function saveAboutMe(fd: FormData) {
   const supabase = await db();
