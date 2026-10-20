@@ -99,12 +99,14 @@ export function ScheduleAdd({
       {projects.length > 0 ? (
         <PickMany label="Project" size="md" options={projects.map((p) => ({ id: p.id, name: p.title }))} value={project} onChange={setProject} />
       ) : (
-        <Link href="/projects" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
+        <Link href="/projects" className="block w-fit text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
           Start a project to add actions to it
         </Link>
       )}
 
-      <button className="btn" disabled={pending || !ready}>Add</button>
+      <div>
+        <button className="btn" disabled={pending || !ready}>Add</button>
+      </div>
         </>
       )}
     </form>
