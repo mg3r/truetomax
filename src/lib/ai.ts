@@ -92,15 +92,17 @@ async function baseContext(supabase: SupabaseClient, opts: { journalCount?: numb
     supabase.from("projects").select("title, status_note").eq("status", "eliminated").limit(20),
   ]);
   const [routineRows, routineChecks] = await Promise.all([
-    supabase.from("routines").select("id, title, cadence, weekdays").order("sort"),
+    supabase.from("routines").select("*").order("sort"),
     supabase.from("routine_checks").select("routine_id").gte("day", since),
   ]);
   const routineCount = new Map<string, number>();
   for (const c of routineChecks.data ?? []) routineCount.set(c.routine_id as string, (routineCount.get(c.routine_id as string) ?? 0) + 1);
   const routineText = (routineRows.data ?? [])
     .map((r: Row) => {
-      const days = r.cadence === "weekly" ? ` on ${(r.weekdays as number[]).map((w) => WEEKDAYS[w].slice(0, 3)).join(", ")}` : "";
-      const possible = r.cadence === "weekly" ? Math.round(((r.weekdays as number[]).length * 14) / 7) : 14;
+      const pinned = r.cadence === "weekly" && (r.weekdays as number[]).length > 0;
+      const times = pinned ? (r.weekdays as number[]).length : Math.max(1, Number(r.times_per_week ?? 1));
+      const days = r.cadence !== "weekly" ? "" : pinned ? ` on ${(r.weekdays as number[]).map((w) => WEEKDAYS[w].slice(0, 3)).join(", ")}` : `, ${times}× a week on any day (a regulating practice, not a scheduled event)`;
+      const possible = r.cadence === "weekly" ? times * 2 : 14;
       return `- ${r.title} (${r.cadence}${days}) — done ${routineCount.get(r.id as string) ?? 0} of ${possible} times in the last 2 weeks`;
     })
     .join("\n");
@@ -152,13 +154,30 @@ export async function ask(opts: { system?: string; messages: { role: "user" | "a
 }
 
 /** Ask for JSON and parse it, tolerating code fences or stray prose around it. */
-export async function askJSON<T>(prompt: string, context: string, maxTokens = 1500): Promise<T> {
-  const text = await ask({
-    maxTokens,
-    messages: [{ role: "user", content: `${context}\n\n---\n\n${prompt}\n\nRespond with JSON only, no prose.` }],
-  });
+function parseJSON<T>(text: string): T {
   const start = text.search(/[[{]/);
   const end = Math.max(text.lastIndexOf("}"), text.lastIndexOf("]"));
-  if (start < 0 || end < 0) throw new Error("The partner didn't return usable JSON.");
+  if (start < 0 || end < 0) throw new Error("no JSON");
   return JSON.parse(text.slice(start, end + 1)) as T;
+}
+
+export async function askJSON<T>(prompt: string, context: string, maxTokens = 4000): Promise<T> {
+  const text = await ask({
+    maxTokens,
+    messages: [{ role: "user", content: `${context}\n\n---\n\n${prompt}\n\nRespond with valid JSON only, no prose. Escape any double quotes inside strings.` }],
+  });
+  try {
+    return parseJSON<T>(text);
+  } catch {
+    // Occasionally the reply has a stray quote or gets cut short. Ask once for a clean copy.
+    const fixed = await ask({
+      maxTokens,
+      messages: [{ role: "user", content: `Fix this so it is valid JSON with the same content. If it was cut off, close it after the last complete item. Return only the JSON.\n\n${text}` }],
+    });
+    try {
+      return parseJSON<T>(fixed);
+    } catch {
+      throw new Error("Your partner's answer came back garbled. Try again.");
+    }
+  }
 }

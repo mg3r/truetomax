@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { askJSON, buildContext } from "@/lib/ai";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 type Idea = { title: string; body: string; first_step: string; money_path?: string };
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const { kind } = await req.json();
   const k = kind === "content" ? "content" : "venture";
   try {
-    const ideas = await askJSON<Idea[]>(PROMPTS[k], await buildContext(supabase, { query: k === "content" ? "sharing posting instagram audience" : "income money paid offer clients" }), 1800);
+    const ideas = await askJSON<Idea[]>(PROMPTS[k], await buildContext(supabase, { query: k === "content" ? "sharing posting instagram audience" : "income money paid offer clients" }), 4000);
     await supabase.from("ideas").insert(
       ideas.slice(0, 3).map((i) => ({ kind: k, title: i.title, body: i.body, first_step: i.first_step, money_path: i.money_path ?? null }))
     );

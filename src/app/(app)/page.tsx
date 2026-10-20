@@ -10,7 +10,7 @@ import { TaskRow, SuggestionRow, AddTask, EventRow, type Task } from "@/componen
 import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
 import { RoutineToday } from "@/components/Routine";
-import { isDue, type Routine } from "@/lib/routine";
+import { isDue, isPinned, timesOf, mondayOf, type Routine } from "@/lib/routine";
 import { sameThing } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
@@ -41,10 +41,17 @@ export default async function TodayPage() {
   // Routine: what's due today and what's already ticked. Quietly absent until its migration runs.
   const [routineRows, routineChecks] = await Promise.all([
     supabase.from("routines").select("*").order("sort").order("created_at"),
-    supabase.from("routine_checks").select("routine_id").eq("day", day),
+    supabase.from("routine_checks").select("routine_id, day").gte("day", mondayOf(day)).lte("day", day),
   ]);
-  const routine = ((routineRows.data ?? []) as Routine[]).filter((r) => isDue(r, day));
-  const checked = (routineChecks.data ?? []).map((c) => c.routine_id as string);
+  const checkRows = routineChecks.data ?? [];
+  const checked = checkRows.filter((c) => c.day === day).map((c) => c.routine_id as string);
+  // Weekly items on any day: how many times so far this week, not counting today.
+  const weekDone: Record<string, number> = {};
+  for (const c of checkRows) if (c.day !== day) weekDone[c.routine_id] = (weekDone[c.routine_id] ?? 0) + 1;
+  // Once a weekly item has been done enough times this week, it steps aside until Monday.
+  const routine = ((routineRows.data ?? []) as Routine[]).filter(
+    (r) => isDue(r, day) && (r.cadence !== "weekly" || isPinned(r) || checked.includes(r.id) || (weekDone[r.id] ?? 0) < timesOf(r))
+  );
   const routineDone = routine.filter((r) => checked.includes(r.id)).length;
 
   const mv = moves.data ?? [];
@@ -166,7 +173,7 @@ export default async function TodayPage() {
             <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
           </div>
           <div className="mt-2">
-            <RoutineToday items={routine} checked={checked} day={day} times={Object.fromEntries(routineTime)} />
+            <RoutineToday items={routine} checked={checked} day={day} times={Object.fromEntries(routineTime)} weekDone={weekDone} />
           </div>
         </section>
       )}

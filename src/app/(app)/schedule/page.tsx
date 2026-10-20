@@ -7,7 +7,7 @@ import { sameThing } from "@/lib/match";
 import { eventsForRange, timeLabel } from "@/lib/google";
 import { ActionButton } from "@/components/DeleteButton";
 import Link from "next/link";
-import { isDue, type Routine } from "@/lib/routine";
+import { isDue, isPinned, timesOf, type Routine } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +97,10 @@ export default async function SchedulePage() {
   const routines = (routineRows.data ?? []) as Routine[];
   const dailyItems = routines.filter((r) => r.cadence === "daily");
   const nightlyItems = routines.filter((r) => r.cadence === "nightly");
+  // Weekly items on any day aren't tied to a date: one line for the week, with how many you've done.
+  const anyDay = routines.filter((r) => r.cadence === "weekly" && !isPinned(r));
+  const anyDayDone = anyDay.reduce((n, r) => n + Math.min(timesOf(r), (checkRows ?? []).filter((c) => c.routine_id === r.id).length), 0);
+  const anyDayTotal = anyDay.reduce((n, r) => n + timesOf(r), 0);
   const items = (rhythm.data ?? []) as Item[];
 
   return (
@@ -111,12 +115,21 @@ export default async function SchedulePage() {
         projects={projects}
       />
 
+      {anyDay.length > 0 && (
+        <Link href="/routine" className="flex items-baseline justify-between gap-3 border-y border-line py-3 hover:text-ink">
+          <span>
+            Weekly routine <span className="text-sm text-muted">· any day: {anyDay.map((r) => `${r.title} ${timesOf(r)}×`).join(", ")}</span>
+          </span>
+          <span className="shrink-0 text-sm text-muted tabular-nums">{anyDayDone} of {anyDayTotal} this week</span>
+        </Link>
+      )}
+
       <section aria-label="Your week" className="space-y-9">
         {week.map((d) => {
           const wd = weekdayOf(d);
           const isToday = d === day;
           const list = items.filter((r) => r.weekday === wd);
-          const weekly = routines.filter((r) => r.cadence === "weekly" && isDue(r, d));
+          const weekly = routines.filter((r) => isPinned(r) && isDue(r, d));
           // One list for the day: anytime first, then morning, afternoon, evening. Within each, untimed first, then by time.
           const dayTasks = tasks.filter((t) => t.day === d);
           // A calendar event with the same name as something here shows once: the app's item, at the event's time, linked to the calendar.
