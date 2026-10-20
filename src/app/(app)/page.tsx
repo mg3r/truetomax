@@ -184,21 +184,6 @@ export default async function TodayPage() {
         )}
       </section>
 
-      {routine.length > 0 && (
-        <section aria-labelledby="routine">
-          <div className="flex items-baseline justify-between">
-            <h2 id="routine" className="section-title">
-              <Link href="/rhythm" className="hover:text-ink">Rhythm</Link>
-            </h2>
-            <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
-          </div>
-          <div className="mt-2">
-            <RoutineToday items={routine} checked={checked} day={day} times={Object.fromEntries(routineTime)} weekDone={weekDone} />
-          </div>
-        </section>
-      )}
-
-
       {(allDay.length > 0 || timedEvents.length > 0) && (
         <section aria-labelledby="calendar">
           <h2 id="calendar" className="section-title">Calendar</h2>
@@ -240,6 +225,21 @@ export default async function TodayPage() {
           </div>
         )}
       </section>
+
+      {routine.length > 0 && (
+        <section aria-labelledby="routine">
+          <div className="flex items-baseline justify-between">
+            <h2 id="routine" className="section-title">
+              <Link href="/rhythm" className="hover:text-ink">Rhythm</Link>
+            </h2>
+            <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
+          </div>
+          <div className="mt-2">
+            <RoutineToday items={routine} checked={checked} day={day} times={Object.fromEntries(routineTime)} weekDone={weekDone} />
+          </div>
+        </section>
+      )}
+
 
       <section aria-labelledby="moves">
         <h2 id="moves" className="section-title">Moves this week</h2>

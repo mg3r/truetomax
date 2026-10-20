@@ -70,7 +70,7 @@ const byWhen = (list: Routine[]) =>
     return px - py || (x.at_time ?? "").localeCompare(y.at_time ?? "") || a.sort - b.sort;
   });
 
-/** One quiet line describing a Rhythm item: "practice · weekly · 2× · any day · feeds Dinner series". */
+/** One quiet line describing a Rhythm item: "practice · weekly · 2× · any day · for Dinner series". */
 function summaryOf(r: Routine, kinds: boolean, feeds: string[]) {
   const when = whenOf(r);
   return [
@@ -78,7 +78,7 @@ function summaryOf(r: Routine, kinds: boolean, feeds: string[]) {
     r.cadence,
     r.cadence === "weekly" ? (isPinned(r) ? r.weekdays.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DAY_LETTERS[d]).join(", ") : `${timesOf(r)}× · any day`) : null,
     when,
-    feeds.length ? `feeds ${feeds.join(", ")}` : null,
+    feeds.length ? `for ${feeds.join(", ")}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -384,7 +384,7 @@ function RoutineRow({ r, week, doneOn, projects, links }: { r: Routine; week: st
         <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-7 text-xs">
           {isPractice(r) && links !== null && (
             <>
-          <span className="mr-1 text-muted">Feeds</span>
+          <span className="mr-1 text-muted">For</span>
           {projects.length ? (
             projects.map((p) => {
               const on = feeds.includes(p.id);
