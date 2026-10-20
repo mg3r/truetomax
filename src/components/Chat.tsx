@@ -174,8 +174,8 @@ function Sidebar({ conversations, current, onClose }: { conversations: Conversat
 
   return (
     <div className="fixed inset-0 z-40">
-      <button aria-label="Close conversations" onClick={onClose} className="absolute inset-0 bg-ink/20" />
-      <aside id="conversations" aria-label="Conversations" className="absolute inset-y-0 left-0 flex w-80 max-w-[85vw] flex-col border-r border-line bg-bg pt-[env(safe-area-inset-top)]">
+      <div aria-hidden="true" onClick={onClose} className="sidebar-scrim absolute inset-0" />
+      <aside id="conversations" aria-label="Conversations" className="sidebar-panel absolute inset-y-0 left-0 flex w-80 max-w-[85vw] flex-col border-r border-line bg-bg pt-[env(safe-area-inset-top)] shadow-[8px_0_32px_-16px_rgb(0_0_0/0.25)]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <h2 className="font-serif text-xl">Conversations</h2>
           <RemoveX label="Close" action={onClose} />

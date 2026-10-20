@@ -84,6 +84,7 @@ export async function scheduleTask(id: string, day: string | null) {
 export async function deleteTask(id: string) {
   const supabase = await db();
   await supabase.from("tasks").delete().eq("id", id);
+  await forget(supabase, "task", id);
   refresh();
 }
 
@@ -445,6 +446,8 @@ export async function setProjectPractices(projectId: string, practiceIds: string
 export async function resetPlan(fd: FormData) {
   if (fd.get("confirm") !== "clear") return;
   const supabase = await db();
+  const { data: planTasks } = await supabase.from("tasks").select("id").not("project_id", "is", null);
+  if (planTasks?.length) await supabase.from("memory").delete().eq("source_type", "task").in("source_id", planTasks.map((t) => t.id));
   await supabase.from("tasks").delete().not("project_id", "is", null);
   await supabase.from("tasks").delete().eq("status", "suggested");
   await supabase.from("projects").delete().not("id", "is", null);
@@ -714,8 +717,13 @@ export async function checkRoutine(id: string, day: string, done: boolean) {
 /* Deleting a project takes its tasks and goals with it. */
 export async function deleteProject(id: string, goBack = false) {
   const supabase = await db();
+  // Gone means gone: the partner's memory of it goes too.
+  const { data: tasks } = await supabase.from("tasks").select("id").eq("project_id", id);
+  const taskIds = (tasks ?? []).map((t) => t.id);
   await supabase.from("tasks").delete().eq("project_id", id);
   await supabase.from("projects").delete().eq("id", id);
+  await supabase.from("memory").delete().eq("source_type", "project").eq("source_id", id);
+  if (taskIds.length) await supabase.from("memory").delete().eq("source_type", "task").in("source_id", taskIds);
   refresh();
   if (goBack) redirect("/projects");
 }

@@ -97,3 +97,16 @@ export async function embedMissing(supabase: SupabaseClient, limit = 40) {
   }
   return done;
 }
+
+/** Drop memories of projects and tasks that have since been deleted, so the partner stops recalling them. */
+export async function pruneMemory(supabase: SupabaseClient) {
+  for (const [type, table] of [["project", "projects"], ["task", "tasks"]] as const) {
+    const { data: mem } = await supabase.from("memory").select("source_id").eq("source_type", type).limit(300);
+    const ids = (mem ?? []).map((m) => m.source_id as string);
+    if (!ids.length) continue;
+    const { data: live } = await supabase.from(table).select("id").in("id", ids);
+    const keep = new Set((live ?? []).map((r) => r.id));
+    const gone = ids.filter((id) => !keep.has(id));
+    if (gone.length) await supabase.from("memory").delete().eq("source_type", type).in("source_id", gone);
+  }
+}

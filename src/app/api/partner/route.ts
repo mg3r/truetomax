@@ -1,5 +1,5 @@
 import { NextResponse, after } from "next/server";
-import { remember } from "@/lib/memory";
+import { remember, pruneMemory } from "@/lib/memory";
 import { createClient } from "@/lib/supabase/server";
 import { ask, buildContext, PARTNER } from "@/lib/ai";
 import { ensureConversation, touchConversation } from "@/lib/conversations";
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
   // What you tell your partner becomes long-term memory too.
   if (saved && message.trim().length > 40) after(() => remember(supabase, "chat", saved.id, `Told the partner: ${message.trim()}`));
 
+  await pruneMemory(supabase).catch(() => {});
   const [context, history] = await Promise.all([
     buildContext(supabase, { query: message }),
     (convId ? supabase.from("messages").select("role, content").eq("conversation_id", convId) : supabase.from("messages").select("role, content"))
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
 
   try {
     const reply = await ask({
-      system: `${PARTNER}\n\nThis is a conversation in the Partner tab. Earlier conversations aren't shown here, but what matters from them is in long-term memory below. Keep replies short unless he asks for depth. If he decides something, offer to turn it into a task or goal by naming it exactly.\n\n# Current context\n${context}`,
+      system: `${PARTNER}\n\nThis is a conversation in the Partner tab. Earlier conversations aren't shown here, but what matters from them is in long-term memory below. The current context below is the truth right now: if earlier messages, his docs or memories mention projects, tasks or goals that aren't in the live lists, he has deleted them. Don't treat them as current or bring them back unless he does. Keep replies short unless he asks for depth. If he decides something, offer to turn it into a task or goal by naming it exactly.\n\n# Current context\n${context}`,
       messages: turns,
       maxTokens: 2500,
     });
