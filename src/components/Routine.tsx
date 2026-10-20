@@ -47,7 +47,7 @@ function Times({ value, onChange, small = false }: { value: number; onChange: (n
   return (
     <span className="inline-flex items-center gap-1.5" role="group" aria-label="Times a week">
       <button type="button" aria-label="Fewer" disabled={value <= 1} onClick={() => onChange(value - 1)} className={`${btn} grid place-items-center rounded-full border border-line text-muted hover:text-ink disabled:opacity-30`}>−</button>
-      <span className="min-w-[4.5rem] text-center tabular-nums">{value}× a week</span>
+      <span className="min-w-[1.75rem] text-center tabular-nums">{value}×</span>
       <button type="button" aria-label="More" disabled={value >= 7} onClick={() => onChange(value + 1)} className={`${btn} grid place-items-center rounded-full border border-line text-muted hover:text-ink disabled:opacity-30`}>+</button>
     </span>
   );
@@ -71,8 +71,9 @@ export function RoutineToday({ items, checked, day, times = {}, weekDone = {} }:
   };
 
   const groups = [
-    { label: "today", list: items.filter((r) => r.cadence !== "nightly") },
+    { label: "today", list: items.filter((r) => r.cadence === "daily") },
     { label: "tonight", list: items.filter((r) => r.cadence === "nightly") },
+    { label: "weekly", list: items.filter((r) => r.cadence === "weekly") },
   ].filter((g) => g.list.length);
 
   return (
@@ -147,10 +148,14 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
               {c.label}
             </Chip>
           ))}
+          {cadence === "weekly" && !days.length && (
+            <span className="ml-1 self-center">
+              <Times value={times} onChange={setTimes} />
+            </span>
+          )}
         </div>
         {cadence === "weekly" && (
-          <div className="mt-3 space-y-3">
-            {!days.length && <Times value={times} onChange={setTimes} />}
+          <div className="mt-3">
             <div className="flex flex-wrap gap-2" role="group" aria-label="Set days (optional)">
               <Chip on={!days.length} onClick={() => setDays([])}>Any day</Chip>
               {WEEK.map((d) => (
@@ -245,13 +250,13 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
             {c.label.toLowerCase()}
           </button>
         ))}
+        {r.cadence === "weekly" && !isPinned(r) && (
+          <span className="ml-1">
+            <Times small value={timesOf(r)} onChange={(n) => start(() => updateRoutine(r.id, { times_per_week: n }))} />
+          </span>
+        )}
         {r.cadence === "weekly" && (
-          <span className="ml-2 flex flex-wrap items-center gap-1">
-            {!isPinned(r) && (
-              <span className="mr-2">
-                <Times small value={timesOf(r)} onChange={(n) => start(() => updateRoutine(r.id, { times_per_week: n }))} />
-              </span>
-            )}
+          <span className="flex basis-full flex-wrap items-center gap-1 pt-1">
             <button
               aria-pressed={!isPinned(r)}
               onClick={() => isPinned(r) && start(() => updateRoutine(r.id, { weekdays: [], times_per_week: timesOf(r) }))}
