@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { addToSchedule } from "@/app/actions";
 
 const PARTS = [
@@ -49,15 +50,22 @@ export function TodayAdd({ day, projects }: { day: string; projects: { id: strin
             </button>
           ))}
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Exact time (optional)" className={`rounded-full border bg-transparent px-2.5 py-0.5 ${time ? "border-ink text-ink" : "border-line text-muted"}`} />
-          {projects.length > 0 && (
-            <>
-              <span aria-hidden="true" className="mx-1 h-4 border-l border-line" />
-              {projects.map((p) => (
-                <button key={p.id} type="button" aria-pressed={project === p.id} onClick={() => setProject(project === p.id ? null : p.id)} className={pill(project === p.id)}>
-                  {p.title}
-                </button>
-              ))}
-            </>
+        </div>
+      )}
+      {open && (
+        <div className="mt-1 flex flex-wrap items-center gap-1 text-sm" role="group" aria-label="Project (optional)">
+          <button type="button" aria-pressed={project === null} onClick={() => setProject(null)} className={pill(project === null)}>
+            No project
+          </button>
+          {projects.map((p) => (
+            <button key={p.id} type="button" aria-pressed={project === p.id} onClick={() => setProject(p.id)} className={pill(project === p.id)}>
+              {p.title}
+            </button>
+          ))}
+          {!projects.length && (
+            <Link href="/projects" className="px-2.5 py-1 text-muted underline decoration-line underline-offset-4 hover:text-ink">
+              Start a project
+            </Link>
           )}
         </div>
       )}

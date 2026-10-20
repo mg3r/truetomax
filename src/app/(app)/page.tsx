@@ -33,7 +33,7 @@ export default async function TodayPage() {
       // Unfinished one-time tasks carry over; things that repeat come back on their own day instead.
       .or(`and(day.lt.${day},status.eq.todo,source.neq.rhythm),and(day.eq.${day},status.in.(todo,done,suggested))`)
       .order("created_at"),
-    supabase.from("projects").select("id, title").eq("status", "active").order("created_at"),
+    supabase.from("projects").select("id, title").in("status", ["active", "paused"]).order("created_at"),
     supabase.from("journal_entries").select("id, body").eq("day", day).eq("prompt", d.question ?? "").maybeSingle(),
     supabase.from("moves").select("kind, amount").gte("day", weekStart),
     supabase.from("reviews").select("id", { count: "exact", head: true }).eq("seen", false),
