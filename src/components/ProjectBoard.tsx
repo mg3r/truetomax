@@ -43,7 +43,7 @@ export function ProjectBoard({ projects: initial, selected }: { projects: BoardP
 
   return (
     <DndContext sensors={sensors} onDragStart={(e: DragStartEvent) => setDragging(e.active.id as string)} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {COLUMNS.map((c) => (
           <Column
             key={c.id}

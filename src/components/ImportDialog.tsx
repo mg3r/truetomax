@@ -97,8 +97,8 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
         {copy.button}
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/20 p-4 sm:items-center" onClick={() => !busy && setOpen(false)}>
-          <div role="dialog" aria-modal="true" aria-label={copy.title} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-3xl border border-line bg-bg p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" onClick={() => !busy && setOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label={copy.title} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-3xl border border-line bg-bg p-5 shadow-[0_12px_48px_-12px_rgb(0_0_0/0.35)]">
             <div className="flex items-baseline justify-between gap-4">
               <h2 className="font-serif text-xl">{copy.title}</h2>
               <button type="button" onClick={() => setOpen(false)} disabled={busy} className="text-sm text-muted hover:text-ink">

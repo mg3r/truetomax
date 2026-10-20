@@ -11,7 +11,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "Every page shares one width, roomy enough for boards and long lists, with reading text kept to a comfortable line length. On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
       "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },

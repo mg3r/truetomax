@@ -37,10 +37,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
         <ImportDialog kind="projects" />
       </div>
 
-      {/* The board is wider than the page's reading column on a computer, so four columns have room. */}
-      <div className="lg:relative lg:left-1/2 lg:w-[min(68rem,calc(100vw-18rem))] lg:-translate-x-1/2">
-        <ProjectBoard projects={board} selected={selected ?? null} />
-      </div>
+      <ProjectBoard projects={board} selected={selected ?? null} />
 
       <IdeaList kind="venture" ideas={ideaRows.data ?? []} />
 

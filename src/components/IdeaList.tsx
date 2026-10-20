@@ -20,9 +20,9 @@ export function IdeaList({ kind, ideas }: { kind: "content" | "venture"; ideas: 
         />
       </div>
       {ideas.length ? (
-        <ul className="mt-2 divide-y divide-line">
+        <ul className="mt-2 grid gap-x-8 lg:grid-cols-3">
           {ideas.map((i) => (
-            <li key={i.id} className="py-3">
+            <li key={i.id} className="border-t border-line py-3">
               <p className="font-medium">{i.title}</p>
               {i.body && <p className="mt-0.5 text-sm text-muted">{i.body}</p>}
               {i.money_path && <p className="mt-1 text-sm"><span className="text-muted">Money path: </span>{i.money_path}</p>}

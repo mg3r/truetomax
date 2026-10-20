@@ -165,7 +165,7 @@ export default async function SocialsPage({ searchParams }: { searchParams: Prom
                 )}
               </div>
             )}
-            <ol className="space-y-4">
+            <ol className="grid gap-x-8 gap-y-4 lg:grid-cols-2">
               {read.recommendations.map((r, i) => (
                 <li key={i} className="border-t border-line pt-4">
                   <p className="font-semibold">{r.title}</p>
