@@ -44,9 +44,12 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 - [x] Simplified: repeating things live only in Rhythm (Schedule adds one-time things); Ideas folded into Projects (Backlog) and Socials (post ideas); one weekly review (no separate focus review); no board view — run `0018_simplify.sql`
 
+- [x] Moves noticed automatically from finished actions, journal and chat (plus Instagram); one line on Today, correctable — run `0019_auto_moves.sql`
+- [x] Rhythm dots are this week (Mon–Sun) and tappable to fill in a day you missed marking
+
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0018` in order if any haven't been run; check the 7am notification arrives.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0019` in order if any haven't been run; check the 7am notification arrives.
 
 ## v2 integrations
 5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.
