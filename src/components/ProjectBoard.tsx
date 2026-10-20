@@ -11,8 +11,8 @@ export type BoardProject = { id: string; title: string; status: string; next: st
 const COLUMNS = [
   { id: "review", title: "In review", empty: "Projects you're still deciding on." },
   { id: "active", title: "In progress", empty: "Drag a project here to start it." },
-  { id: "paused", title: "Backlog", empty: "Not now, maybe later." },
   { id: "done", title: "Done", empty: "Finished projects." },
+  { id: "paused", title: "Backlog", empty: "Not now, maybe later." },
 ] as const;
 
 const columnOf = (status: string) => (status === "eliminated" ? "done" : status);
