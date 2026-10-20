@@ -71,7 +71,7 @@ async function token(supabase: SupabaseClient) {
   return acct.access_token as string;
 }
 
-type Media = { id: string; caption?: string; media_type?: string; media_product_type?: string; permalink?: string; timestamp?: string; like_count?: number; comments_count?: number };
+type Media = { id: string; caption?: string; media_type?: string; media_product_type?: string; permalink?: string; thumbnail_url?: string; media_url?: string; timestamp?: string; like_count?: number; comments_count?: number };
 
 async function insights(id: string, access: string) {
   // "views" is still rolling out; if a post rejects it, ask again without it.
@@ -97,11 +97,15 @@ export async function syncInstagram(supabase: SupabaseClient, { force = false } 
 
   const access = await token(supabase);
   if (!access) return;
-  const [me, media] = await Promise.all([
-    fetch(`${GRAPH}/me?fields=username,followers_count&access_token=${access}`).then((r) => r.json()),
-    fetch(`${GRAPH}/me/media?fields=id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count&limit=25&access_token=${access}`).then((r) => r.json()),
-  ]);
-  const posts = (media.data ?? []) as Media[];
+  const me = await fetch(`${GRAPH}/me?fields=username,followers_count,media_count&access_token=${access}`).then((r) => r.json());
+  // Your posts, newest first, up to 100.
+  const posts: Media[] = [];
+  let next: string | null = `${GRAPH}/me/media?fields=id,caption,media_type,media_product_type,permalink,thumbnail_url,media_url,timestamp,like_count,comments_count&limit=50&access_token=${access}`;
+  while (next && posts.length < 100) {
+    const page: { data?: Media[]; paging?: { next?: string } } = await fetch(next).then((r) => r.json());
+    posts.push(...(page.data ?? []));
+    next = page.paging?.next ?? null;
+  }
   const { data: known } = await supabase.from("instagram_media").select("media_id");
   const seen = new Set((known ?? []).map((m) => m.media_id));
 
@@ -115,11 +119,16 @@ export async function syncInstagram(supabase: SupabaseClient, { force = false } 
       posted_at: m.timestamp ?? null,
       likes: m.like_count ?? null,
       comments: m.comments_count ?? null,
+      thumb_url: m.thumbnail_url ?? (m.media_type !== "VIDEO" ? m.media_url ?? null : null),
       ...(await insights(m.id, access)),
       synced_at: new Date().toISOString(),
     }))
   );
-  if (rows.length) await supabase.from("instagram_media").upsert(rows, { onConflict: "user_id,media_id" });
+  if (rows.length) {
+    const { error: upErr } = await supabase.from("instagram_media").upsert(rows, { onConflict: "user_id,media_id" });
+    // Before the socials migration adds the picture column, save without it.
+    if (upErr && /thumb_url/.test(upErr.message)) await supabase.from("instagram_media").upsert(rows.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== "thumb_url"))), { onConflict: "user_id,media_id" });
+  }
 
   const fresh = rows.filter((r) => !seen.has(r.media_id) && r.posted_at && r.posted_at >= acct.connected_at);
   if (fresh.length) {

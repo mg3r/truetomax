@@ -9,6 +9,13 @@ const SECTIONS: { title: string; body: string[] }[] = [
     ],
   },
   {
+    title: "Getting around",
+    body: [
+      "On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Routine, Schedule), building (Vision, Projects, Ideas), and reflecting and sharing (Journal, Socials, Partner). Profile sits at the bottom.",
+      "On your phone, the bar at the bottom has Today, Schedule, Projects and Partner; Menu opens everything else.",
+    ],
+  },
+  {
     title: "Today",
     body: [
       "Each morning the day is prepared for you: an affirmation, one line naming what would make today count, a random page from your copy of The Creative Act, and a question drawn from that page. The affirmation and question are written in the partner's own words; the page is from your book.",
@@ -47,10 +54,24 @@ const SECTIONS: { title: string; body: string[] }[] = [
     ],
   },
   {
-    title: "Journal and Ideas",
+    title: "Ideas",
     body: [
-      "Journal holds everything you've written. It's the richest thing your partner learns from.",
-      "Ideas has two sides. Work & income: feasible ways to earn from what you already do; test one, or eliminate it and say why, and it won't be suggested again. Sharing: posts and series to make, plus how your recent Instagram posts did.",
+      "Two kinds. Work & income: feasible ways to earn from what you already do. Test one, or eliminate it and say why, and it won't be suggested again. Sharing: posts and series to make, built from what you're doing this week and from what's landing on your socials.",
+    ],
+  },
+  {
+    title: "Journal",
+    body: [
+      "Everything you've written, newest first. It's the richest thing your partner learns from.",
+    ],
+  },
+  {
+    title: "Socials",
+    body: [
+      "Your pages in one place. Instagram for now; more platforms will join it here.",
+      "See your followers and the last 30 days at a glance (posts, views, reach, saves, shares), then every post with its numbers, sorted by Latest or Best. Tap a post to open it on Instagram.",
+      "\u201cRead my posts\u201d has your partner go through them and say what's working, what isn't, and 3\u20135 specific things to try this week, each with the evidence behind it. Post ideas under Ideas \u2192 Sharing use all of this.",
+      "Posts refresh from Instagram every few hours. New posts count as a move (shared) on Today automatically.",
     ],
   },
   {
@@ -70,19 +91,35 @@ const SECTIONS: { title: string; body: string[] }[] = [
   },
 ];
 
+const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+/** The guide, with its sections listed on the side (across the top on a phone) to jump straight to one. */
 export function HowItWorks() {
   return (
-    <div className="max-w-[62ch] space-y-10">
-      {SECTIONS.map((s) => (
-        <section key={s.title}>
-          <h2 className="font-serif text-xl">{s.title}</h2>
-          <div className="mt-2 space-y-3 leading-relaxed">
-            {s.body.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        </section>
-      ))}
+    <div className="md:grid md:grid-cols-[9rem_1fr] md:gap-8">
+      <nav aria-label="Sections" className="-mx-4 mb-8 overflow-x-auto px-4 md:sticky md:top-10 md:mx-0 md:mb-0 md:self-start md:overflow-visible md:px-0">
+        <ul className="flex gap-1.5 md:flex-col md:gap-0.5">
+          {SECTIONS.map((s) => (
+            <li key={s.title} className="shrink-0">
+              <a href={`#${slug(s.title)}`} className="block rounded-full border border-line px-3 py-1 text-sm whitespace-nowrap text-muted hover:text-ink md:rounded-none md:border-0 md:px-0 md:py-1">
+                {s.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="max-w-[62ch] space-y-12">
+        {SECTIONS.map((s) => (
+          <section key={s.title} id={slug(s.title)} className="scroll-mt-6">
+            <h2 className="font-serif text-xl">{s.title}</h2>
+            <div className="mt-2 space-y-3 leading-relaxed">
+              {s.body.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

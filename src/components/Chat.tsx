@@ -135,7 +135,7 @@ export function Chat({ initial, conversations, current, threads }: { initial: Ms
         <div ref={end} />
       </div>
 
-      <div className="sticky bottom-16 mt-6 bg-bg pt-3 pb-2 sm:bottom-0">
+      <div className="sticky bottom-16 mt-6 bg-bg pt-3 pb-2 md:bottom-0">
         <form onSubmit={send} className="flex items-end gap-2">
           <textarea
             value={draft}

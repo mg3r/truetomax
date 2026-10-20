@@ -24,6 +24,10 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] PWA on Supabase + Vercel + Claude API; muted, minimal, organic theme
 - [x] Google Calendar and Google Docs connection (code done; Google Cloud setup still to do)
 
+- [x] Socials tab (Instagram first): account at a glance, every post with its numbers (Latest/Best), and the partner's read with recommendations (run `0012_socials.sql`); Ideas → Sharing uses it as context
+- [x] Side navigation on computer (grouped: your day / building / reflecting and sharing, Profile at the bottom); phone keeps a bottom bar of four plus Menu
+- [x] Profile → Docs: how everything works, with a section list to jump around
+
 ## Next, in priority order
 1. **Fill in your Vision, Projects and Schedule yourself,** with what's alive today. Most important, because every suggestion the partner makes comes from this.
 2. **Partner suggests tasks for a project:** proposes 3–5 next steps from your vision, docs and history; you accept them into the project.
