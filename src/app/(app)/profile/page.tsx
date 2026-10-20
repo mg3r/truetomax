@@ -7,11 +7,13 @@ import { DocUpload, GoogleDocLink } from "@/components/Docs";
 import { googleConfigured } from "@/lib/google";
 import { instagramConfigured } from "@/lib/instagram";
 import { MorningToggle } from "@/components/MorningToggle";
+import { HowItWorks } from "@/components/HowItWorks";
 
 export const dynamic = "force-dynamic";
 
 const TABS = [
   { id: "context", label: "Context" },
+  { id: "docs", label: "Docs" },
   { id: "settings", label: "Settings" },
 ] as const;
 
@@ -60,6 +62,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       </div>
 
       {tab === "context" && <DocsTab />}
+      {tab === "docs" && <HowItWorks />}
       {tab === "settings" && <SettingsTab googleStatus={googleStatus} igStatus={igStatus} />}
     </div>
   );
