@@ -259,11 +259,11 @@ export default async function SchedulePage() {
 
           return (
             // Today stands out as its own card, so you find it at a glance.
-            <div key={d} id={isToday ? "today" : undefined} aria-current={isToday ? "date" : undefined} className={isToday ? "pebble -mx-4 bg-surface px-4 py-4 shadow-[0_0_0_1px_var(--ink)] sm:-mx-5 sm:px-5" : ""}>
+            <div key={d} id={isToday ? "today" : undefined} aria-current={isToday ? "date" : undefined} className={isToday ? "pebble -mx-4 bg-surface px-4 py-4 shadow-[0_0_0_1px_var(--clay)] sm:-mx-5 sm:px-5" : ""}>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-serif text-xl">
                   {WEEKDAYS[wd]}
-                  {isToday && <span className="ml-2 rounded-full bg-ink px-2.5 py-0.5 align-middle font-sans text-xs text-bg">Today</span>}
+                  {isToday && <span className="ml-2 rounded-full bg-clay px-2.5 py-0.5 align-middle font-sans text-xs text-bg">Today</span>}
                 </h2>
               </div>
               {entries.length ? (

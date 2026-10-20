@@ -87,7 +87,7 @@ function Column({ id, title, empty, count, children, onAdd }: { id: string; titl
   return (
     <section ref={setNodeRef} aria-label={title} className={`pebble min-h-32 bg-surface p-3 transition-shadow ${isOver ? "shadow-[0_0_0_1px_var(--ink)]" : ""}`}>
       <div className="flex items-baseline justify-between px-1">
-        <h2 className="text-sm font-medium">{title}</h2>
+        <h2 className={`text-sm font-medium ${id === "active" ? "text-clay" : ""}`}>{title}</h2>
         <span className="text-xs text-muted tabular-nums">{count}</span>
       </div>
       <ul className="mt-3 space-y-2">{children}</ul>

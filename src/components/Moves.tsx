@@ -42,7 +42,7 @@ export function MovesLine({ moves }: { moves: Move[] }) {
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-baseline justify-between gap-3 text-left">
         <span>
           <span className="section-title">Moves this week</span>
-          <span className="ml-3 font-serif text-lg">{parts.length ? parts.join(" · ") : <span className="text-muted">none yet</span>}</span>
+          <span className="ml-3 font-serif text-lg">{parts.length ? <span className="text-clay">{parts.join(" · ")}</span> : <span className="text-muted">none yet</span>}</span>
         </span>
         <span className="shrink-0 text-xs text-muted">{open ? "close" : "see"}</span>
       </button>
