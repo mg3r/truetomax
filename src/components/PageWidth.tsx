@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 // The pages with a lot to lay out (boards, posts, long lists) get the wide column; the rest stay a reading width.
-const WIDE = ["/projects", "/socials", "/vision"];
+const WIDE = ["/projects", "/socials"];
 
 export function PageWidth({ children }: { children: React.ReactNode }) {
   const path = usePathname();
