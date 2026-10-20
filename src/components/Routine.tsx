@@ -153,19 +153,18 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
               <Times value={times} onChange={setTimes} />
             </span>
           )}
-        </div>
-        {cadence === "weekly" && (
-          <div className="mt-3">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Set days (optional)">
+          {cadence === "weekly" && (
+            <>
+              <span aria-hidden="true" className="mx-1 self-stretch border-l border-line" />
               <Chip on={!days.length} onClick={() => setDays([])}>Any day</Chip>
               {WEEK.map((d) => (
                 <Chip key={d} on={days.includes(d)} onClick={() => setDays((s) => (s.includes(d) ? s.filter((x) => x !== d) : [...s, d]))}>
                   {DAY_LETTERS[d]}
                 </Chip>
               ))}
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
         <button className="btn mt-4" disabled={pending || !title.trim()}>
           Add
         </button>
@@ -256,7 +255,8 @@ function RoutineRow({ r, week, doneOn }: { r: Routine; week: string[]; doneOn: S
           </span>
         )}
         {r.cadence === "weekly" && (
-          <span className="flex basis-full flex-wrap items-center gap-1 pt-1">
+          <span className="flex flex-wrap items-center gap-1">
+            <span aria-hidden="true" className="mx-1 h-3 border-l border-line" />
             <button
               aria-pressed={!isPinned(r)}
               onClick={() => isPinned(r) && start(() => updateRoutine(r.id, { weekdays: [], times_per_week: timesOf(r) }))}
