@@ -125,7 +125,7 @@ export function TaskList({
                             start(() => renameTask(t.id, title));
                           }}
                         />
-                        {open !== t.id && (meta || t.reason) && (
+                        {!(open === t.id && (!done || t.reason)) && (meta || t.reason) && (
                           <p className="flex items-center gap-1.5 text-xs text-muted">
                             {meta}
                             {/* A small mark when it carries notes (the details from a post idea, or your own); open it to read them. */}
