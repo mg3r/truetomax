@@ -116,7 +116,7 @@ export function ScheduleAdd({
         ))}
         {!projects.length && (
           <Link href="/projects" className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
-            Start a project to add tasks to it
+            Start a project to add actions to it
           </Link>
         )}
       </div>

@@ -3,12 +3,20 @@
 import { useState, useTransition } from "react";
 import { updateProject, addGoal, renameGoal, setGoalStatus } from "@/app/actions";
 import { Grow } from "./Grow";
-import { Select } from "./Select";
+
+// Three states: in progress, in the backlog, or done. (Older "let go" projects count as done.)
+const STATUSES = [
+  { value: "active", label: "In progress" },
+  { value: "paused", label: "Backlog" },
+  { value: "done", label: "Done" },
+] as const;
+const statusOf = (s: string) => (s === "eliminated" ? "done" : s);
 
 /** Project name, description and status, all edited where they sit. */
 export function ProjectHeader({ p }: { p: { id: string; title: string; description: string; status: string } }) {
   const [title, setTitle] = useState(p.title);
   const [description, setDescription] = useState(p.description ?? "");
+  const [status, setStatus] = useState(p.status);
   const [, start] = useTransition();
 
   return (
@@ -30,19 +38,26 @@ export function ProjectHeader({ p }: { p: { id: string; title: string; descripti
         className="mt-2 w-full resize-none overflow-hidden bg-transparent text-muted placeholder:text-muted/70 focus:text-ink focus:outline-none"
       />
       <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <Select
-          name="status"
-          label="Status"
-          className="w-36"
-          defaultValue={p.status}
-          onChange={(v) => start(() => updateProject(p.id, { status: v }))}
-          options={[
-            { value: "active", label: "Active" },
-            { value: "paused", label: "Paused" },
-            { value: "done", label: "Finished" },
-            { value: "eliminated", label: "Let go" },
-          ]}
-        />
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Status">
+          {STATUSES.map((st) => {
+            const on = statusOf(status) === st.value;
+            return (
+              <button
+                key={st.value}
+                type="button"
+                aria-pressed={on}
+                onClick={() => {
+                  if (on) return;
+                  setStatus(st.value);
+                  start(() => updateProject(p.id, { status: st.value }));
+                }}
+                className={`rounded-full border px-3 py-1 ${on ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
+              >
+                {st.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -74,7 +89,7 @@ export function GoalList({ projectId, goals }: { projectId: string; goals: Goal[
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Add a goal, e.g. Host 2 paid dinners this month"
+          placeholder="Add a goal"
           aria-label="New goal, then press Enter"
           className="min-w-0 flex-1 bg-transparent placeholder:text-muted focus:outline-none"
         />

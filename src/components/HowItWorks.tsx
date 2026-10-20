@@ -18,8 +18,8 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Today",
     body: [
-      "Each morning the day is prepared for you: an affirmation, one line naming what would make today count (taken only from what you've set or uploaded yourself: your tasks, projects, schedule, rituals, practices, Vision, journal and docs, never from the partner's own ideas), a reading from your copy of The Creative Act, and a question drawn from it. The reading is a whole section: it starts where the section starts and runs until it ends, even across pages, so it never stops mid-thought. The affirmation and question are written in the partner's own words; the reading is your book.",
-      "Today is for doing, not planning: you add things on the other tabs (Actions, Rhythm, Schedule, Projects) and they show up here. Below the reading: your Rhythm to tick off (rituals and practices, with practices marked); today's Calendar events in their own list; then your Actions for today (from Actions, Schedule and projects), timed ones in time order and the rest by part of day. Unfinished one-time tasks carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
+      "Each morning the day is prepared for you: an affirmation, one line naming what would make today count (taken only from what you've set or uploaded yourself: your actions, projects, schedule, rituals, practices, Vision, journal and docs, never from the partner's own ideas), a reading from your copy of The Creative Act, and a question drawn from it. The reading is a whole section: it starts where the section starts and runs until it ends, even across pages, so it never stops mid-thought. The affirmation and question are written in the partner's own words; the reading is your book.",
+      "Today is for doing, not planning: you add things on the other tabs (Actions, Rhythm, Schedule, Projects) and they show up here. Below the reading: your Rhythm to tick off (rituals and practices, with practices marked); today's Calendar events in their own list; then your Actions for today (from Actions, Schedule and projects), timed ones in time order and the rest by part of day. Unfinished one-time actions carry over to the next day (marked \u201ccarried over\u201d); things that repeat on your Schedule don't, they come back on their next day.",
       "Your partner suggests up to three actions a day, starting with Up next ones from your projects. Each comes with the project it serves and the practice it's a session of, when there is one. Add the ones that fit; skip the rest. What you add, finish and skip teaches it what works.",
       "Moves this week counts every time you share your work or ask someone to pay you. It's the number that changes everything else. Write your answer to the question in the journal at the bottom.",
     ],
@@ -27,9 +27,9 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Actions",
     body: [
-      "Every action in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each task shows its day and project when it has one.",
+      "Every action in one running checklist: from all your projects, and ones with no project. It's grouped into Today, Coming up (dated for later this week or beyond), Up next, Later and Done, and each action shows its day and project when it has one.",
       "Add like a Notes checklist: tap the empty line at the end of Today, Up next or Later, type, press Enter, and keep going. Tap an action to rename it, move it between Today, Up next and Later, put it in a project, or mark it as a session of one of your practices (finishing it then logs that practice). Tick to finish; \u00d7 deletes. Filter by project at the top; anything you add while filtered goes into that project.",
-      "Import a list: take a photo of a handwritten list, or upload a PDF, Word or text file. Each item is added to Up next, and anything crossed out or ticked is marked done, including tasks you already had.",
+      "Import a list: take a photo of a handwritten list, or upload a PDF, Word or text file. Each item is added to Up next, and anything crossed out or ticked is marked done, including actions you already had.",
     ],
   },
   {
@@ -45,8 +45,8 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Schedule",
     body: [
-      "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any task set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
-      "Add something as Just once (pick the day) or Every week (pick the days); anything that lands on today shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time task is the same task everywhere: tick it, edit it or delete it here, on Today, or in its project.",
+      "Your whole week in one place. Each day shows the things you repeat every week, your Google Calendar events, and any action set for that date: ones you added on Today, here, or in a project. Anytime comes first, then morning, afternoon and evening, in time order.",
+      "Add something as Just once (pick the day) or Every week (pick the days); anything that lands on today shows on Today right away. Set it with a part of day, an optional exact time, and an optional project. A one-time action is the same action everywhere: tick it, edit it or delete it here, on Today, or in its project.",
       "Tap an item's words to edit it, or its time to change when it happens. If something is in your Google Calendar and also here (same name), it shows once: your item, at the calendar's time, with a link to the event. Tap a calendar event to open it in Google Calendar. Weekly items are added to Today each morning; \u201cAdd changes to today\u201d brings in edits right away.",
     ],
   },
@@ -59,10 +59,10 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Projects",
     body: [
-      "What you're building. Each project has goals (plain text with a checkbox) and tasks, shown as a list or a board. Everything edits in place; × deletes.",
+      "What you're building. Each project has a status (In progress, Backlog or Done), goals (plain text with a checkbox) and actions, shown as a list or a board. Everything edits in place; × deletes.",
       "A project's actions sit in one of four places. Today: on Today and on Schedule, and it carries over until it's done. Up next: planned and waiting. It shows in your Actions list, and your partner offers it as one of the morning's suggestions when it fits (\u201cFrom Pottery\u201d); adding it moves it to today. Later: someday, out of the way; it never comes to you on its own, so move it to Up next when it's time. Done: finished.",
-      "Your partner suggests next steps for each project: tap \u201cSuggest next steps\u201d and it proposes 3\u20135, drawing on the project's goals and tasks, your vision, your docs and uploads, your journal, your socials and what it has learned about how you work. Keep the ones you want (they go to Up next); let the rest go.",
-      "Deleting a project removes its tasks and goals, and your partner forgets them too.",
+      "Your partner suggests next steps for each project: tap \u201cSuggest next steps\u201d and it proposes 3\u20135, drawing on the project's goals and actions, your vision, your docs and uploads, your journal, your socials and what it has learned about how you work. Keep the ones you want (they go to Up next); let the rest go.",
+      "Deleting a project removes its actions and goals, and your partner forgets them too.",
     ],
   },
   {
@@ -91,7 +91,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
     body: [
       "Chat is your creative partner. Ask it anything, think out loud, or tell it what happened. Each conversation is its own thread; start a new one any time and find past ones under Conversations. A focus review runs process of elimination: what to keep, pause or drop, and the one path most likely to bring in income in the next 90 days.",
       "Before every reply it reads your Vision, projects, routine, schedule, recent journal, your docs, what it has learned, memories from further back that match what you're talking about, and the passages from your docs that bear on it, found by meaning rather than exact words. Every doc is read in full and kept as page-sized passages, so even a very long doc is searchable all the way through; the partner always sees the opening of each doc plus the passages that matter right now. What you tell it in chat becomes memory too.",
-      "Learned is what it has figured out about you. Once a week (when there's enough to go on) it reads everything and proposes things it thinks are true for you to confirm or reject, suggests schedule changes, tunes how it suggests tasks, and writes you a short review. Confirmed things steer every suggestion; rejected things are never acted on. A dot shows when something is waiting for you.",
+      "Learned is what it has figured out about you. Once a week (when there's enough to go on) it reads everything and proposes things it thinks are true for you to confirm or reject, suggests schedule changes, tunes how it suggests actions, and writes you a short review. Confirmed things steer every suggestion; rejected things are never acted on. A dot shows when something is waiting for you.",
     ],
   },
   {

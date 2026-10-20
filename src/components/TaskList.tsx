@@ -232,7 +232,7 @@ function Title({ task, done, onFocus, onRename }: { task: ListTask; done: boolea
         if (!value.trim()) return setValue(task.title);
         if (value !== task.title) onRename(value.trim());
       }}
-      aria-label="Task"
+      aria-label="Action"
       className={`w-full bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""}`}
     />
   );

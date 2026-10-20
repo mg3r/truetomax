@@ -42,7 +42,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       <div>
         <div className="flex items-baseline justify-between">
           <Link href="/projects" className="text-sm text-muted hover:text-ink">Projects</Link>
-          <DeleteButton action={deleteProject.bind(null, id, true)} label="Delete project" confirm={`Delete "${p.title}" and its tasks?`} />
+          <DeleteButton action={deleteProject.bind(null, id, true)} label="Delete project" confirm={`Delete "${p.title}" and its actions?`} />
         </div>
         <ProjectHeader p={p} />
       </div>
@@ -62,7 +62,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </section>
 
       <section aria-labelledby="tasks">
-        <h2 id="tasks" className="section-title">tasks</h2>
+        <h2 id="tasks" className="section-title">actions</h2>
         <div className="mt-3">
           <TaskPanel projectId={id} tasks={tasks} today={day} practices={practices} />
         </div>

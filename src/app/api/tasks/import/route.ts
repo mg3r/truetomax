@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     }
 
     const items = parse(reply);
-    if (!items.length) return NextResponse.json({ error: "Couldn't find any tasks in that. Try a clearer photo." }, { status: 422 });
+    if (!items.length) return NextResponse.json({ error: "Couldn't find any actions in that. Try a clearer photo." }, { status: 422 });
 
     // Match against what you already have, so importing the same list twice doesn't double it.
     const { data: existing } = await supabase.from("tasks").select("id, title, status").in("status", ["todo", "done"]).neq("source", "rhythm");

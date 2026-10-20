@@ -60,8 +60,8 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add a task"
-            aria-label="New task"
+            placeholder="Add an action"
+            aria-label="New action"
             className="field min-w-0 flex-1"
           />
           <button className="btn" disabled={!title.trim()}>Add</button>
@@ -162,7 +162,7 @@ export function TaskPanel({ projectId, tasks: initial, today, practices = [] }: 
               </section>
             );
           })}
-          {!tasks.length && <p className="text-sm text-muted">No tasks yet. Add the next step above.</p>}
+          {!tasks.length && <p className="text-sm text-muted">No actions yet. Add the next step above.</p>}
         </div>
       )}
     </div>
@@ -184,7 +184,7 @@ function TitleInput({ task, done, onFocus, onRename }: { task: BoardTask; done: 
         if (!value.trim()) return setValue(task.title);
         if (value !== task.title) onRename(value.trim());
       }}
-      aria-label="Task"
+      aria-label="Action"
       className={`min-w-0 flex-1 bg-transparent focus:outline-none ${done ? "text-muted line-through decoration-line" : ""}`}
     />
   );

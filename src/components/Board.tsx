@@ -18,7 +18,7 @@ import { RemoveX } from "./RemoveX";
 export type BoardTask = { id: string; title: string; status: string; day: string | null; source: string; reason: string | null; routine_id?: string | null };
 
 export const LANES: { id: Lane; title: string; hint: string; empty: string }[] = [
-  { id: "later", title: "Later", hint: "Not scheduled", empty: "Ideas and someday tasks wait here." },
+  { id: "later", title: "Later", hint: "Not scheduled", empty: "Someday actions wait here." },
   { id: "next", title: "Up next", hint: "Your partner offers these", empty: "Drag something here to line it up." },
   { id: "today", title: "Today", hint: "Shows on Today", empty: "Nothing for this project today." },
   { id: "done", title: "Done", hint: "Last two weeks", empty: "Finished work lands here." },

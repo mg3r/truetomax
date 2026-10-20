@@ -57,7 +57,7 @@ export default async function ProjectsPage() {
           {active.map((p, i) => (
             <li key={p.id} className="relative">
               <ProjectCard p={card(p, i)} />
-              <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its tasks?`} className="absolute top-3 right-3" />
+              <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} className="absolute top-3 right-3" />
             </li>
           ))}
         </ul>
@@ -66,22 +66,26 @@ export default async function ProjectsPage() {
       )}
 
 
-      {resting.length > 0 && (
-        <section aria-labelledby="resting">
-          <h2 id="resting" className="section-title">paused, finished and eliminated</h2>
-          <ul className="mt-2 divide-y divide-line">
-            {resting.map((p) => (
-              <li key={p.id} className="flex items-center gap-2">
-                <Link href={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-baseline justify-between gap-4 py-2.5">
-                  <span className="text-muted">{p.title}{p.status_note ? <span className="text-sm">: {p.status_note}</span> : null}</span>
-                  <span className="shrink-0 text-xs text-muted">{p.status === "done" ? "finished" : p.status}</span>
-                </Link>
-                <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its tasks?`} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {[
+        { title: "backlog", list: resting.filter((p) => p.status === "paused") },
+        { title: "done", list: resting.filter((p) => p.status !== "paused") },
+      ]
+        .filter((g) => g.list.length)
+        .map((g) => (
+          <section key={g.title} aria-label={g.title}>
+            <h2 className="section-title">{g.title}</h2>
+            <ul className="mt-2 divide-y divide-line">
+              {g.list.map((p) => (
+                <li key={p.id} className="flex items-center gap-2">
+                  <Link href={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-baseline justify-between gap-4 py-2.5">
+                    <span className="text-muted">{p.title}{p.status_note ? <span className="text-sm">: {p.status_note}</span> : null}</span>
+                  </Link>
+                  <RemoveX action={deleteProject.bind(null, p.id, false)} label={`Delete ${p.title}`} confirm={`Delete "${p.title}" and its actions?`} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
     </div>
   );
 }
