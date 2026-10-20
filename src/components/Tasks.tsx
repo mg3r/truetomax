@@ -101,7 +101,7 @@ export function SuggestionRow({
       </button>
       {task.reason && <p className="mt-0.5 text-sm text-muted">{task.reason}</p>}
       {open && (
-        <ActionEditor action={a} today={today} projects={projects} practices={practices} showWhere={false} onChange={(patch) => setA((x) => ({ ...x, ...patch }))} onClose={() => setOpen(false)} />
+        <ActionEditor action={a} today={today} projects={projects} practices={practices} showWhere={false} showNotes={false} onChange={(patch) => setA((x) => ({ ...x, ...patch }))} onClose={() => setOpen(false)} />
       )}
       <div className="mt-2 flex gap-2">
         <button className="btn-quiet !border-ink !text-ink" onClick={() => start(() => setTaskStatus(task.id, "todo"))}>

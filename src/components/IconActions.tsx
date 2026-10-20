@@ -1,14 +1,25 @@
 "use client";
 
 import { useTransition } from "react";
+import { notify } from "./Toaster";
 
 const base = "grid h-9 w-9 place-items-center rounded-full border border-line text-muted disabled:opacity-40";
 
 /** A round + that keeps something (an idea becomes a project in review, or a post idea goes to Up next). */
-export function PlusButton({ action, label }: { action: () => Promise<void>; label: string }) {
+export function PlusButton({ action, label, done }: { action: () => Promise<void>; label: string; done?: { text: string; href: string; link: string } }) {
   const [pending, start] = useTransition();
   return (
-    <button type="button" aria-label={label} title={label} disabled={pending} onClick={() => start(() => action())} className={`${base} hover:border-ink hover:text-ink`}>
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          await action();
+          if (done) notify(done.text, done.href, done.link);
+        })
+      } className={`${base} hover:border-ink hover:text-ink`}>
       <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
         <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>

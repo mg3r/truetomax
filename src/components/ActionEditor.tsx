@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useClickAway } from "@/lib/useClickAway";
 import { editTask, moveTask, setTaskProjects, setTaskPractices, type Lane } from "@/app/actions";
 import { PickMany } from "./PickMany";
+import { Grow } from "./Grow";
 import { projectsOf, practicesOf } from "@/lib/links";
 
 const UNDATED = "9999-12-31";
@@ -19,6 +20,7 @@ export type EditableAction = {
   routine_id?: string | null;
   project_ids?: string[] | null;
   routine_ids?: string[] | null;
+  reason?: string | null;
 };
 
 const PARTS = [
@@ -54,6 +56,7 @@ export function ActionEditor({
   onChange,
   onClose,
   showWhere = true,
+  showNotes = true,
 }: {
   action: EditableAction;
   today: string;
@@ -62,6 +65,8 @@ export function ActionEditor({
   onChange: (patch: Partial<EditableAction>) => void;
   onClose: () => void;
   showWhere?: boolean;
+  /** Off where the notes are already shown above (partner suggestions). */
+  showNotes?: boolean;
 }) {
   const [, start] = useTransition();
   // Tap anywhere outside the action's row (or press Escape) to close; every change has already saved.
@@ -72,6 +77,7 @@ export function ActionEditor({
   }, []);
   useClickAway(row, true, onClose);
   const [time, setTime] = useState(action.at_time?.slice(0, 5) ?? "");
+  const [notes, setNotes] = useState(action.reason ?? "");
   const lane = laneOfAction(action, today);
   const dated = action.day && action.day !== UNDATED && action.day > today;
 
@@ -148,6 +154,20 @@ export function ActionEditor({
         }}
       />
 
+      {showNotes && (
+        <Grow
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() => {
+            if (notes.trim() === (action.reason ?? "").trim()) return;
+            onChange({ reason: notes.trim() || null });
+            start(() => editTask(action.id, { notes }));
+          }}
+          placeholder="Notes"
+          aria-label="Notes"
+          className="mt-1 block w-full resize-none rounded-xl border border-line bg-transparent px-3 py-2 text-sm whitespace-pre-wrap placeholder:text-muted focus:border-ink focus:outline-none"
+        />
+      )}
     </div>
   );
 }

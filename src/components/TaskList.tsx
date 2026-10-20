@@ -10,7 +10,7 @@ import { LineEdit } from "./LineEdit";
 
 const UNDATED = "9999-12-31";
 
-export type ListTask = { id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null; project_ids?: string[] | null; routine_ids?: string[] | null; part_of_day?: string | null; at_time?: string | null };
+export type ListTask = { reason?: string | null; id: string; title: string; status: string; day: string | null; project_id: string | null; routine_id?: string | null; project_ids?: string[] | null; routine_ids?: string[] | null; part_of_day?: string | null; at_time?: string | null };
 type Project = { id: string; title: string };
 type Group = "today" | "scheduled" | "next" | "later" | "done";
 
@@ -124,7 +124,17 @@ export function TaskList({
                             start(() => renameTask(t.id, title));
                           }}
                         />
-                        {meta && <p className="text-xs text-muted">{meta}</p>}
+                        {(meta || t.reason) && (
+                          <p className="flex items-center gap-1.5 text-xs text-muted">
+                            {meta}
+                            {/* A small mark when it carries notes (the details from a post idea, or your own); open it to read them. */}
+                            {t.reason && (
+                              <svg width="11" height="11" viewBox="0 0 12 12" aria-label="Has notes" role="img" className="shrink-0">
+                                <path d="M2.5 3.5h7M2.5 6h7M2.5 8.5h4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                              </svg>
+                            )}
+                          </p>
+                        )}
                       </div>
                       <RemoveX
                         label={`Delete ${t.title}`}

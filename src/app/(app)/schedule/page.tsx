@@ -247,7 +247,7 @@ export default async function SchedulePage() {
                     item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
                     done={t.status === "done"}
                     calendar={cal}
-                    action={{ id: t.id, day: t.day, status: t.status, part_of_day: t.part_of_day ?? null, at_time: t.at_time ?? null, project_id: t.project_id ?? null, routine_id: t.routine_id ?? null, project_ids: t.project_ids ?? null, routine_ids: t.routine_ids ?? null }}
+                    action={{ id: t.id, day: t.day, status: t.status, part_of_day: t.part_of_day ?? null, at_time: t.at_time ?? null, project_id: t.project_id ?? null, routine_id: t.routine_id ?? null, project_ids: t.project_ids ?? null, routine_ids: t.routine_ids ?? null, reason: t.reason ?? null }}
                     today={day}
                     projects={projects}
                     practices={practices}

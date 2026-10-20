@@ -33,9 +33,9 @@ export function IdeaList({ kind, ideas }: { kind: "content" | "venture"; ideas: 
               {i.first_step && <p className="mt-1 text-sm"><span className="text-muted">{projects ? "First step: " : "Next time: "}</span>{i.first_step}</p>}
               <div className="mt-2 flex gap-2">
                 {projects ? (
-                  <PlusButton action={ideaToProject.bind(null, i.id, "review")} label="Add to projects (In review)" />
+                  <PlusButton action={ideaToProject.bind(null, i.id, "review")} label="Add to projects (In review)" done={{ text: `Added “${i.title}” to your board, In review`, href: "/projects", link: "See it" }} />
                 ) : (
-                  <PlusButton action={contentIdeaToTask.bind(null, i.id)} label="Add to Up next" />
+                  <PlusButton action={contentIdeaToTask.bind(null, i.id)} label="Add to Up next in Actions" done={{ text: "Added to Up next, with all its details", href: "/actions", link: "Open Actions" }} />
                 )}
                 <TrashButton action={letGoOfIdea.bind(null, i.id)} label="Delete idea" confirm={`Delete "${i.title}"? It's gone for good and won't be suggested again.`} />
               </div>

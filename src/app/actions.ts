@@ -292,17 +292,18 @@ export async function ideaToProject(id: string, status: "review" | "active" | "p
     .insert({ title: idea.title, description: [idea.body, idea.money_path && `Money path: ${idea.money_path}`].filter(Boolean).join("\n\n"), makes_money: !!idea.money_path, status })
     .select("id")
     .single();
-  if (project && idea.first_step) await supabase.from("tasks").insert({ title: idea.first_step, project_id: project.id, day: UNDATED });
+  if (project && idea.first_step) await supabase.from("tasks").insert({ title: idea.first_step, project_id: project.id, day: UNDATED, reason: idea.body ?? null });
   await supabase.from("ideas").update({ status: "planned", project_id: project?.id }).eq("id", id);
   refresh();
 }
 
 export async function contentIdeaToTask(id: string) {
   const supabase = await db();
-  const { data: idea } = await supabase.from("ideas").select("title, first_step").eq("id", id).single();
+  const { data: idea } = await supabase.from("ideas").select("title, body, first_step, money_path").eq("id", id).single();
   if (!idea) return;
-  // A post idea you keep becomes an Up next action, ready for when it fits.
-  await supabase.from("tasks").insert({ title: idea.first_step ? `${idea.title}: ${idea.first_step}` : idea.title, day: UNDATED });
+  // A post idea you keep becomes an Up next action, ready for when it fits. Everything the idea said comes with it, as its notes.
+  const notes = [idea.first_step && `Next time: ${idea.first_step}`, idea.body, idea.money_path && `Money path: ${idea.money_path}`].filter(Boolean).join("\n\n");
+  await supabase.from("tasks").insert({ title: idea.title, reason: notes || null, day: UNDATED, source: "partner" });
   await supabase.from("ideas").update({ status: "planned" }).eq("id", id);
   refresh();
 }
@@ -777,8 +778,10 @@ export async function editRhythm(id: string, fields: { title?: string; part_of_d
 }
 
 /** Edit a one-time task where it sits on Schedule: words, part of day, or time. */
-export async function editTask(id: string, fields: { title?: string; part_of_day?: string | null; at_time?: string | null }) {
+export async function editTask(id: string, fields: { title?: string; part_of_day?: string | null; at_time?: string | null; notes?: string | null }) {
   const patch: Record<string, unknown> = {};
+  // An action's notes: the details that came with it (a post idea, the partner's why), or anything you add.
+  if (fields.notes !== undefined) patch.reason = fields.notes?.trim() ? fields.notes.trim().slice(0, 4000) : null;
   if (fields.title !== undefined) {
     if (!fields.title.trim()) return;
     patch.title = fields.title.trim();
