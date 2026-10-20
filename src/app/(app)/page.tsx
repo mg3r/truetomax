@@ -11,6 +11,7 @@ import { eventsForDay, googleConfigured, timeLabel } from "@/lib/google";
 import { JournalForm } from "@/components/JournalForm";
 import { RoutineToday } from "@/components/Routine";
 import { isDue, type Routine } from "@/lib/routine";
+import { sameThing } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
 
@@ -73,13 +74,31 @@ export default async function TodayPage() {
   ]);
   const hhmm = (iso: string) =>
     new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: process.env.APP_TIMEZONE || "America/New_York" }).format(new Date(iso));
-  const allDay = (events ?? []).filter((e) => e.allDay);
+  // A calendar event with the same name as a task or routine item shows once: the item you tick, at the event's time.
+  const routineTime = new Map<string, string>();
+  const taskTime = new Map<string, string>();
+  const shownEvents = (events ?? []).filter((e) => {
+    const t = list.find((x) => !taskTime.has(x.id) && sameThing(x.title, e.title));
+    if (t) {
+      if (!e.allDay && !t.at_time) taskTime.set(t.id, hhmm(e.start!));
+      else taskTime.set(t.id, "");
+      return false;
+    }
+    const r = routine.find((x) => !routineTime.has(x.id) && sameThing(x.title, e.title));
+    if (r) {
+      routineTime.set(r.id, e.allDay ? "" : timeLabel(e.start!));
+      return false;
+    }
+    return true;
+  });
+  const timed = list.map((t) => (taskTime.get(t.id) ? { ...t, at_time: taskTime.get(t.id)! } : t));
+  const allDay = shownEvents.filter((e) => e.allDay);
   const schedule = [
-    ...(events ?? []).filter((e) => !e.allDay).map((e) => ({ key: `e-${e.id}`, at: hhmm(e.start!), event: e, task: null as Task | null })),
-    ...list.filter((t) => t.at_time).map((t) => ({ key: t.id, at: t.at_time!.slice(0, 5), event: null, task: t })),
+    ...shownEvents.filter((e) => !e.allDay).map((e) => ({ key: `e-${e.id}`, at: hhmm(e.start!), event: e, task: null as Task | null })),
+    ...timed.filter((t) => t.at_time).map((t) => ({ key: t.id, at: t.at_time!.slice(0, 5), event: null, task: t })),
   ].sort((a, b) => a.at.localeCompare(b.at));
   const PART: Record<string, number> = { morning: 0, afternoon: 1, evening: 2 };
-  const untimed = list
+  const untimed = timed
     .filter((t) => !t.at_time)
     .sort((a, b) => Number(a.status === "done") - Number(b.status === "done") || (PART[a.part_of_day ?? ""] ?? 3) - (PART[b.part_of_day ?? ""] ?? 3));
 
@@ -147,7 +166,7 @@ export default async function TodayPage() {
             <span className="text-sm text-muted">{routineDone} of {routine.length}</span>
           </div>
           <div className="mt-2">
-            <RoutineToday items={routine} checked={checked} day={day} />
+            <RoutineToday items={routine} checked={checked} day={day} times={Object.fromEntries(routineTime)} />
           </div>
         </section>
       )}

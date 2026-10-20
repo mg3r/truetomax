@@ -3,6 +3,7 @@ import { today, weekdayOf, WEEKDAYS, addDays } from "@/lib/dates";
 import { applyRoutineToday } from "@/app/actions";
 import { ScheduleAdd } from "@/components/ScheduleAdd";
 import { ScheduleItem } from "@/components/ScheduleItem";
+import { sameThing } from "@/lib/match";
 import { eventsForRange, timeLabel } from "@/lib/google";
 import { ActionButton } from "@/components/DeleteButton";
 import Link from "next/link";
@@ -55,11 +56,12 @@ function RoutineSummary({ label, done, total, ahead }: { label: string; done: nu
   );
 }
 
-function RoutineLine({ title }: { title: string }) {
+function RoutineLine({ title, cal }: { title: string; cal?: { link?: string; label: string } | null }) {
   return (
     <li className="flex items-center gap-3 py-2">
-      <span className="w-24 shrink-0 text-sm text-muted">routine</span>
+      <span className="w-24 shrink-0 text-sm text-muted tabular-nums">{cal ? cal.label : "routine"}</span>
       <Link href="/routine" className="min-w-0 flex-1 hover:underline">{title}</Link>
+      {cal && (cal.link ? <a href={cal.link} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-muted hover:text-ink hover:underline">routine, calendar</a> : <span className="shrink-0 text-xs text-muted">routine, calendar</span>)}
     </li>
   );
 }
@@ -116,8 +118,20 @@ export default async function SchedulePage() {
           const list = items.filter((r) => r.weekday === wd);
           const weekly = routines.filter((r) => r.cadence === "weekly" && isDue(r, d));
           // One list for the day: anytime first, then morning, afternoon, evening. Within each, untimed first, then by time.
+          const dayTasks = tasks.filter((t) => t.day === d);
+          // A calendar event with the same name as something here shows once: the app's item, at the event's time, linked to the calendar.
+          const dayEvents = events?.[d] ?? [];
+          const used = new Set<string>();
+          const eventFor = (title: string) => {
+            const e = dayEvents.find((ev) => !used.has(ev.id) && sameThing(ev.title, title));
+            if (e) used.add(e.id);
+            return e ? { link: e.link, at: e.allDay ? null : hhmm(e.start!), label: e.allDay ? "all day" : timeLabel(e.start!) } : null;
+          };
+          const weeklyMatched = weekly.map((r) => ({ r, cal: eventFor(r.title) }));
+          const listMatched = list.map((r) => ({ r, cal: eventFor(r.title) }));
+          const tasksMatched = dayTasks.map((t) => ({ t, cal: eventFor(t.title) }));
           const entries = [
-            ...(events?.[d] ?? []).map((e) => {
+            ...dayEvents.filter((e) => !used.has(e.id)).map((e) => {
               const at = e.allDay ? null : hhmm(e.start!);
               return { key: `e-${e.id}`, bucket: at ? BUCKET[partForTime(at)] : 0, at, sort: 0, node: <EventLine key={`e-${e.id}`} label={e.allDay ? "all day" : timeLabel(e.start!)} title={e.title} link={e.link} /> };
             }),
@@ -127,37 +141,46 @@ export default async function SchedulePage() {
             ...(nightlyItems.length
               ? [{ key: "rn", bucket: 3, at: "99:99", sort: 0, node: <RoutineSummary key="rn" label="Nightly routine" total={nightlyItems.length} done={nightlyItems.filter((r) => checked.has(`${r.id}:${d}`)).length} ahead={d > day} /> }]
               : []),
-            ...weekly.map((r) => ({ key: `w-${r.id}`, bucket: 0, at: null, sort: r.sort, node: <RoutineLine key={`w-${r.id}`} title={r.title} /> })),
-            ...list.map((r) => {
-              const part = partOf(r);
+            ...weeklyMatched.map(({ r, cal }) => ({
+              key: `w-${r.id}`,
+              bucket: cal?.at ? BUCKET[partForTime(cal.at)] : 0,
+              at: cal?.at ?? null,
+              sort: r.sort,
+              node: <RoutineLine key={`w-${r.id}`} title={r.title} cal={cal} />,
+            })),
+            ...listMatched.map(({ r, cal }) => {
+              const own = r.at_time?.slice(0, 5) ?? null;
+              const at = own ?? cal?.at ?? null;
+              const part = own ? partOf(r) : cal?.at ? partForTime(cal.at) : partOf(r);
               return {
                 key: r.id,
                 bucket: part ? BUCKET[part] : 0,
-                at: r.at_time?.slice(0, 5) ?? null,
+                at,
                 sort: r.sort,
-                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={r.project_id ? projName.get(r.project_id) : null} />,
+                node: <ScheduleItem key={r.id} item={{ ...r, part_of_day: r.part_of_day ?? null }} project={r.project_id ? projName.get(r.project_id) : null} calendar={cal} />,
               };
             }),
-            ...tasks
-              .filter((t) => t.day === d)
-              .map((t) => {
-                const part = partOf({ ...t, weekday: 0, sort: 0 } as Item);
-                return {
-                  key: `t-${t.id}`,
-                  bucket: part ? BUCKET[part] : 0,
-                  at: t.at_time?.slice(0, 5) ?? null,
-                  sort: 50,
-                  node: (
-                    <ScheduleItem
-                      key={`t-${t.id}`}
-                      kind="task"
-                      item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
-                      project={t.project_id ? projName.get(t.project_id) : null}
-                      done={t.status === "done"}
-                    />
-                  ),
-                };
-              }),
+            ...tasksMatched.map(({ t, cal }) => {
+              const own = t.at_time?.slice(0, 5) ?? null;
+              const at = own ?? cal?.at ?? null;
+              const part = own ? partOf({ ...t, weekday: 0, sort: 0 } as Item) : cal?.at ? partForTime(cal.at) : partOf({ ...t, weekday: 0, sort: 0 } as Item);
+              return {
+                key: `t-${t.id}`,
+                bucket: part ? BUCKET[part] : 0,
+                at,
+                sort: 50,
+                node: (
+                  <ScheduleItem
+                    key={`t-${t.id}`}
+                    kind="task"
+                    item={{ id: t.id, title: t.title, at_time: t.at_time, part_of_day: t.part_of_day ?? null }}
+                    project={t.project_id ? projName.get(t.project_id) : null}
+                    done={t.status === "done"}
+                    calendar={cal}
+                  />
+                ),
+              };
+            }),
           ].sort((x, y) => x.bucket - y.bucket || (x.at ?? "").localeCompare(y.at ?? "") || x.sort - y.sort);
 
           return (

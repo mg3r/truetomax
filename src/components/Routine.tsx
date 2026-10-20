@@ -42,7 +42,7 @@ function Check({ done, title, onClick }: { done: boolean; title: string; onClick
 }
 
 /** Today's routine: tick things off as you go. Nightly sits last, for the evening. */
-export function RoutineToday({ items, checked, day }: { items: Routine[]; checked: string[]; day: string }) {
+export function RoutineToday({ items, checked, day, times = {} }: { items: Routine[]; checked: string[]; day: string; times?: Record<string, string> }) {
   const [done, setDone] = useOptimistic(new Set(checked), (s: Set<string>, { id, on }: { id: string; on: boolean }) => {
     const n = new Set(s);
     if (on) n.add(id);
@@ -74,7 +74,8 @@ export function RoutineToday({ items, checked, day }: { items: Routine[]; checke
               return (
                 <li key={r.id} className="flex items-start gap-3 py-2.5">
                   <Check done={on} title={r.title} onClick={() => toggle(r.id)} />
-                  <span className={on ? "text-muted line-through decoration-line" : ""}>{r.title}</span>
+                  <span className={`min-w-0 flex-1 ${on ? "text-muted line-through decoration-line" : ""}`}>{r.title}</span>
+                  {r.id in times && <span className="shrink-0 text-xs text-muted tabular-nums">{times[r.id] || "calendar"}</span>}
                 </li>
               );
             })}

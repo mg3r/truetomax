@@ -28,7 +28,20 @@ export type RhythmItem = { id: string; title: string; at_time: string | null; pa
  * One line on the Schedule you edit where it sits: tap the words to rename, tap the time to move it.
  * "rhythm" repeats every week; "task" is a one-time task on its date (the same task Today shows), with a box to tick.
  */
-export function ScheduleItem({ item, kind = "rhythm", project, done = false }: { item: RhythmItem; kind?: "rhythm" | "task"; project?: string | null; done?: boolean }) {
+export function ScheduleItem({
+  item,
+  kind = "rhythm",
+  project,
+  done = false,
+  calendar,
+}: {
+  item: RhythmItem;
+  kind?: "rhythm" | "task";
+  project?: string | null;
+  done?: boolean;
+  /** The matching Google Calendar event, if it's also there: its time is used when this has none of its own. */
+  calendar?: { link?: string; label: string } | null;
+}) {
   const [title, setTitle] = useState(item.title);
   const [part, setPart] = useState(item.part_of_day);
   const [time, setTime] = useState(item.at_time?.slice(0, 5) ?? "");
@@ -45,7 +58,7 @@ export function ScheduleItem({ item, kind = "rhythm", project, done = false }: {
     setDone(done);
   }, [done]);
 
-  const label = time ? clock(time) : part ?? "anytime";
+  const label = time ? clock(time) : calendar ? calendar.label : part ?? "anytime";
   const edit = kind === "task" ? editTask : editRhythm;
   const save = (fields: Parameters<typeof editRhythm>[1]) => start(() => edit(item.id, fields));
   const meta = [kind === "rhythm" ? "weekly" : null, project].filter(Boolean).join(", ");
@@ -91,7 +104,21 @@ export function ScheduleItem({ item, kind = "rhythm", project, done = false }: {
             aria-label="What"
             className={`w-full bg-transparent focus:outline-none ${isDone ? "text-muted line-through decoration-line" : ""}`}
           />
-          {meta && <p className="text-xs text-muted">{meta}</p>}
+          {(meta || calendar) && (
+            <p className="text-xs text-muted">
+              {meta}
+              {calendar && (
+                <>
+                  {meta ? ", " : ""}
+                  {calendar.link ? (
+                    <a href={calendar.link} target="_blank" rel="noopener noreferrer" className="hover:text-ink hover:underline">in your calendar</a>
+                  ) : (
+                    "in your calendar"
+                  )}
+                </>
+              )}
+            </p>
+          )}
         </div>
         <RemoveX
           label={`Remove ${item.title}`}
