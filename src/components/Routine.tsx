@@ -148,23 +148,31 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
               {c.label}
             </Chip>
           ))}
-          {cadence === "weekly" && !days.length && (
-            <span className="ml-1 self-center">
-              <Times value={times} onChange={setTimes} />
-            </span>
-          )}
-          {cadence === "weekly" && (
-            <>
-              <span aria-hidden="true" className="mx-1 self-stretch border-l border-line" />
-              <Chip on={!days.length} onClick={() => setDays([])}>Any day</Chip>
-              {WEEK.map((d) => (
-                <Chip key={d} on={days.includes(d)} onClick={() => setDays((s) => (s.includes(d) ? s.filter((x) => x !== d) : [...s, d]))}>
-                  {DAY_LETTERS[d]}
-                </Chip>
-              ))}
-            </>
-          )}
         </div>
+        {cadence === "weekly" && (
+          <div className="mt-3 flex flex-wrap items-center gap-1 text-sm" role="group" aria-label="How many times, and which days">
+            {!days.length && (
+              <span className="mr-1">
+                <Times value={times} onChange={setTimes} />
+              </span>
+            )}
+            {!days.length && <span aria-hidden="true" className="mx-1 h-4 border-l border-line" />}
+            {[{ d: -1, label: "Any day" }, ...WEEK.map((d) => ({ d, label: DAY_LETTERS[d] }))].map(({ d, label }) => {
+              const on = d === -1 ? !days.length : days.includes(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => (d === -1 ? setDays([]) : setDays((s) => (s.includes(d) ? s.filter((x) => x !== d) : [...s, d])))}
+                  className={`rounded-full border px-2.5 py-1 ${on ? "border-ink bg-ink text-bg" : "border-transparent text-muted hover:text-ink"}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <button className="btn mt-4" disabled={pending || !title.trim()}>
           Add
         </button>
