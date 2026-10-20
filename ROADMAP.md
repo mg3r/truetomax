@@ -58,13 +58,14 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0021` in order if any haven't been run; check the 7am notification arrives.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0024` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
+3. **Use it for a week before adding more.** Let the partner learn from what you add, finish and skip; tune from real use.
 
 ## v2 integrations
-5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their views, reach, saves and shares show under Ideas → Sharing; new posts count as moves; the partner plans from what lands.
+5. **Instagram (truetomax):** code done (run `0006_instagram.sql`, Meta app setup, then Connect Instagram). Posts and their numbers show on Socials; new posts count as moves; the partner plans from what lands.
 6. **Stripe and bank:** read-only income from SourceDart and Intelligent Adjuster (Stripe restricted key; bank via an aggregator like Plaid). Income becomes a learned signal alongside moves.
-7. **Google Drive folders:** code done (run `0007_drive.sql`). Paste a folder link under Context → Your docs; Google Docs, Word and text files inside (two levels deep) sync daily.
-8. **Morning notification:** code done (run `0008_push.sql`; add `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in Vercel; turn on in Context → Settings on your phone). Prepares the day at 7:30 local and sends the affirmation.
+7. **Google Drive folders:** code done (run `0007_drive.sql`). Paste a folder link under Profile → Context; Google Docs, Word and text files inside (two levels deep) sync daily.
+8. **Morning notification:** code done (run `0008_push.sql`; add `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in Vercel; turn on in Profile → Settings on your phone). Prepares the day at 7:30 local and sends the affirmation.
 9. **Memory by meaning:** paste `supabase/functions/embed/index.ts` into Supabase → Edge Functions → Deploy a new function → Via Editor, named `embed`. Older memories catch up automatically.
 
 ## Later
