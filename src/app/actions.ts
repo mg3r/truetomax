@@ -849,3 +849,12 @@ export async function logPractice(id: string, day: string, on: boolean) {
   await supabase.from("tasks").update(on ? { status: "done", completed_at: new Date().toISOString() } : { status: "todo", completed_at: null }).eq("practice_id", id).eq("day", day).in("status", on ? ["todo"] : ["done"]);
   refresh();
 }
+
+/** Edit a saved journal entry in place. Its memory is rewritten so the partner reads the current version. */
+export async function updateJournal(id: string, body: string) {
+  if (!body.trim()) return;
+  const supabase = await db();
+  const { data: entry } = await supabase.from("journal_entries").update({ body: body.trim(), updated_at: new Date().toISOString() }).eq("id", id).select("id, day, prompt, body").single();
+  if (entry) after(() => remember(supabase, "journal", entry.id, journalText(entry), entry.day));
+  refresh();
+}

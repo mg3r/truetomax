@@ -80,7 +80,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Journal",
     body: [
-      "Everything you've written, newest first. It's the richest thing your partner learns from.",
+      "Everything you've written, newest first, each with the date and time you wrote it (and when you last edited it). Tap any entry to edit it; it saves when you tap away. It's the richest thing your partner learns from, and it always reads the current version: edits replace what it remembered.",
     ],
   },
   {
