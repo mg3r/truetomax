@@ -118,8 +118,7 @@ export function RoutineEditor({ items: initial, checks, week }: { items: Routine
   return (
     <div className="space-y-12">
       <form onSubmit={add} className="pebble bg-surface p-5">
-        <h2 className="section-title">add to your routine</h2>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Meditate 10 minutes" aria-label="What" className="field mt-4" />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add to your routine" aria-label="Add to your routine" className="field" />
         <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="How often">
           {CADENCES.map((c) => (
             <Chip key={c.value} on={cadence === c.value} onClick={() => setCadence(c.value)}>
