@@ -95,7 +95,7 @@ export default async function TodayPage() {
       </section>
 
       {learnedNotes.length > 0 && (
-        <Link href="/learned" className="block pebble border border-line px-4 py-3 hover:bg-surface">
+        <Link href="/partner?view=learned" className="block pebble border border-line px-4 py-3 hover:bg-surface">
           <span className="font-semibold">Your partner has {learnedNotes.join(", ")}.</span>{" "}
           <span className="text-muted">Check it&rsquo;s right so it keeps learning the right things.</span>
         </Link>

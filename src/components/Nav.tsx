@@ -20,7 +20,7 @@ const LINKS = [
 export function Nav() {
   const path = usePathname();
   const active = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href) || (href === "/projects" && path.startsWith("/plan")) || (href === "/partner" && path.startsWith("/learned"));
+    href === "/" ? path === "/" : path.startsWith(href) || (href === "/projects" && path.startsWith("/plan"));
 
   return (
     <>

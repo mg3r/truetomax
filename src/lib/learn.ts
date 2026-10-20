@@ -181,7 +181,8 @@ export async function learnIfDue(supabase: SupabaseClient) {
   if (Date.now() - new Date(last).getTime() < 7 * 86400_000) return;
   const { count } = await supabase.from("tasks").select("id", { count: "exact", head: true }).in("status", ["done", "skipped"]).gte("day", addDays(today(), -7));
   const { count: entries } = await supabase.from("journal_entries").select("id", { count: "exact", head: true }).gte("day", addDays(today(), -7));
-  if ((count ?? 0) + (entries ?? 0) < 5) return;
+  const { count: checks } = await supabase.from("routine_checks").select("routine_id", { count: "exact", head: true }).gte("day", addDays(today(), -7));
+  if ((count ?? 0) + (entries ?? 0) + (checks ?? 0) < 5) return;
   // Claim this week's pass first so two open tabs don't both run it.
   await supabase.from("profile_context").update({ last_learned_at: new Date().toISOString() }).not("user_id", "is", null);
   try {
