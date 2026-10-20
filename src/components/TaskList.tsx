@@ -50,15 +50,23 @@ export function TaskList({
   practices = [],
   today,
   filter,
+  openId = null,
 }: {
   tasks: ListTask[];
   projects: Project[];
   practices?: { id: string; name: string }[];
   today: string;
   filter: string | null;
+  /** Opened from Today: this action starts open, scrolled into view. */
+  openId?: string | null;
 }) {
   const [tasks, setTasks] = useState(initial);
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(openId);
+  useEffect(() => {
+    if (!openId) return;
+    const el = document.getElementById(`action-${openId}`);
+    el?.scrollIntoView({ block: "center" });
+  }, [openId]);
   const [, start] = useTransition();
   useEffect(() => {
     setTasks(initial);
@@ -210,7 +218,7 @@ function Lane({ id, title, empty, children }: { id?: Lane; title: string; empty:
 function Row({ id, open, children }: { id: string; open: boolean; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({ id });
   return (
-    <li ref={setNodeRef} className={`group relative border-b border-line ${open ? "py-3" : "py-1.5"} ${isDragging ? "opacity-30" : ""}`}>
+    <li ref={setNodeRef} id={`action-${id}`} className={`group relative border-b border-line ${open ? "py-3" : "py-1.5"} ${isDragging ? "opacity-30" : ""}`}>
       <button
         ref={setActivatorNodeRef}
         {...listeners}

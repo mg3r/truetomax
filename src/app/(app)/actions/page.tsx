@@ -8,8 +8,8 @@ import { loadPractices } from "@/lib/routine";
 
 export const dynamic = "force-dynamic";
 
-export default async function ActionsPage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
-  const { project } = await searchParams;
+export default async function ActionsPage({ searchParams }: { searchParams: Promise<{ project?: string; open?: string }> }) {
+  const { project, open: openId } = await searchParams;
   const supabase = await createClient();
   const day = todayOf();
 
@@ -52,7 +52,7 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
         </nav>
       )}
 
-      <TaskList key={filter ?? "all"} tasks={tasks} projects={projects} practices={practices} today={day} filter={filter} />
+      <TaskList key={filter ?? "all"} tasks={tasks} projects={projects} practices={practices} today={day} filter={filter} openId={openId ?? null} />
     </div>
   );
 }

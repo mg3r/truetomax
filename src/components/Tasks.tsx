@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useRef, useState } from "react";
+import Link from "next/link";
 import { namesOf, projectsOf, practicesOf } from "@/lib/links";
 import { setTaskStatus, deleteTask, addTask } from "@/app/actions";
 import { Select } from "./Select";
@@ -63,7 +64,14 @@ export function TaskRow({ task, aside, showTime = false }: { task: Task; today?:
         )}
       </button>
       <div className="min-w-0 flex-1">
-        <p className={done ? "text-muted line-through decoration-line" : ""}>{task.title}</p>
+        {/* Tap it to open it on Actions, notes and all. */}
+        {task.source === "rhythm" ? (
+          <p className={done ? "text-muted line-through decoration-line" : ""}>{task.title}</p>
+        ) : (
+          <Link href={`/actions?open=${task.id}`} className={`block hover:underline hover:decoration-line hover:underline-offset-4 ${done ? "text-muted line-through decoration-line" : ""}`}>
+            {task.title}
+          </Link>
+        )}
       </div>
       {aside && <div className="shrink-0 self-center">{aside}</div>}
       {!done && (
