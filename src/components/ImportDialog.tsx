@@ -55,6 +55,7 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
@@ -125,7 +126,33 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" onClick={() => !busy && setOpen(false)}>
-          <div role="dialog" aria-modal="true" aria-label={copy.title} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-3xl border border-line bg-bg p-5 shadow-[0_12px_48px_-12px_rgb(0_0_0/0.35)]">
+          {/* Drop a file anywhere on the pop-up to import it. */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={copy.title}
+            onClick={(e) => e.stopPropagation()}
+            onDragOver={(e) => {
+              if (busy || !e.dataTransfer.types.includes("Files")) return;
+              e.preventDefault();
+              setOver(true);
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f && !busy) sendFile(f);
+            }}
+            className={`relative w-full max-w-lg rounded-3xl border bg-bg p-5 shadow-[0_12px_48px_-12px_rgb(0_0_0/0.35)] transition-colors ${over ? "border-clay" : "border-line"}`}
+          >
+            {over && (
+              <div className="pointer-events-none absolute inset-2 z-10 grid place-items-center rounded-2xl border border-dashed border-clay bg-bg/90 text-sm text-clay">
+                Drop to import
+              </div>
+            )}
             <div className="flex items-baseline justify-between gap-4">
               <h2 className="font-serif text-xl">{copy.title}</h2>
               <button type="button" onClick={() => setOpen(false)} disabled={busy} className="text-sm text-muted hover:text-ink">
@@ -140,7 +167,7 @@ export function ImportDialog({ kind, projectId = null }: { kind: Kind; projectId
               disabled={busy}
               rows={7}
               autoFocus
-              placeholder="Paste text, or a Google Doc link"
+              placeholder="Paste text or a Google Doc link, or drop a file here"
               className="mt-4 w-full resize-y rounded-2xl border border-line bg-surface p-3 text-sm placeholder:text-muted focus:border-ink focus:outline-none"
             />
 
