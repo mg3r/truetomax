@@ -952,7 +952,11 @@ export async function addPortfolioItems(items: { section: string; image_path: st
   const supabase = await db();
   const { data: last } = await supabase.from("portfolio_items").select("sort").eq("section", items[0].section).order("sort", { ascending: false }).limit(1).maybeSingle();
   const start = (last?.sort ?? 0) + 1;
-  await supabase.from("portfolio_items").insert(items.map((it, i) => ({ ...it, sort: start + i })));
+  // Each new piece takes the next catalogue number in its section (before 0027 runs, without one).
+  const { data: top } = await supabase.from("portfolio_items").select("number").eq("section", items[0].section).not("number", "is", null).order("number", { ascending: false }).limit(1).maybeSingle();
+  const first = (top?.number ?? 0) + 1;
+  const { error } = await supabase.from("portfolio_items").insert(items.map((it, i) => ({ ...it, sort: start + i, number: first + i })));
+  if (error) await supabase.from("portfolio_items").insert(items.map((it, i) => ({ ...it, sort: start + i })));
   refreshSite();
 }
 

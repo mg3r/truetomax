@@ -8,7 +8,7 @@ import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@d
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
 import { toJpeg } from "@/lib/images";
-import { SECTIONS, photoUrl, type PortfolioItem } from "@/lib/portfolio";
+import { SECTIONS, photoUrl, catalogNo, type PortfolioItem } from "@/lib/portfolio";
 import { addPortfolioItems, deletePortfolioItem, reorderPortfolio, updatePortfolioItem } from "@/app/actions";
 import { Grow } from "./Grow";
 
@@ -168,6 +168,7 @@ function Card({ item, onChange, onDelete }: { item: PortfolioItem; onChange: (pa
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={photoUrl(item.image_path)} alt={item.title ?? ""} className="h-full w-full object-cover" draggable={false} />
         {!item.published && <span className="absolute top-2 left-2 rounded-full bg-bg/90 px-2 py-0.5 text-xs">Hidden</span>}
+        {catalogNo(item.number) && <span className="absolute right-2 bottom-2 rounded-full bg-bg/85 px-2 py-0.5 text-xs tabular-nums">{catalogNo(item.number)}</span>}
       </div>
       <input
         value={title}

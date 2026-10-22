@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CONTACT, sectionOf, photoUrl } from "@/lib/portfolio";
+import { CONTACT, sectionOf, photoUrl, catalogNo } from "@/lib/portfolio";
 import { publishedItems } from "@/lib/portfolioData";
 import { Gallery } from "@/components/site/Gallery";
 
@@ -34,7 +34,7 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
       </section>
 
       {items.length ? (
-        <Gallery items={items.map((i) => ({ src: photoUrl(i.image_path), title: i.title, description: i.description, width: i.width, height: i.height }))} />
+        <Gallery email={CONTACT.email} items={items.map((i) => ({ src: photoUrl(i.image_path), no: catalogNo(i.number), title: i.title, description: i.description, width: i.width, height: i.height }))} />
       ) : (
         <p className="text-muted">New work coming soon.</p>
       )}

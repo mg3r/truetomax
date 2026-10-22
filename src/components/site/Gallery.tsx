@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Photo = { src: string; title: string | null; description: string | null; width: number | null; height: number | null };
+type Photo = { src: string; no: string | null; title: string | null; description: string | null; width: number | null; height: number | null };
 
 /** The work in columns; tap a photo to see it large, then swipe or use the arrow keys. */
-export function Gallery({ items }: { items: Photo[] }) {
+export function Gallery({ items, email }: { items: Photo[]; email: string }) {
   const [at, setAt] = useState<number | null>(null);
   const dlg = useRef<HTMLDialogElement>(null);
   const x0 = useRef<number | null>(null);
@@ -63,9 +63,13 @@ export function Gallery({ items }: { items: Photo[] }) {
                 className="block h-auto w-full transition-transform duration-700 group-hover:scale-[1.015]"
               />
             </button>
-            {(p.title || p.description) && (
+            {(p.no || p.title || p.description) && (
               <figcaption className="mt-2.5 px-0.5">
-                {p.title && <p className="font-serif text-lg leading-snug">{p.title}</p>}
+                {/* The catalogue number, quiet like a gallery label, then the title. */}
+                <p className="flex items-baseline gap-3">
+                  {p.no && <span className="shrink-0 text-xs tracking-wide text-muted tabular-nums">{p.no}</span>}
+                  {p.title && <span className="font-serif text-lg leading-snug">{p.title}</span>}
+                </p>
                 {p.description && <p className="mt-0.5 text-sm whitespace-pre-line text-muted">{p.description}</p>}
               </figcaption>
             )}
@@ -101,9 +105,16 @@ export function Gallery({ items }: { items: Photo[] }) {
                 <button type="button" aria-label="Next" onClick={() => setAt((i) => (i! + 1) % items.length)} className="absolute top-1/2 right-1 -translate-y-1/2 px-3 py-4 text-3xl text-white/80 hover:text-white">›</button>
               </>
             )}
-            {(open.title || open.description) && (
-              <p className="absolute inset-x-0 bottom-4 px-4 text-center text-sm text-white/80">{[open.title, open.description].filter(Boolean).join(" · ")}</p>
-            )}
+            <div className="absolute inset-x-0 bottom-4 px-4 text-center text-sm text-white/80">
+              {(open.no || open.title || open.description) && <p>{[open.no, open.title, open.description].filter(Boolean).join(" · ")}</p>}
+              {/* Ask about this exact piece: the email arrives with its number in the subject. */}
+              <a
+                href={`mailto:${email}?subject=${encodeURIComponent(`About ${[open.no, open.title].filter(Boolean).join(", ") || "a piece"}`)}`}
+                className="mt-1.5 inline-block text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white"
+              >
+                Ask about {open.no ?? "this piece"}
+              </a>
+            </div>
           </div>
         )}
       </dialog>

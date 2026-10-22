@@ -20,7 +20,11 @@ export type PortfolioItem = {
   height: number | null;
   sort: number;
   published: boolean;
+  number?: number | null;
 };
+
+/** "No. 07": the piece's catalogue number. */
+export const catalogNo = (n: number | null | undefined) => (n ? `No. ${String(n).padStart(2, "0")}` : null);
 
 /** The public address of a photo in the portfolio bucket. */
 export const photoUrl = (path: string) => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/portfolio/${path}`;

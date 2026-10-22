@@ -60,7 +60,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0026` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0027` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
 3. **Use it for a week before adding more.** Let the partner learn from what you add, finish and skip; tune from real use.
 
 ## v2 integrations
@@ -71,6 +71,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 9. **Memory by meaning:** paste `supabase/functions/embed/index.ts` into Supabase → Edge Functions → Deploy a new function → Via Editor, named `embed`. Older memories catch up automatically.
 
 ## Later
+- **Portfolio pieces:** group several photos into one piece or set (one number, one title, a small swipe between its photos on the site), so the same pot shot twice isn't two entries; numbers then refer to pieces, not photos.
 - **A clear Tomorrow:** make planning tomorrow obvious. On Actions, the "Coming up" group becomes **Tomorrow**, always shown with its own "Add an action" line, and you can drag actions into it. Tomorrow's actions roll onto Today the next morning. **Up next** means "this week, no set day" (the partner offers these when they fit). Later stays for someday. Actions dated further out than tomorrow show their day.
 - **Subtasks:** an action can hold subtasks. Drag one action onto another to make it a subtask; drag subtasks to reorder them or move them between parents. Subtasks take on the parent's project automatically. Import turns sub-points into subtasks (instead of notes) once this exists, and the partner reads them like notes.
 - Productize as truetoyou: per-person onboarding replaces the seeded About you, routine and goals; the app name is already one setting (`NEXT_PUBLIC_APP_NAME`).

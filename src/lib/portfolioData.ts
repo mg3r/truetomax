@@ -7,7 +7,7 @@ function publicClient() {
 }
 
 export async function publishedItems(section?: string): Promise<PortfolioItem[]> {
-  let q = publicClient().from("portfolio_items").select("id, section, image_path, title, description, width, height, sort, published").eq("published", true);
+  let q = publicClient().from("portfolio_items").select("*").eq("published", true);
   if (section) q = q.eq("section", section);
   const { data, error } = await q.order("sort").order("created_at");
   return error ? [] : ((data ?? []) as PortfolioItem[]);
