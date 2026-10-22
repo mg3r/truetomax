@@ -968,7 +968,9 @@ export async function updatePortfolioItem(id: string, fields: { title?: string |
 
 export async function reorderPortfolio(ids: string[]) {
   const supabase = await db();
-  await Promise.all(ids.map((id, i) => supabase.from("portfolio_items").update({ sort: i + 1 }).eq("id", id)));
+  const results = await Promise.all(ids.map((id, i) => supabase.from("portfolio_items").update({ sort: i + 1 }).eq("id", id)));
+  const failed = results.find((r) => r.error);
+  if (failed?.error) console.error("reorderPortfolio", failed.error.message);
   refreshSite();
 }
 

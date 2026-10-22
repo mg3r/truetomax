@@ -4,7 +4,8 @@ import { CONTACT, sectionOf, photoUrl } from "@/lib/portfolio";
 import { publishedItems } from "@/lib/portfolioData";
 import { Gallery } from "@/components/site/Gallery";
 
-export const revalidate = 60;
+// Always fresh: what you change in Portfolio (order, words, hiding) shows on the next visit.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string }> }): Promise<Metadata> {
   const { section } = await params;

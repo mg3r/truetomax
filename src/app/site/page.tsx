@@ -2,7 +2,8 @@ import Link from "next/link";
 import { SECTIONS, photoUrl } from "@/lib/portfolio";
 import { publishedItems, siteBase } from "@/lib/portfolioData";
 
-export const revalidate = 60;
+// Always fresh: what you change in Portfolio (order, words, hiding) shows on the next visit.
+export const dynamic = "force-dynamic";
 
 /** truetomax.com: who Max is, and each body of work that has something to show. */
 export default async function SiteHome() {
