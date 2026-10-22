@@ -60,7 +60,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0027` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0028` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
 3. **Use it for a week before adding more.** Let the partner learn from what you add, finish and skip; tune from real use.
 
 ## v2 integrations

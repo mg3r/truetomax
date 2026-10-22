@@ -30,3 +30,19 @@ export const catalogNo = (n: number | null | undefined) => (n ? `No. ${String(n)
 export const photoUrl = (path: string) => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/portfolio/${path}`;
 
 export const CONTACT = { email: "maxwellrgross@gmail.com", instagram: "truetomax" };
+
+/** Every piece of text on the site, with what it says until you change it in Portfolio. */
+export const SITE_TEXT_DEFAULTS: Record<string, string> = {
+  home_title: "Things I make by hand.",
+  home_intro: "I\u2019m Max. I make pottery, cook, paint and DJ. Here\u2019s the work, as it comes.",
+  contact_title: "Interested in a piece?",
+  contact_body: "Prices on request. I\u2019m also happy to make something for your table, your kitchen or your space.",
+  ...Object.fromEntries(SECTIONS.flatMap((s) => [[`${s.id}_title`, s.title], [`${s.id}_blurb`, s.blurb]])),
+};
+
+export type SiteText = Record<string, string>;
+export const withDefaults = (saved: Record<string, unknown> | null | undefined): SiteText => {
+  const out: SiteText = { ...SITE_TEXT_DEFAULTS };
+  for (const [k, v] of Object.entries(saved ?? {})) if (typeof v === "string" && v.trim()) out[k] = v;
+  return out;
+};

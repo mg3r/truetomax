@@ -986,3 +986,13 @@ export async function deletePortfolioItem(id: string) {
   if (data?.image_path) await supabase.storage.from("portfolio").remove([data.image_path]);
   refreshSite();
 }
+
+/** Change one piece of text on the site (an empty value goes back to the default). */
+export async function saveSiteText(key: string, value: string) {
+  if (!/^[a-z_]{2,40}$/.test(key)) return;
+  const supabase = await db();
+  const { data } = await supabase.from("site_text").select("content").maybeSingle();
+  const content = { ...((data?.content as Record<string, string>) ?? {}), [key]: value.trim().slice(0, 2000) };
+  await supabase.from("site_text").upsert({ content, updated_at: new Date().toISOString() });
+  refreshSite();
+}

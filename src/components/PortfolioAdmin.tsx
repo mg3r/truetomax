@@ -16,7 +16,7 @@ import { Grow } from "./Grow";
  * Your portfolio, managed in place: drop or pick photos to upload, drag to reorder,
  * type a title and description under each, hide one without deleting it, or delete it.
  */
-export function PortfolioAdmin({ section, items: initial, counts, userId }: { section: string; items: PortfolioItem[]; counts: Record<string, number>; userId: string }) {
+export function PortfolioAdmin({ section, items: initial, counts, userId, pageText = null }: { section: string; items: PortfolioItem[]; counts: Record<string, number>; userId: string; pageText?: React.ReactNode }) {
   const router = useRouter();
   const [items, setItems] = useState(initial);
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
@@ -74,6 +74,9 @@ export function PortfolioAdmin({ section, items: initial, counts, userId }: { se
           </Link>
         ))}
       </nav>
+
+      {/* This section's page title and description, as they read on the site. */}
+      {pageText}
 
       {/* Drop photos here, or tap to pick them (on a phone: your photo library or the camera). */}
       <div
