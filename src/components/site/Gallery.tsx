@@ -27,11 +27,30 @@ export function Gallery({ items }: { items: Photo[] }) {
 
   const open = at === null ? null : items[at];
 
+  // Columns that read in your order, left to right: each photo goes into the shortest column so far.
+  // (Plain CSS columns fill top to bottom, which scrambled the order you set.)
+  const [cols, setCols] = useState(3);
+  useEffect(() => {
+    const fit = () => setCols(window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  const columns: { p: Photo; i: number }[][] = Array.from({ length: cols }, () => []);
+  const heights = Array(cols).fill(0);
+  items.forEach((p, i) => {
+    const c = heights.indexOf(Math.min(...heights));
+    columns[c].push({ p, i });
+    heights[c] += (p.width && p.height ? p.height / p.width : 1.25) + (p.title || p.description ? 0.18 : 0) + 0.06;
+  });
+
   return (
     <>
-      <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
-        {items.map((p, i) => (
-          <figure key={p.src} className="mb-8 break-inside-avoid">
+      <div className="flex gap-5">
+        {columns.map((col, c) => (
+          <div key={c} className="min-w-0 flex-1">
+            {col.map(({ p, i }) => (
+          <figure key={p.src} className="mb-8">
             <button type="button" onClick={() => setAt(i)} className="group block w-full cursor-zoom-in overflow-hidden rounded-md bg-surface" aria-label={`Open ${p.title ?? `photo ${i + 1}`}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -51,6 +70,8 @@ export function Gallery({ items }: { items: Photo[] }) {
               </figcaption>
             )}
           </figure>
+            ))}
+          </div>
         ))}
       </div>
 
