@@ -33,6 +33,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 - [x] Project ideas below the board
 - [x] Action ideas at the bottom of Actions (run `0024_action_ideas.sql`)
 - [x] Focus line leads to its action (run `0025_focus_link.sql`)
+- [x] Portfolio at truetomax.com with an admin tab: upload, reorder, describe, hide (run `0026_portfolio.sql`; add truetomax.com to the Vercel project). Next: Art, Food, DJ sections (DJ needs audio/mixes), truetoyou page, an About section
 - [x] Tasks page: one running checklist of every task, Notes-style adding, move and project in place, import a list from a photo/PDF/doc with crossed-off items marked done
 - [x] Today is for doing only (no add field); Up next has no day and is offered in the partner's suggestions
 - [x] Partner suggests next steps inside each project
@@ -59,7 +60,7 @@ An evolving guiding light: give each day direction, help execute visions, share 
 
 ## Next, in priority order
 1. **Fill in your Vision, Projects, Routine and Schedule yourself** with what's alive today; every suggestion comes from this.
-2. **Your setup steps still to confirm:** run migrations `0009` to `0025` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
+2. **Your setup steps still to confirm:** run migrations `0009` to `0026` in order if any haven't been run; check the 7am notification arrives; after deploying, try Look at it now on a reel (video watching) and one import of each kind.
 3. **Use it for a week before adding more.** Let the partner learn from what you add, finish and skip; tune from real use.
 
 ## v2 integrations

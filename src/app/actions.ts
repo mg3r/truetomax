@@ -939,3 +939,44 @@ export async function createProject(title: string, status: string): Promise<{ id
   refresh();
   return { id: res.data?.id };
 }
+
+/* Portfolio: the public site at truetomax.com */
+function refreshSite() {
+  revalidatePath("/portfolio");
+  revalidatePath("/site", "layout");
+}
+
+/** New photos land at the end of their section, in the order you picked them. */
+export async function addPortfolioItems(items: { section: string; image_path: string; width: number; height: number }[]) {
+  if (!items.length) return;
+  const supabase = await db();
+  const { data: last } = await supabase.from("portfolio_items").select("sort").eq("section", items[0].section).order("sort", { ascending: false }).limit(1).maybeSingle();
+  const start = (last?.sort ?? 0) + 1;
+  await supabase.from("portfolio_items").insert(items.map((it, i) => ({ ...it, sort: start + i })));
+  refreshSite();
+}
+
+export async function updatePortfolioItem(id: string, fields: { title?: string | null; description?: string | null; published?: boolean }) {
+  const patch: Record<string, unknown> = {};
+  if (fields.title !== undefined) patch.title = fields.title?.trim() || null;
+  if (fields.description !== undefined) patch.description = fields.description?.trim() || null;
+  if (fields.published !== undefined) patch.published = fields.published;
+  const supabase = await db();
+  await supabase.from("portfolio_items").update(patch).eq("id", id);
+  refreshSite();
+}
+
+export async function reorderPortfolio(ids: string[]) {
+  const supabase = await db();
+  await Promise.all(ids.map((id, i) => supabase.from("portfolio_items").update({ sort: i + 1 }).eq("id", id)));
+  refreshSite();
+}
+
+/** Removes the photo from the site and from storage. */
+export async function deletePortfolioItem(id: string) {
+  const supabase = await db();
+  const { data } = await supabase.from("portfolio_items").select("image_path").eq("id", id).maybeSingle();
+  await supabase.from("portfolio_items").delete().eq("id", id);
+  if (data?.image_path) await supabase.storage.from("portfolio").remove([data.image_path]);
+  refreshSite();
+}

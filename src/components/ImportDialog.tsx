@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { isHeic, toJpeg } from "@/lib/images";
 
 type Kind = "actions" | "projects" | "visions";
 
@@ -12,40 +13,8 @@ const COPY: Record<Kind, { button: string; title: string; hint: string; busy: st
 };
 
 /** Shrink a photo before sending it, so big phone pictures upload quickly. */
-const isHeic = (f: File) => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
-
-/** Open any photo as a bitmap: iPhone HEIC photos are converted first, since most browsers can't read them. */
-async function bitmapOf(file: File): Promise<ImageBitmap> {
-  let blob: Blob = file;
-  if (isHeic(file)) {
-    const heic2any = (await import("heic2any")).default;
-    const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
-    blob = Array.isArray(out) ? out[0] : out;
-  }
-  try {
-    return await createImageBitmap(blob);
-  } catch {
-    // Some browsers can only open it through an <img>.
-    const url = URL.createObjectURL(blob);
-    try {
-      const img = new Image();
-      img.src = url;
-      await img.decode();
-      return await createImageBitmap(img);
-    } finally {
-      URL.revokeObjectURL(url);
-    }
-  }
-}
-
 async function shrink(file: File): Promise<Blob> {
-  const img = await bitmapOf(file);
-  const scale = Math.min(1, 2000 / Math.max(img.width, img.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(img.width * scale);
-  canvas.height = Math.round(img.height * scale);
-  canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve) => canvas.toBlob((b) => resolve(b ?? file), "image/jpeg", 0.85));
+  return (await toJpeg(file, 2000, 0.85)).blob;
 }
 
 /** One import pop-up for actions, projects and visions: paste text, paste a Google Doc link, upload a file, or a photo. */

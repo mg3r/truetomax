@@ -11,7 +11,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
   {
     title: "Getting around",
     body: [
-      "Projects and Socials use a wider page, since they hold a board, posts and long lists; the other pages keep a reading width. On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Socials, Journal, Partner). Profile sits at the bottom.",
+      "Projects and Socials use a wider page, since they hold a board, posts and long lists; the other pages keep a reading width. On a computer, everything is down the left side, grouped by what you're doing: your day (Today, Actions, Schedule, Rhythm), building (Vision, Projects), and reflecting and sharing (Socials, Portfolio, Journal, Partner). Profile sits at the bottom.",
       "On your phone, the bar at the bottom has Today, Actions, Projects and Partner; Menu opens everything else.",
     ],
   },
@@ -81,6 +81,14 @@ const SECTIONS: { title: string; body: string[] }[] = [
       "See your followers and the last 30 days at a glance, from Instagram's own insights: posts, views, reach, how much of your viewing comes from non-followers, accounts engaged, interactions, saves, shares, follows and unfollows, and link taps. Below that, a by-format table compares reels, carousels and photos: average views, share rate and save rate (out of the people reached), and for reels average watch time and skip rate (how many swipe away in the first moments). Then every post with its numbers, sorted by Latest or Best. Tap a post's picture or caption to open it on Instagram; tap the italic note or \u201cWhat it saw\u201d to open everything about it.",
       "\u201cRead my posts\u201d has your partner go through them and say what's working, what isn't, and 3\u20135 specific things to try this week, each with the evidence behind it. Post ideas live here too: \u201cSuggest 3 posts\u201d builds them from what you're making this week and what's landing. Tap + to keep one: it goes to Up next in Actions as a short action, with everything the idea said kept in its notes, and a note at the bottom of the screen tells you where it went. The trash can deletes it.",
       "Your partner looks at each post once, all of it: every photo, every slide of a carousel, and frames from across each video, whether it's a reel or a video inside a carousel (about one every two seconds, so it sees how the video unfolds, not just its cover). It can't hear the sound yet, but it reads any text on screen. The italic note under the caption is the short version; open \u201cWhat it saw\u201d for the full read: what it learned from the post (how it did against your usual, and what in it most likely explains that), what the post opens with, slide by slide or moment by moment, the text on screen, and every number for that post (average watch against length, how much of it people watch, skip rate, share, save and engagement rates, reposts, follows and profile visits it drove). If it hasn't looked at a post yet, tap \u201cLook at it now\u201d there. Its read and its post ideas draw on all of this. Posts refresh from Instagram every few hours. New posts count as a move (shared) on Today automatically.",
+    ],
+  },
+  {
+    title: "Portfolio",
+    body: [
+      "Your public site, at truetomax.com: the work you make, for anyone you want to send it to. Nothing else in the app is ever public; truetomax.com shows only the portfolio, and the app stays at its own address behind your sign-in.",
+      "Portfolio is where you manage it. Pick a section (Pottery now; Art, Food, DJ and truetoyou are ready for later), then tap Add photos or drop them in. iPhone photos are fine: they're turned upright, sized for the web and uploaded for you. Drag photos to put them in order; type a title and description under each (it saves when you click away); Hide takes one off the site without deleting it; Delete removes it for good after asking.",
+      "On the site, each section with something published gets its own page (truetomax.com/pottery), with your photos in your order, your words under them, a full-screen view you can swipe through, and \u201cPrices on request\u201d with Email and Instagram buttons. Preview opens it from inside the app. Changes show on the site within a minute.",
     ],
   },
   {
